@@ -36,7 +36,7 @@ async function bytes(url: string): Promise<Uint8Array> {
 
 const wholeFiles = new Map<string, Promise<Uint8Array>>();
 
-/** Base64 files cannot be fetched by byte range: fetch the whole route file once and cut blocks from it. */
+/** Whole route files, for base64 hosts and for hosts that ignore Range: fetched once, blocks cut from them. */
 function wholeFile(url: string): Promise<Uint8Array> {
   const cached = wholeFiles.get(url) ?? bytes(url);
   wholeFiles.set(url, cached);
@@ -74,26 +74,34 @@ export async function loadAppData(base: string): Promise<AppData> {
   return { matrix, routeIndex, base };
 }
 
+function cutBlock(file: Uint8Array, start: number, end: number, candidate: number): Uint16Array {
+  if (file.byteLength < end) throw new RankError("BAD_DATA", `route block ${candidate} is truncated`);
+  return readU16(file.subarray(start, end));
+}
+
 /**
  * One candidate's route block, fetched with an HTTP Range request (about 20 KB instead of the
- * whole 5 MB file). A server that ignores Range sends the whole file; then the block is cut out.
+ * whole 5 MB file). A host that ignores Range (Cloudflare Pages) sends the whole file: the app
+ * keeps it, and cuts this block and every later one out of it.
  */
 export async function fetchRouteBlock(data: AppData, direction: "out" | "home", candidate: number): Promise<Uint16Array> {
   const idx = direction === "out" ? data.routeIndex.out : data.routeIndex.home;
   const start = idx[candidate]! * 2;
   const end = idx[candidate + 1]! * 2;
   if (end <= start) return new Uint16Array(0);
-  if (BASE64) {
-    const file = await wholeFile(`${data.base}${direction}_routes.u16`);
-    if (file.byteLength < end) throw new RankError("BAD_DATA", `route block ${candidate} is truncated`);
-    return readU16(file.subarray(start, end));
-  }
-  const res = await get(`${data.base}${direction}_routes.u16`, { headers: { Range: `bytes=${start}-${end - 1}` } });
+  const url = `${data.base}${direction}_routes.u16`;
+  const kept = wholeFiles.get(url);
+  if (BASE64 || kept) return cutBlock(await (kept ?? wholeFile(url)), start, end, candidate);
+  const res = await get(url, { headers: { Range: `bytes=${start}-${end - 1}` } });
   const raw = new Uint8Array(await res.arrayBuffer());
-  if (res.status === 206 && !(res.headers.get("Content-Range") ?? "").startsWith(`bytes ${start}-${end - 1}/`)) {
+  if (res.status !== 206) {
+    const block = cutBlock(raw, start, end, candidate);
+    wholeFiles.set(url, Promise.resolve(raw));
+    return block;
+  }
+  if (!(res.headers.get("Content-Range") ?? "").startsWith(`bytes ${start}-${end - 1}/`)) {
     throw new RankError("BAD_DATA", `route block ${candidate}: the server sent another byte range`);
   }
-  const block = res.status === 206 ? raw : raw.subarray(start, end);
-  if (block.byteLength !== end - start) throw new RankError("BAD_DATA", `route block ${candidate} is truncated`);
-  return readU16(block);
+  if (raw.byteLength !== end - start) throw new RankError("BAD_DATA", `route block ${candidate} is truncated`);
+  return readU16(raw);
 }

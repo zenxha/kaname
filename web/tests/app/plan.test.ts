@@ -65,6 +65,15 @@ describe("fetchRouteBlock", () => {
     expect([...await fetchRouteBlock(data, "home", 1)]).toEqual([7]);
   });
 
+  it("downloads a whole file only once when the host ignores Range", async () => {
+    const noRange = { ...data, base: "/no-range/" } as AppData;
+    const f = respond(200, new Uint8Array([...file, 4, 0]));
+    vi.stubGlobal("fetch", f);
+    expect([...await fetchRouteBlock(noRange, "home", 0)]).toEqual([1]);
+    expect([...await fetchRouteBlock(noRange, "home", 1)]).toEqual([7]);
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+
   it("returns an empty block without a request", async () => {
     const f = respond(206, file);
     vi.stubGlobal("fetch", f);
