@@ -50,7 +50,7 @@ Here $`s_i`$ is the start of person $`i`$ and $`h_i`$ is their home. $`n`$ is th
 - Ties go to the station with more lines, then to the lower spread between people, then to the station id.
 - The result also holds the Pareto set of average and worst-case times, for a view of the tradeoff.
 
-`docs/data-format.md` describes the data files, the route encoding and what the travel times include.
+`docs/data-format.md` describes the data files, the route encoding and what the travel times include. `docs/tuning.md` shows how the default α and λ were tested on 1,000 sampled groups.
 
 ## Repository layout
 
@@ -65,7 +65,7 @@ Here $`s_i`$ is the start of person $`i`$ and $`h_i`$ is their home. $`n`$ is th
 | `pipeline/config/` | Build parameters and reviewed correction tables |
 | `pipeline/validation/` | Reference journey times for the accuracy test |
 | `data/` | The generated data, `meta.json` and `LICENSES.md` |
-| `docs/` | The data format and internal notes |
+| `docs/` | The data format, the tuning study and internal notes |
 
 ## Tests
 

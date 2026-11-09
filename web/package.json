@@ -12,6 +12,7 @@
     "coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "cli": "tsx ../cli/rank.ts",
+    "tune": "tsx ../cli/tune.ts",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "deploy": "npm run build && npx --yes wrangler@4.153.0 pages deploy dist --project-name kaname --branch main",
