@@ -13,25 +13,27 @@ export interface Resolved {
   readonly home: readonly StationOption[];
 }
 
-function withLabel(label: string, fn: () => StationOption[]): StationOption[] {
+type Place = "start" | "home";
+
+function withLabel(label: string, place: Place, fn: () => StationOption[]): StationOption[] {
   try {
     return fn();
   } catch (e) {
-    if (e instanceof RankError) throw new RankError(e.code, `participant "${label}": ${e.message}`);
+    if (e instanceof RankError) throw new RankError(e.code, `participant "${label}": ${e.message}`, { participant: label, place });
     throw e;
   }
 }
 
-function resolveLocation(data: MatrixData, loc: unknown, label: string, what: string): StationOption[] {
+function resolveLocation(data: MatrixData, loc: unknown, label: string, place: Place): StationOption[] {
   if (isRecord(loc) && typeof loc.station === "string") {
     const query = loc.station;
-    return withLabel(label, () => [{ index: findStation(data, query), distanceM: 0, walkMinutes: 0 }]);
+    return withLabel(label, place, () => [{ index: findStation(data, query), distanceM: 0, walkMinutes: 0 }]);
   }
   if (isRecord(loc) && typeof loc.lat === "number" && typeof loc.lng === "number") {
     const { lat, lng } = loc;
-    return withLabel(label, () => snapToStations(data, lat, lng));
+    return withLabel(label, place, () => snapToStations(data, lat, lng));
   }
-  throw new RankError("BAD_PARTICIPANT", `participant "${label}": ${what} must be {station} or {lat, lng}`);
+  throw new RankError("BAD_PARTICIPANT", `participant "${label}": ${place} must be {station} or {lat, lng}`, { participant: label, place });
 }
 
 function validLabel(p: unknown, i: number): string {
@@ -52,10 +54,10 @@ function checkRoutable(data: MatrixData, r: Resolved, needHome: boolean): void {
   });
   const names = (opts: readonly StationOption[]) => opts.map((o) => describeStation(data.stations[o.index]!)).join(", ");
   if (!reachesOut) {
-    throw new RankError("UNROUTABLE_STATION", `participant "${r.label}": ${names(r.start)} cannot reach any meeting station`);
+    throw new RankError("UNROUTABLE_STATION", `participant "${r.label}": ${names(r.start)} cannot reach any meeting station`, { participant: r.label, place: "start" });
   }
   if (needHome && !reachesHome) {
-    throw new RankError("UNROUTABLE_STATION", `participant "${r.label}": no meeting station has a train home to ${names(r.home)}`);
+    throw new RankError("UNROUTABLE_STATION", `participant "${r.label}": no meeting station has a train home to ${names(r.home)}`, { participant: r.label, place: "home" });
   }
 }
 

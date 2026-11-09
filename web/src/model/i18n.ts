@@ -70,6 +70,11 @@ const en = {
   mapLabel: "Map of everyone's routes",
   routesError: "The routes could not load, so the map shows straight lines.",
   locationError: "Could not get your location.",
+  maxPeople: "Kaname plans up to {n} people.",
+  problemFar: "{who}'s place is more than 2 km from any station that Kaname knows. Kaname covers stations up to about 60 km from Tokyo.",
+  problemStart: "No evening train goes from {who}'s start to any meeting station. Pick another start for {who}.",
+  problemHome: "No meeting station has a train to {who}'s home between 21:00 and 23:00. Pick another home for {who}.",
+  problemOther: "Kaname cannot plan this group ({detail}).",
   attribution: "Train times: Mini Tokyo 3D (MIT) · platform positions: MLIT 国土数値情報 (CC BY 4.0) · addresses: 大字・町丁目レベル位置参照情報 国土交通省 · kana: Wikidata (CC0)",
 };
 
@@ -144,6 +149,11 @@ const ja: Record<StringKey, string> = {
   mapLabel: "全員の経路の地図",
   routesError: "経路を読み込めなかったため、地図は直線で表示しています。",
   locationError: "現在地を取得できませんでした。",
+  maxPeople: "{n}人まで計画できます。",
+  problemFar: "{who}の場所は、対象の駅から2 km以上離れています。東京から約60 kmまでの駅に対応しています。",
+  problemStart: "{who}の出発駅から、夕方に行ける集合駅がありません。別の出発駅を選んでください。",
+  problemHome: "21時から23時に、{who}の帰りの駅まで行ける電車がどの集合駅からもありません。別の帰りの駅を選んでください。",
+  problemOther: "このグループは計画できません（{detail}）。",
   attribution: "時刻: Mini Tokyo 3D (MIT) · ホーム位置: 国土数値情報 (CC BY 4.0) · 住所: 大字・町丁目レベル位置参照情報 国土交通省 · 読み: Wikidata (CC0)",
 };
 

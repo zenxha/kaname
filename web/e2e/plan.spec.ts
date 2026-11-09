@@ -182,6 +182,19 @@ test("a link with a station the data does not have says so and keeps the rest", 
   await expect(page.locator(".mk-person")).toHaveCount(2);
 });
 
+test("two friends with the same name still get a plan", async ({ page }) => {
+  await page.goto("/?basemap=none&p=tokyo_Aki&p=shinjuku_Aki");
+  await expect(page.locator(".ticket")).toBeVisible();
+  await expect(page.locator(".notice")).toHaveCount(0);
+});
+
+test("a home with no evening train names the person, in their language", async ({ page }) => {
+  await page.goto("/?basemap=none&p=tokyo_Aki&p=shinjuku.kazusa-kameyama_Ben");
+  await expect(page.getByRole("alert")).toHaveText("No meeting station has a train to Ben's home between 21:00 and 23:00. Pick another home for Ben.");
+  await page.getByRole("button", { name: "日本語" }).click();
+  await expect(page.getByRole("alert")).toContainText("Benの帰りの駅");
+});
+
 test("fewer than two people asks for more", async ({ page }) => {
   await page.goto(APP);
   await openSheet(page);

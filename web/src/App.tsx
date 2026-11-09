@@ -10,6 +10,7 @@ import { useAppData, useRouteBlocks } from "./data/useAppData";
 import { MapView, type MapText } from "./map/MapView";
 import type { MapStation, Padding } from "./map/types";
 import { t, type Lang } from "./model/i18n";
+import { problemText } from "./model/problem";
 import { isExample, type Person } from "./model/scenario";
 import { planOf } from "./model/share";
 import { visibleHeight, type Snap } from "./model/sheet";
@@ -137,7 +138,7 @@ function Planner({ data, lang, setLang }: PlannerProps) {
       <Sheet stacked={stacked} snap={sheetSnap} viewport={viewport} onSnap={setSnap} label={t(lang, "result")}
         moreLabel={t(lang, "showMore")} lessLabel={t(lang, "showLess")} head={<>
           {outcome.kind === "needTwo" && <p className="notice">{t(lang, "needTwo")}</p>}
-          {outcome.kind === "error" && <p className="notice" role="alert">{outcome.message}</p>}
+          {outcome.kind === "error" && <p className="notice" role="alert">{problemText(lang, outcome.error)}</p>}
           {outcome.kind === "ok" && best === null && <p className="notice" role="alert">{t(lang, "noFeasible")}</p>}
           {blocks.error && <p className="notice" role="alert">{t(lang, "routesError")}</p>}
           {fromLink && opening.unknown > 0 && <p className="notice" role="alert">{t(lang, "unknownStations", { n: opening.unknown })}</p>}

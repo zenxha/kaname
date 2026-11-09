@@ -12,7 +12,7 @@ import { toParticipants, type Person } from "./model/scenario";
 
 export type Outcome =
   | { readonly kind: "needTwo" }
-  | { readonly kind: "error"; readonly message: string }
+  | { readonly kind: "error"; readonly error: RankError }
   | {
     readonly kind: "ok";
     readonly result: RankResult;
@@ -38,7 +38,7 @@ export function useOutcome(data: MatrixData, people: readonly Person[], alpha: n
       const best = result.candidates.find((c) => c.station.id === selected) ?? result.candidates[0] ?? null;
       return { kind: "ok", result, best };
     } catch (e) {
-      if (e instanceof RankError) return { kind: "error", message: e.message };
+      if (e instanceof RankError) return { kind: "error", error: e };
       throw e;
     }
   }, [data, people, alpha, selected, unnamed]);

@@ -1,9 +1,10 @@
 /** The people: rows that open into a trip, one editor at a time, and the add button. Focus follows the editor. */
 import { useEffect, useId, useRef, useState } from "react";
 import type { MatrixData } from "../../core/data";
+import { MAX_PARTICIPANTS } from "../../core/participants";
 import { earliestLastTrain } from "../model/compare";
 import { t, type Lang } from "../model/i18n";
-import { addPerson, removePerson, updatePerson, type Person } from "../model/scenario";
+import { addPerson, canAddPerson, removePerson, updatePerson, type Person } from "../model/scenario";
 import { scoredIndexes, stationIndex, type Outcome, type PersonRoute } from "../usePlan";
 import { PersonEditor } from "./PersonEditor";
 import { PersonRow } from "./PersonRow";
@@ -67,7 +68,9 @@ export function PeopleList({ data, lang, people, outcome, routes, open, onOpen, 
           );
         })}
       </ol>
-      <button ref={addRef} type="button" className="add" onClick={addOne}>{t(lang, "addPerson")}</button>
+      {canAddPerson(people)
+        ? <button ref={addRef} type="button" className="add" onClick={addOne}>{t(lang, "addPerson")}</button>
+        : <p className="snap" role="status">{t(lang, "maxPeople", { n: MAX_PARTICIPANTS })}</p>}
     </section>
   );
 }
