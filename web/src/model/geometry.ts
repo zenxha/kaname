@@ -30,6 +30,26 @@ export function hopPath(data: MatrixData, hop: RouteHop): LngLat[] {
   return stationRun(line, a, b, rw?.loop === true).map((s) => stationPoint(data, s, hop.railway));
 }
 
+export interface MapLeg {
+  readonly path: readonly LngLat[];
+  /** A walk between two stations, drawn as a dotted straight step. */
+  readonly walk: boolean;
+  /** The line's own color; a walk keeps the color of the line it walks to. */
+  readonly color: string;
+}
+
+/** A route as map legs: each train ride in its line's color, and each walk between stations as a step. */
+export function routeLegs(data: MatrixData, hops: readonly RouteHop[]): MapLeg[] {
+  return hops.flatMap((hop, i): MapLeg[] => {
+    const color = data.railways[hop.railway]?.color ?? "#888888";
+    const ride: MapLeg = { path: hopPath(data, hop), walk: false, color };
+    const prev = hops[i - 1];
+    if (!hop.walk || prev === undefined) return [ride];
+    const from = stationPoint(data, prev.to, prev.railway);
+    return [{ path: [from, ride.path[0]!], walk: true, color }, ride];
+  });
+}
+
 /** One continuous path for a whole route. A walk between stations becomes a straight step. */
 export function routePath(data: MatrixData, hops: readonly RouteHop[]): LngLat[] {
   return hops.reduce<LngLat[]>((path, hop) => {
