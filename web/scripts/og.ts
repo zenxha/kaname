@@ -9,6 +9,7 @@ import { defaultDataDir, loadMatrixData, loadRouteData } from "../../cli/loadDat
 import { rank } from "../core/rank";
 import { routeFor } from "../core/routes";
 import { routeLegs, type LngLat } from "../src/model/geometry";
+import { plainSummary } from "../src/model/compare";
 import { DEFAULT_PEOPLE, toParticipants } from "../src/model/scenario";
 
 const OUT = join(import.meta.dirname, "..", "static");
@@ -93,7 +94,7 @@ h1 { font: 700 66px/1.08 "BIZ UDPGothic"; letter-spacing: -0.01em; margin-top: 1
   <p class="sub">Find the closest station for all your friends in Tokyo.</p>
   <p class="ja">みんなにとって最適な集合場所を、東京の駅から。</p>
 </div>
-<div class="ticket"><small>${people.map((p) => p.label).join(" and ")} meet at</small><b>${best.station.ja}<span>${best.station.en} · ${Math.round(best.average)} min on average</span></b></div>
+<div class="ticket"><small>${people.map((p) => p.label).join(" and ")} meet at</small><b>${best.station.ja}<span>${best.station.en} · ${Math.round(plainSummary(best).average)} min on average</span></b></div>
 </body></html>`;
 
 const icon = (size: number) => `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${FONT}"><style>

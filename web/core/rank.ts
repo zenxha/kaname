@@ -17,7 +17,8 @@ import { formatClock } from "./time";
 import type { CandidateResult, Exclusion, ParetoPoint, ParticipantInput, PersonResult, RankOptions, RankResult } from "./types";
 
 export const DEFAULT_ALPHA = 0.5;
-export const DEFAULT_LAMBDA = 5;
+/** Minutes added for each change of train. M4 tuning: docs/tuning.md. */
+export const DEFAULT_LAMBDA = 10;
 export const DEFAULT_LIMIT = 10;
 const MAX_LAMBDA = 60;
 /** last_dep tops out around 25:00, so a later end would strand everyone; 26:59 is the clock limit. */

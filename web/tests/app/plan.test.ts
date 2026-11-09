@@ -26,7 +26,7 @@ describe("person numbering and routes", () => {
   });
 
   it("draws each person's route in line colors, with no home line when home is the start", () => {
-    const best = rank(toParticipants(DEFAULT_PEOPLE), {}, real).candidates[0]!;
+    const best = rank(toParticipants(DEFAULT_PEOPLE), { limit: 207 }, real).candidates.find((c) => c.station.id === "jimbocho")!;
     const k = stationIndex(real, best.station.id);
     const blocks = {
       candidate: k,

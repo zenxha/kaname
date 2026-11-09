@@ -4,9 +4,9 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { REPO_DIR } from "./realData";
 
-const HOOK = join(REPO_DIR, ".claude", "hooks", "log-check.mjs");
+// Not from ./realData: that loads the travel-time data, which this file does not need.
+const HOOK = join(import.meta.dirname, "..", "..", ".claude", "hooks", "log-check.mjs");
 const repos: string[] = [];
 
 function repo(): string {
@@ -38,7 +38,9 @@ afterEach(() => {
   for (const dir of repos.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-describe("the decision and lesson hook", () => {
+// These tests start real git and node processes. The first one in a cold full run once took 36 s
+// (6 s is common), so they get more time than the 30 s default.
+describe("the decision and lesson hook", { timeout: 120_000 }, () => {
   it("asks for a lesson after a fix that changed code and logged nothing", () => {
     const dir = repo();
     commit(dir, "fix: stop the add button at the limit", ["web/src/a.ts"]);

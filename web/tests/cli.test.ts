@@ -30,6 +30,12 @@ describe("kaname CLI", () => {
     expect(r.out).toMatch(/Pareto/);
   });
 
+  it("shows each plain trip next to its score, so the penalty is visible", () => {
+    const r = run("--data", DATA_DIR, "--person", "Shizuku:seiseki-sakuragaoka", "--person", "Tora:shibamata", "--top", "1");
+    expect(r.out).toContain("Shizuku: 50 there (1 change) + 50 back (1 change) + 0 walk = 100 min, score 120");
+    expect(r.out).toContain("Tora: 41 there (2 changes) + 44 back (2 changes) + 0 walk = 85 min, score 125");
+  });
+
   it("prints JSON with --json", () => {
     const r = run("--data", DATA_DIR, "--person", "a:新宿", "--person", "b:渋谷", "--json", "--top", "2");
     expect(r.code).toBe(0);

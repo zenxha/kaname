@@ -39,10 +39,10 @@ describe("scenario state", () => {
     expect(toParticipants(people, (n) => `Person ${n}`).map((p) => p.label)).toEqual(["Person 1", "Person 2"]);
   });
 
-  it("opens on Shizuku and Tora, who meet at 神保町", () => {
+  it("opens on Shizuku and Tora, who meet at 神田", () => {
     const r = rank(toParticipants(DEFAULT_PEOPLE), {}, real);
     expect(r.candidates.length).toBe(10);
-    expect(r.candidates[0]!.station.ja).toBe("神保町");
+    expect(r.candidates[0]!.station.ja).toBe("神田");
     expect(isExample(DEFAULT_PEOPLE)).toBe(true);
     expect(isExample(updatePerson(DEFAULT_PEOPLE, "p1", { label: "Mei" }))).toBe(false);
   });

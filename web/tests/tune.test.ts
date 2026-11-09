@@ -1,7 +1,7 @@
 /** The tuning study in cli/tune.ts: sampled groups, and sweeps of the slider and the transfer penalty. */
 import { describe, expect, it } from "vitest";
 import { alphaSweep, lambdaSweep, sampleGroups } from "../../cli/tune";
-import { rank } from "../core/rank";
+import { DEFAULT_LAMBDA, rank } from "../core/rank";
 import { real, realAddresses } from "./realData";
 
 const towns = realAddresses().towns;
@@ -52,7 +52,7 @@ describe("alphaSweep", () => {
 
 describe("lambdaSweep", () => {
   it("compares each penalty with the default, by the minutes and transfers of the winner", () => {
-    const rows = lambdaSweep(real, groups, [0, 5, 15], 0.5);
+    const rows = lambdaSweep(real, groups, [0, DEFAULT_LAMBDA, 20], 0.5);
     expect(rows[1]!.sameAs).toBe(1);
     expect(rows[2]!.transfers).toBeLessThanOrEqual(rows[0]!.transfers);
     expect(rows[2]!.minutes).toBeGreaterThanOrEqual(rows[0]!.minutes);

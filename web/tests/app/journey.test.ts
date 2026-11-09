@@ -93,12 +93,13 @@ describe("compareToFirst", () => {
   });
 
   it("says how the average and each round trip change at the runner-up", () => {
-    expect(first!.station.id).toBe("jimbocho");
-    expect(second!.station.id).toBe("kudanshita");
+    expect(first!.station.id).toBe("kanda");
+    expect(second!.station.id).toBe("nippori");
+    // 神田: Shizuku 100, Tora 85 (average 92.5). 日暮里: Shizuku 122, Tora 51 (average 86.5).
     expect(compareToFirst(second!, first!)).toEqual({
       station: first!.station,
-      average: 0,
-      people: [{ label: "Shizuku", minutes: -3 }, { label: "Tora", minutes: 3 }],
+      average: -6,
+      people: [{ label: "Shizuku", minutes: 22 }, { label: "Tora", minutes: -34 }],
     });
   });
 });
@@ -106,8 +107,8 @@ describe("compareToFirst", () => {
 describe("earliestLastTrain", () => {
   it("names who has to leave first, and when: the end the app proposes", () => {
     const best = rank([SHIZUKU, TORA], {}, real).candidates[0]!;
-    expect(best.station.id).toBe("jimbocho");
-    expect(earliestLastTrain(best)).toEqual({ time: 23 * 60 + 30, labels: ["Tora"] });
+    expect(best.station.id).toBe("kanda");
+    expect(earliestLastTrain(best)).toEqual({ time: 23 * 60 + 32, labels: ["Tora"] });
   });
 
   it("lists everyone who shares the earliest train, and is null when nobody needs one", () => {

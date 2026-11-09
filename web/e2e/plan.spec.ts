@@ -37,16 +37,16 @@ async function remove(page: Page, id: string): Promise<void> {
   await page.locator("section.editor").getByRole("button", { name: "Remove" }).click();
 }
 
-test("the example group opens on 神保町: lines draw in, the seal stamps, five stations rank", async ({ page }) => {
+test("the example group opens on 神田: lines draw in, the seal stamps, five stations rank", async ({ page }) => {
   await page.goto(APP);
   await expect(page.locator(".t-lab")).toHaveText("Meet at");
-  await expect(page.locator(".t-name b")).toHaveText("神保町");
+  await expect(page.locator(".t-name b")).toHaveText("神田");
   await expect(page.locator(".example-tag")).toHaveText("Example group");
   await expect(page.locator(".mk-person")).toHaveCount(2);
   await expect(page.locator(".mk-meet .seal")).not.toHaveClass(/wait/);
   await expect(page.locator(".others li")).toHaveCount(5);
   await expect(page.locator("[data-person]")).toHaveCount(2);
-  await expect(page.locator(".t-stay")).toHaveText("Everyone can stay until 23:30, Tora's last train home.");
+  await expect(page.locator(".t-stay")).toHaveText("Everyone can stay until 23:32, Tora's last train home.");
   await expect(page.getByLabel("Meeting ends")).toHaveCount(0); // the app proposes the end; nobody types it
 });
 
@@ -57,36 +57,36 @@ test("tapping a person opens their trip and fades everyone else", async ({ page 
   await expect(page.locator('[data-person="p2"] .pill')).toHaveCount(0); // open: the rail replaces the pills
   await expect(page.locator(".prow.open .rail li").first()).toContainText("Shibamata");
   await expect(page.locator(".prow.open .rail li").first()).toContainText("Kanamachi");
-  await expect(page.locator(".prow.open .rail .tag")).toHaveText(["walk", "through train", "walk"]);
-  await expect(page.locator(".prow.open .rail li.arrive")).toContainText("Jimbocho");
-  await expect(page.locator(".prow.open .last.first")).toHaveText("Last train home leaves Jimbocho at 23:30");
+  await expect(page.locator(".prow.open .rail .tag")).toHaveText(["walk", "through train", "change"]);
+  await expect(page.locator(".prow.open .rail li.arrive")).toContainText("Kanda");
+  await expect(page.locator(".prow.open .last.first")).toHaveText("Last train home leaves Kanda at 23:32");
   await expect(page.locator(".mk-person.dimmed")).toHaveCount(1);
   await page.getByRole("button", { name: "日本語" }).click();
   await expect(page.locator(".prow.open .rail li").first()).toContainText("柴又");
-  await expect(page.locator(".prow.open .rail .tag")).toHaveText(["徒歩", "直通", "徒歩"]);
+  await expect(page.locator(".prow.open .rail .tag")).toHaveText(["徒歩", "直通", "乗り換え"]);
   await expect(page.locator(".mk-person.dimmed")).toHaveCount(1);
   await page.getByRole("button", { name: "EN", exact: true }).click();
   await page.locator('[data-person="p2"]').click();
   await expect(page.locator(".prow.open")).toHaveCount(0);
-  await expect(page.locator('[data-person="p2"] .pill')).toHaveText(["Kanamachi", "Joban Local", "Chiyoda", "Shinjuku"]);
+  await expect(page.locator('[data-person="p2"] .pill')).toHaveText(["Kanamachi", "Joban Local", "Chiyoda", "Yamanote"]);
   await expect(page.locator(".mk-person.dimmed")).toHaveCount(0);
 });
 
 test("another station, the slider and a third person each say what changed, and the end follows the place", async ({ page }) => {
   await page.goto(APP);
-  await expect(page.locator(".t-name b")).toHaveText("神保町");
+  await expect(page.locator(".t-name b")).toHaveText("神田");
   await openSheet(page);
 
   await page.locator(".others li").nth(1).getByRole("button").click();
   await expect(page.locator(".t-lab")).toHaveText("Number 2 of the ranking");
-  await expect(page.locator(".t-name b")).toHaveText("九段下");
-  await expect(page.locator(".ticket")).toContainText("Same average as Jimbocho. Shizuku's trip is 3 min shorter, Tora's trip is 3 min longer.");
+  await expect(page.locator(".t-name b")).toHaveText("日暮里");
+  await expect(page.locator(".ticket")).toContainText("6 min less on average than Kanda. Shizuku's trip is 22 min longer, Tora's trip is 34 min shorter.");
 
   await page.getByLabel("Efficient to fair").fill("0");
   await expect(page.locator(".t-name b")).toHaveText("日暮里");
   await expect(page.locator(".note")).toHaveText("Efficient: the lowest average, even if one trip gets long.");
   await page.getByLabel("Efficient to fair").fill("50");
-  await expect(page.locator(".t-name b")).toHaveText("神保町");
+  await expect(page.locator(".t-name b")).toHaveText("神田");
 
   await addPerson(page, "Hitori", "kanazawa-hakkei", /Kanazawa-hakkei/);
   await expect(page.locator(".t-name b")).toHaveText("品川");

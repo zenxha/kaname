@@ -153,7 +153,7 @@ export function report(data: MatrixData, groups: readonly TuneGroup[]): string[]
     "",
     `α = ${DEFAULT_ALPHA}`,
     "",
-    "| λ | minutes per person | transfers per person | same winner as λ = 5 |",
+    `| λ | minutes per person | transfers per person | same winner as λ = ${DEFAULT_LAMBDA} |`,
     "| --- | --- | --- | --- |",
     ...lambdaSweep(data, groups, lambdas, DEFAULT_ALPHA).map((r) => `| ${r.lambda} | ${fixed(r.minutes)} | ${fixed(r.transfers, 2)} | ${pct(r.sameAs)} |`),
   ];

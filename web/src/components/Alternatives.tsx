@@ -2,6 +2,7 @@
 import { useLayoutEffect, useRef } from "react";
 import type { CandidateResult } from "../../core/types";
 import { t, type Lang } from "../model/i18n";
+import { plainSummary } from "../model/compare";
 
 interface Props {
   readonly lang: Lang;
@@ -44,7 +45,7 @@ export function Alternatives({ lang, candidates, selected, onSelect }: Props) {
             <button type="button" aria-current={c.station.id === selected} onClick={() => onSelect(c.station.id)}>
               <span className="rank">{c.rank}</span>
               <span className="name">{c.station.ja}<small>{c.station.en}</small></span>
-              <span className="nums">{t(lang, "avgLongest", { avg: Math.round(c.average), worst: c.worst.cost })}</span>
+              <span className="nums">{t(lang, "avgLongest", { avg: Math.round(plainSummary(c).average), worst: plainSummary(c).longest.minutes })}</span>
             </button>
           </li>
         ))}

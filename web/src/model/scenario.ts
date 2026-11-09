@@ -20,7 +20,7 @@ export interface Person {
 
 /**
  * The example group the app opens with. Each lives at that station in their story: Shizuku (Whisper of
- * the Heart) at 聖蹟桜ヶ丘, Tora-san (Otoko wa Tsurai yo) at 柴又. They meet at 神保町, the book town.
+ * the Heart) at 聖蹟桜ヶ丘, Tora-san (Otoko wa Tsurai yo) at 柴又. They meet at 神田, next to the 神保町 book town.
  */
 export const DEFAULT_PEOPLE: readonly Person[] = [
   { id: "p1", label: "Shizuku", start: { station: "seiseki-sakuragaoka" }, home: null },

@@ -16,23 +16,23 @@ npm --prefix web run tune -- --groups 1000 --seed 1
 
 ## The slider (α)
 
-"Extra average" is how many minutes the average trip at the winning station is above the lowest average of any station. "Extra longest" is the same for the longest trip. λ is 5.
+"Extra average" is how many minutes the average trip at the winning station is above the lowest average of any station. "Extra longest" is the same for the longest trip. λ is 10, the default.
 
 | α | Extra average (min) | Extra longest (min) | Same winner as α = 0.5 |
 | --- | --- | --- | --- |
-| 0 | 5.2 | 0.0 | 70% |
-| 0.1 | 4.5 | 0.0 | 75% |
-| 0.2 | 3.7 | 0.2 | 81% |
-| 0.3 | 3.1 | 0.4 | 86% |
-| 0.4 | 2.4 | 0.8 | 93% |
-| 0.5 | 1.8 | 1.2 | 100% |
-| 0.6 | 1.4 | 1.8 | 93% |
-| 0.7 | 0.8 | 2.8 | 84% |
-| 0.8 | 0.4 | 4.0 | 75% |
-| 0.9 | 0.1 | 5.6 | 67% |
-| 1 | 0.0 | 8.2 | 57% |
+| 0 | 6.0 | 0.0 | 70% |
+| 0.1 | 5.2 | 0.0 | 74% |
+| 0.2 | 4.4 | 0.2 | 79% |
+| 0.3 | 3.7 | 0.4 | 85% |
+| 0.4 | 2.8 | 0.9 | 92% |
+| 0.5 | 2.0 | 1.5 | 100% |
+| 0.6 | 1.5 | 2.2 | 93% |
+| 0.7 | 1.0 | 3.2 | 86% |
+| 0.8 | 0.5 | 4.8 | 77% |
+| 0.9 | 0.1 | 6.7 | 68% |
+| 1 | 0.0 | 9.4 | 60% |
 
-At α = 0.5, the winner is less than 2 minutes from the best station on both measures. The ends of the slider cost much more on the other measure. At α = 1, the longest trip grows by 8.2 minutes. At α = 0, the average grows by 5.2 minutes.
+At α = 0.5, the winner is 2 minutes or less from the best station on both measures. The ends of the slider cost much more on the other measure. At α = 1, the longest trip grows by 9.4 minutes. At α = 0, the average grows by 6.0 minutes. With λ = 5, the numbers are close: 1.8 and 1.2 minutes at α = 0.5.
 
 Result: the default stays at α = 0.5.
 
@@ -40,14 +40,14 @@ Result: the default stays at α = 0.5.
 
 "Minutes" are train and walk minutes for each person, there and back, without the penalty. "Transfers" are changes of train for each person, there and back. α is 0.5.
 
-| λ | Minutes per person | Transfers per person | Same winner as λ = 5 |
+| λ | Minutes per person | Transfers per person | Same winner as λ = 10 |
 | --- | --- | --- | --- |
-| 0 | 87.6 | 1.88 | 75% |
-| 2.5 | 87.7 | 1.78 | 89% |
-| 5 | 87.8 | 1.71 | 100% |
-| 7.5 | 88.0 | 1.65 | 90% |
-| 10 | 88.2 | 1.61 | 83% |
-| 15 | 88.9 | 1.57 | 74% |
+| 0 | 87.6 | 1.88 | 64% |
+| 2.5 | 87.7 | 1.78 | 75% |
+| 5 | 87.8 | 1.71 | 83% |
+| 7.5 | 88.0 | 1.65 | 93% |
+| 10 | 88.2 | 1.61 | 100% |
+| 15 | 88.9 | 1.57 | 88% |
 
 From λ = 5 to 10, each transfer that the winner avoids costs about 4 minutes of extra travel. From 10 to 15, each one costs about 17 minutes.
 
@@ -55,12 +55,12 @@ Published studies put the cost of one change of train at more than 4 minutes. A 
 
 These numbers support a λ near 10. Up to 10, each transfer avoided costs less than every published estimate. Above 10, the cost reaches the top of the range.
 
-A higher λ also has two visible effects:
+Result: the owner chose λ = 10 on 2026-11-10. Two things changed with it:
 
-- The example group (Shizuku at 聖蹟桜ヶ丘, Tora at 柴又) moves from 神保町 to 神田 at λ = 7.5 and at λ = 10.
-- The numbers in the app include the penalty. At λ = 10, Tora's 85 minutes of trains show as 125.
+- The example group (Shizuku at 聖蹟桜ヶ丘, Tora at 柴又) now meets at 神田 instead of 神保町. The two stations are within half a minute.
+- The app shows plain trip minutes, the same minutes that a journey planner shows. The penalty only orders the stations, and "What do the numbers mean?" says so.
 
-Result: waiting for the owner's decision. `DECISIONS.md` records it.
+A station can then look shorter on both numbers than the winner, because its trips have more changes. In 300 sampled groups, this happens in the top 5 for 14% of groups at λ = 10, and for 7% at λ = 5.
 
 [mit]: https://dspace.mit.edu/bitstream/handle/1721.1/65385/1-258j-spring-2006/contents/lecture-notes/lect23.pdf
 [wtr]: https://www.worldtransitresearch.info/research/9198

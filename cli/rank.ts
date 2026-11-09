@@ -31,7 +31,7 @@ usage: rank [options] --person LABEL:START[>HOME] ...
                   or "lat,lng". Without >HOME the person goes home to START.
   --input FILE    JSON {"participants": [...], "options": {...}} instead of --person
   --alpha A       efficient (1) to fair (0), default 0.5
-  --lambda L      minutes per transfer, default 5
+  --lambda L      minutes added to the score per change of train, default 10
   --end HH:MM     meeting end; drops stations where someone misses the last train home
   --top N         how many stations to show, default 10
   --ignore-home   score the outbound leg only
@@ -150,13 +150,17 @@ function scenarioOptions(raw: unknown, file: string): RankOptions {
 
 const pad = (s: string | number, w: number) => String(s).padStart(w);
 
+const changes = (n: number) => `${n} change${n === 1 ? "" : "s"}`;
+
+/** A score is the plain trip plus the transfer penalty; the lines show both, so the penalty is visible. */
 function candidateLines(c: CandidateResult): string[] {
   const head = `${pad(c.rank, 3)}  ${c.station.ja} ${c.station.en} (${c.station.lines} lines)  ` +
-    `objective ${c.objective.toFixed(1)}  average ${c.average.toFixed(1)}  worst ${c.worst.cost} (${c.worst.label})  spread ${c.spread}`;
+    `objective ${c.objective.toFixed(1)}  average score ${c.average.toFixed(1)}  worst score ${c.worst.cost} (${c.worst.label})  spread ${c.spread}`;
   const people = c.people.map((p) => {
     const last = p.lastDeparture === null ? "" : `  last train ${formatClock(p.lastDeparture)}`;
-    return `       ${p.label}: out ${p.outMinutes} (${p.outTransfers} chg) + home ${p.homeMinutes} (${p.homeTransfers} chg)` +
-      ` + walk ${p.walkMinutes} = ${p.cost}${last}`;
+    const trip = p.outMinutes + p.homeMinutes + p.walkMinutes;
+    return `       ${p.label}: ${p.outMinutes} there (${changes(p.outTransfers)}) + ${p.homeMinutes} back (${changes(p.homeTransfers)})` +
+      ` + ${p.walkMinutes} walk = ${trip} min, score ${p.cost}${last}`;
   });
   return [head, ...people];
 }

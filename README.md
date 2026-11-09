@@ -44,7 +44,7 @@ J(X) &= \alpha \cdot \frac{1}{n} \sum_{i=1}^{n} c_i(X) + (1 - \alpha) \cdot \max
 \end{aligned}
 ```
 
-Here $`s_i`$ is the start of person $`i`$ and $`h_i`$ is their home. $`n`$ is the size of the group. The station with the lowest $`J`$ ranks first. The slider sets $`\alpha`$, and $`\lambda`$ is 5 minutes for each transfer. A ranking for 20 people takes less than 1 ms, because each value is a lookup in a typed array.
+Here $`s_i`$ is the start of person $`i`$ and $`h_i`$ is their home. $`n`$ is the size of the group. The station with the lowest $`J`$ ranks first. The slider sets $`\alpha`$, and $`\lambda`$ is 10 minutes for each transfer. The app shows plain trip minutes, so the penalty only orders the stations. A ranking for 20 people takes less than 1 ms, because each value is a lookup in a typed array.
 
 - A map location snaps to its 3 nearest stations, at most 2 km away. Each trip uses the cheapest of the 3.
 - Ties go to the station with more lines, then to the lower spread between people, then to the station id.
@@ -87,7 +87,7 @@ The command line ranks stations with the same engine. A person is `label:start>h
 npm --prefix web run cli -- --person "Aki:町田" --person "Ben:大宮>船橋" --person "Chie:35.6905,139.7003>千葉"
 ```
 
-`--alpha` sets the balance: 1 is the lowest average, 0 is the lowest worst case, and the default is 0.5. Other options are `--lambda` (minutes for each transfer, default 5), `--end` (a meeting end time), `--top` and `--json`. Run it with `--help` for the full list.
+`--alpha` sets the balance: 1 is the lowest average, 0 is the lowest worst case, and the default is 0.5. Other options are `--lambda` (minutes for each transfer, default 10), `--end` (a meeting end time), `--top` and `--json`. Run it with `--help` for the full list.
 
 ## Rebuild the data
 
