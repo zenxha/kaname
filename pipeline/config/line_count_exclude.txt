@@ -1,0 +1,5 @@
+# Railways that are routing segments, not lines a rider would name. They still carry
+# trains in the router, but they do not count toward a station's number of lines.
+JR-East.YamanoteFreight
+JR-East.TokaidoFreight
+JR-East.OsakiBranch

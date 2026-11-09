@@ -1,0 +1,30 @@
+# Train types that need a surcharge or a reserved-seat ticket. Their trips are excluded,
+# so the matrix matches a planner run with paid limited expresses and Shinkansen off.
+# One Mini Tokyo 3D train-type id per line. Reviewed 2026-11-09 (carried from M0).
+JR-East.LimitedExpress
+JR-Central.LimitedExpress
+Fujikyu.LimitedExpress
+Izukyu.LimitedExpress
+IzuHakone.LimitedExpress
+Chichibu.Express
+Keikyu.MorningWing
+Keikyu.EveningWing
+Keio.KeioLiner
+Keisei.Skyliner
+Keisei.Morningliner
+Keisei.Eveningliner
+Odakyu.LimitedExpress
+OdakyuHakone.LimitedExpress
+TokyoMetro.LimitedExpress
+Seibu.LimitedExpress
+Seibu.HaijimaLiner
+Seibu.S-TRAIN
+TokyoMetro.S-TRAIN
+Tokyu.S-TRAIN
+Minatomirai.S-TRAIN
+Tobu.LimitedExpress
+Tobu.TH-LINER
+TokyoMetro.TH-LINER
+Tobu.TJ-Liner
+Tobu.SL-Taiju
+Moka.SL-Moka
