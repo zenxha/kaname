@@ -1,0 +1,21 @@
+id,origin,destination,ref_dep,ref_arr,ref_minutes,ref_transfers,ref_route,our_dep,our_arr,our_minutes,our_transfers,delta,within_tol,our_route
+1,新宿,東京,18:33,18:47,14,0,JR中央線快速,18:33,18:47,14,0,0,True,JR-East.ChuoRapid
+2,渋谷,池袋,18:30,18:42,12,0,JR湘南新宿ライン,18:30,18:42,12,0,0,True,JR-East.ShonanShinjuku
+3,横浜,新宿,18:33,19:08,35,0,JR湘南新宿ライン,18:33,19:08,35,0,0,True,JR-East.ShonanShinjuku
+4,大宮,品川,18:34,19:18,44,0,JR宇都宮線(上野東京ライン),18:34,19:18,44,0,0,True,JR-East.Tokaido
+5,千葉,渋谷,18:30,19:38,68,2,JR総武線快速 > 東京 > 丸ノ内線 > 赤坂見附 > 銀座線,18:30,19:36,66,3,-2,True,JR-East.SobuRapid > JR-East.ChuoSobuLocal > JR-East.ChuoRapid > JR-East.Yamanote
+6,吉祥寺,豊洲,18:30,19:20,50,2,JR中央線快速 > 四ツ谷 > 丸ノ内線 > 銀座 (walk) 銀座一丁目 > 有楽町線,18:30,19:20,50,2,0,True,JR-East.ChuoRapid > JR-East.ChuoSobuLocal > TokyoMetro.Yurakucho
+7,北千住,二子玉川,18:32,19:28,56,1,千代田線急行 > 表参道 > 半蔵門線準急(田園都市線直通),18:32,19:28,56,1,0,True,TokyoMetro.Chiyoda > Tokyu.DenEnToshi
+8,町田,大手町,18:37,19:24,47,1,小田急快速急行 > 代々木上原 > 千代田線,18:37,19:29,52,1,5,True,Odakyu.Odawara > TokyoMetro.Chiyoda
+9,大手町,町田,18:32,19:25,53,1,千代田線 > 代々木上原 > 小田急快速急行,18:32,19:25,53,1,0,True,TokyoMetro.Chiyoda > Odakyu.Odawara
+10,立川,錦糸町,18:30,19:30,60,1,JR中央線快速 > 御茶ノ水 > JR総武線,18:30,19:35,65,1,5,True,JR-East.ChuoRapid > JR-East.ChuoSobuLocal
+11,武蔵小杉,上野,18:34,19:09,35,1,JR横須賀線 > 品川 > JR上野東京ライン,18:34,19:03,29,1,-6,False,JR-East.Yokosuka > JR-East.Utsunomiya
+12,船橋,六本木,18:36,19:25,49,2,JR総武線快速 > 東京 > 丸ノ内線 > 霞ケ関 > 日比谷線,18:36,19:26,50,2,1,True,JR-East.SobuRapid > TokyoMetro.Marunouchi > TokyoMetro.Hibiya
+13,押上,羽田空港第1・第2ターミナル,18:34,19:26,52,0,都営浅草線急行(京急直通),18:30,19:17,47,2,-5,True,Toei.Asakusa > TokyoMonorail.HanedaAirport > Keikyu.Airport
+14,川越,新宿,18:51,19:31,40,1,東武東上線川越特急 > 池袋 > JR埼京線,18:51,19:31,40,1,0,True,Tobu.Tojo > JR-East.SaikyoKawagoe
+15,二俣川,渋谷,18:33,19:21,48,1,相鉄特急(東急新横浜線直通) > 日吉 > 東急東横線通勤特急,18:30,19:18,48,1,0,True,Sotetsu.Main > JR-East.ShonanShinjuku
+16,柏,新橋,18:33,19:19,46,1,JR常磐線快速 > 上野 > JR上野東京ライン,18:33,19:16,43,1,-3,True,JR-East.JobanRapid > JR-East.Yamanote
+17,調布,秋葉原,18:37,19:18,41,2,京王線特急 > 新宿 > JR中央線快速 > 御茶ノ水 > JR総武線,18:37,19:14,37,2,-4,True,Keio.Keio > JR-East.ChuoRapid > JR-East.ChuoSobuLocal
+18,所沢,有楽町,18:32,19:26,54,1,西武池袋線急行 > 池袋 > 東京メトロ有楽町線,18:32,19:22,50,1,-4,True,Seibu.Ikebukuro > TokyoMetro.Yurakucho
+19,流山おおたかの森,秋葉原,18:38,19:05,27,0,つくばエクスプレス区間快速,18:38,19:05,27,0,0,True,MIR.TsukubaExpress
+20,海浜幕張,品川,18:46,19:48,62,1,JR京葉線 > 東京 > JR東海道線,18:46,19:38,52,1,-10,False,JR-East.Keiyo > JR-East.Yokosuka

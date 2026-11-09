@@ -1,0 +1,21 @@
+id,origin,destination,stresses
+1,新宿,東京,JR single line (Chuo Rapid) short core hop
+2,渋谷,池袋,JR Yamanote vs Metro Fukutoshin competition
+3,横浜,新宿,JR Shonan-Shinjuku vs Tokyu+Metro through-running; Yokohama fringe
+4,大宮,品川,JR Ueno-Tokyo line / Keihin-Tohoku; Saitama fringe
+5,千葉,渋谷,JR Sobu Rapid + transfer; Chiba fringe
+6,吉祥寺,豊洲,JR Chuo + Metro Yurakucho/Tozai cross-operator
+7,北千住,二子玉川,Tobu/Metro/Tokyu through-running (Hanzomon/Den-en-toshi)
+8,町田,大手町,Odakyu + Metro Chiyoda through-running; Tama
+9,大手町,町田,reverse of 8 (asymmetry check)
+10,立川,錦糸町,long JR Chuo + Sobu; Tama
+11,武蔵小杉,上野,JR Yokosuka/Shonan-Shinjuku + Ueno-Tokyo line; Kawasaki
+12,船橋,六本木,JR Sobu/Metro Tozai + Hibiya/Oedo; Chiba
+13,押上,羽田空港第1・第2ターミナル,Keisei/Toei Asakusa/Keikyu through-running to airport
+14,川越,新宿,Tobu Tojo vs JR Saikyo; Saitama fringe
+15,二俣川,渋谷,Sotetsu/Tokyu Shin-Yokohama line through-running (2023)
+16,柏,新橋,JR Joban Rapid + Ueno-Tokyo line; Chiba
+17,調布,秋葉原,Keio + Toei Shinjuku through or JR; Tama
+18,所沢,有楽町,Seibu Ikebukuro + Metro Yurakucho through-running; Saitama
+19,流山おおたかの森,秋葉原,Tsukuba Express (open-data operator) fringe
+20,海浜幕張,品川,JR Keiyo deep platform at Tokyo then long transfer; Chiba

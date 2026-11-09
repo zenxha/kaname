@@ -1,0 +1,16 @@
+# third-party raw data is fetched at build time, never committed (see DECISIONS.md)
+.cache/
+spike/m0/.cache/
+data/raw/
+# python
+__pycache__/
+*.pyc
+.venv/
+# node
+node_modules/
+dist/
+# env / secrets
+.env
+.env.*
+!.env.example
+.DS_Store
