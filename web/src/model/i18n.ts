@@ -7,7 +7,7 @@ const en = {
   avgMin: "AVG MIN",
   worstMin: "WORST MIN",
   worstWho: "worst: {who}",
-  nextBest: "NEXT BEST · AVG / WORST",
+  ranking: "TOP 5 · AVG / WORST",
   efficient: "EFFICIENT",
   fair: "FAIR",
   alphaLabel: "Efficient to fair",
@@ -34,7 +34,7 @@ const en = {
   noFeasible: "No station gets everyone home after this meeting. Try an earlier end.",
   searchPlaceholder: "Station",
   editPerson: "Edit {who}",
-  attribution: "Train times: Mini Tokyo 3D (MIT) · positions: MLIT (CC BY 4.0) · map: OpenFreeMap, OpenMapTiles, OpenStreetMap",
+  attribution: "Train times: Mini Tokyo 3D (MIT) · platform positions: MLIT 国土数値情報 (CC BY 4.0)",
   sample: "sample",
 };
 
@@ -46,7 +46,7 @@ const ja: Record<StringKey, string> = {
   avgMin: "平均 分",
   worstMin: "最長 分",
   worstWho: "最長: {who}",
-  nextBest: "次の候補 · 平均 / 最長",
+  ranking: "上位5駅 · 平均 / 最長",
   efficient: "効率",
   fair: "公平",
   alphaLabel: "効率と公平のバランス",
@@ -73,7 +73,7 @@ const ja: Record<StringKey, string> = {
   noFeasible: "この解散時刻では全員が帰れる駅がありません。早めてください。",
   searchPlaceholder: "駅名",
   editPerson: "{who}を編集",
-  attribution: "時刻: Mini Tokyo 3D (MIT) · 位置: 国土数値情報 (CC BY 4.0) · 地図: OpenFreeMap, OpenMapTiles, OpenStreetMap",
+  attribution: "時刻: Mini Tokyo 3D (MIT) · ホーム位置: 国土数値情報 (CC BY 4.0)",
   sample: "サンプル",
 };
 

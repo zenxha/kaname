@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "strict": true,
@@ -13,7 +17,20 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["node"]
+    "types": [
+      "node",
+      "vite/client"
+    ],
+    "jsx": "react-jsx"
   },
-  "include": ["core", "tests", "../cli", "vitest.config.ts"]
+  "include": [
+    "core",
+    "src",
+    "tests",
+    "e2e",
+    "../cli",
+    "vitest.config.ts",
+    "vite.config.ts",
+    "playwright.config.ts"
+  ]
 }
