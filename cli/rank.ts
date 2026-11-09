@@ -5,6 +5,7 @@
  *   npm --prefix web run cli -- spotcheck --refs pipeline/validation/heldout_reference.csv
  */
 import { readFileSync } from "node:fs";
+import { isAbsolute, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { isRecord } from "../web/core/data";
 import { RankError } from "../web/core/errors";
@@ -17,6 +18,8 @@ import { SPOT_TOLERANCE_MIN, spotCheck } from "./spotcheck";
 export interface CliIO {
   readonly out: (line: string) => void;
   readonly err: (line: string) => void;
+  /** Directory that relative paths are read from. Default: where the user ran npm (INIT_CWD). */
+  readonly cwd?: string;
 }
 
 const HELP = `kaname: rank Tokyo meeting stations by everyone's full evening by train
@@ -33,7 +36,7 @@ usage: rank [options] --person LABEL:START[>HOME] ...
   --top N         how many stations to show, default 10
   --ignore-home   score the outbound leg only
   --json          print the full result as JSON
-  --data DIR      data folder, default ../data
+  --data DIR      data folder, default the repo's data/
   --refs FILE     spotcheck: reference CSV (id,origin,destination,query_time,ref_minutes)
 `;
 
@@ -102,12 +105,21 @@ function parseArgs(argv: readonly string[]): Args {
   return args;
 }
 
+function readText(file: string): string {
+  try {
+    return readFileSync(file, "utf-8");
+  } catch (e) {
+    throw new UsageError(`cannot read ${file}: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
 function readScenario(file: string): { people: ParticipantInput[]; options: RankOptions } {
   let raw: unknown;
   try {
-    raw = JSON.parse(readFileSync(file, "utf-8")) as unknown;
+    raw = JSON.parse(readText(file)) as unknown;
   } catch (e) {
-    throw new UsageError(`cannot read ${file}: ${e instanceof Error ? e.message : String(e)}`);
+    if (e instanceof UsageError) throw e;
+    throw new UsageError(`${file} is not valid JSON: ${e instanceof Error ? e.message : String(e)}`);
   }
   if (!isRecord(raw) || !Array.isArray(raw.participants)) throw new UsageError(`${file}: expected {"participants": [...]}`);
   const o = isRecord(raw.options) ? raw.options : {};
@@ -142,7 +154,7 @@ function printResult(r: RankResult, io: CliIO): void {
 
 function runSpotcheck(args: Args, io: CliIO): number {
   if (args.refs === null) throw new UsageError("spotcheck needs --refs FILE.csv");
-  const result = spotCheck(loadMatrixData(args.data), readFileSync(args.refs, "utf-8"));
+  const result = spotCheck(loadMatrixData(args.data), readText(args.refs));
   for (const r of result.rows) {
     const ours = r.ours === null ? "not in the matrix" : `${r.ours} Δ ${r.delta! >= 0 ? "+" : ""}${r.delta}`;
     io.out(`${r.id.padStart(4)} ${r.origin}→${r.destination} ref ${r.ref} ours ${ours}`);
@@ -161,9 +173,15 @@ function runRank(args: Args, io: CliIO): number {
   return 0;
 }
 
+/** Relative paths are relative to where the user ran the command, not to web/. */
+function withPaths(args: Args, cwd: string): Args {
+  const abs = (p: string) => (isAbsolute(p) ? p : resolve(cwd, p));
+  return { ...args, data: abs(args.data), input: args.input && abs(args.input), refs: args.refs && abs(args.refs) };
+}
+
 export function main(argv: readonly string[], io: CliIO): number {
   try {
-    const args = parseArgs(argv);
+    const args = withPaths(parseArgs(argv), io.cwd ?? process.env.INIT_CWD ?? process.cwd());
     if (args.command === "help") {
       io.out(HELP);
       return 0;

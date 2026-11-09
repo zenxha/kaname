@@ -61,6 +61,16 @@ describe("kaname CLI", () => {
     expect(run("--bogus").code).toBe(2);
   });
 
+  it("reads relative paths from the caller's directory and reports a missing file cleanly", () => {
+    const out: string[] = [];
+    const err: string[] = [];
+    const io = { out: (s: string) => out.push(s), err: (s: string) => err.push(s), cwd: REPO_DIR };
+    expect(main(["spotcheck", "--refs", "pipeline/validation/heldout_reference.csv"], io)).toBe(0);
+    expect(main(["spotcheck", "--refs", "no/such.csv"], io)).toBe(2);
+    expect(err.join()).toMatch(/cannot read .*no\/such\.csv/);
+    expect(main(["spotcheck"], io)).toBe(2);
+  });
+
   it("prints help", () => {
     const r = run("--help");
     expect(r.code).toBe(0);
