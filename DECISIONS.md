@@ -91,7 +91,19 @@ All checked 2026-11-09 against the live catalogs and terms, not from memory.
 
 ---
 
-## M3 web UI · STATUS: first design iteration (2026-11-09)
+## M3 web UI · STATUS: iteration 2 built (2026-11-09)
+
+### Iteration 2: the journey redesign
+
+- **What the owner approved:** all six details of the restyle options page (https://claude.ai/artifact/Jw6j3Bej9TynBbKP4FroyT), and the journey prototype (https://claude.ai/artifact/PLDTNhm9zVovrV9vLd8Ueh). The owner did not pick a typeface or a default pair. The build uses the recommended ones: BIZ UDPGothic, and Shizuku with Tora.
+- **Layout:** on a phone the map fills the screen and the result is a sheet over it, at three heights (peek, half, full). On a desktop the same content is a side panel. The map stays in view while you tap people and stations.
+- **Explaining the answer:** the ticket says what changes at another station, for example "Same average as Jimbocho. Shizuku's trip is 3 min shorter, Tora's trip is 3 min longer." It also names the station a meeting end ruled out, and whose last train did it. Tapping a person opens their trip as a list of trains, changes and walks, and fades everyone else on the map. One line under the slider says what the position means.
+- **Motion:** routes draw in along the tracks (500-1000 ms by ride length, 80 ms apart), then the 要 seal stamps (220 ms). The camera eases to each new fit (450 ms). Rows of the station list slide to new places (220 ms). The sheet settles in 280 ms. Under reduced motion, every state appears at once.
+- **Gate test passes:** `npm --prefix web run e2e` runs the journey on a 390×844 phone and a 1280×820 desktop. The example opens on 神保町, and a tapped person's trip opens. The runner-up explains itself, and the slider moves the answer to 日暮里. Hitori moves it to 品川. A 23:30 end moves it to 東京 and names Tora's 23:18 last train. Japanese works.
+- **Review:** a TypeScript review found no critical issues and three high ones, now fixed. A theme change during the line animation could write to a removed map. One failed tile could switch off the street map for the session. A language switch lost the focus fading on the markers. Medium fixes: the sheet handle now works with screen readers, a flick settles from its last height, offscreen content can be scrolled to, and hidden content stays out of the tab order. The map no longer refits when the address bar moves. The end-to-end tests now cover the sheet drag and the handle from the keyboard, and the focus across a language switch.
+- **Not in this iteration:** the shareable URL and kana search (M4), and track shapes from MLIT N02. A keyboard user who picks a station on the map loses focus, because the markers are rebuilt. The list below the map keeps a keyboard path.
+
+### Iteration 1
 
 - **Design:** direction G of the design canvas "Kaname — Tokyo Meetup Optimizer" (a full-bleed map with floating cards and animated routes). It was the last direction on the canvas, it already takes E's "TIGHT" last-train warning, and it matches the brief's map-as-hero spec. The other six directions (A-F) stay on the canvas for comparison.
 - **Gate test passes:** `npm --prefix web run e2e` runs the 5-person scenario end to end on a 390×844 phone and on a 1280×820 desktop: add a person with station search, set a meeting end, pick another station, slide to fair, switch to Japanese.
@@ -190,6 +202,12 @@ h14 (舞浜→新宿, Keiyo→Chuo at 東京) sits at exactly −5. **Pattern:**
 | 2026-11-09 | MapLibre's worker is bundled by Vite (`?worker&url`) and set with `setWorkerUrl` | MapLibre 6 looks for its worker next to its own module, which bundling moves; without this the map has no tiles. |
 | 2026-11-09 | The app reads `data/` as Vite's public folder; `?basemap=none` gives a plain background | No copy step, and the E2E tests do not depend on the tile server. |
 | 2026-11-09 | Public preview on Cloudflare Pages (`npm --prefix web run deploy`), approved by the owner with the license question ("What I need from you", item 2) still open | The owner wants to try the app on a phone over HTTPS, which location access needs. The owner accepted the license risk for now. Only derived files ship, and the site sends `X-Robots-Tag: noindex, nofollow`. A private site needed Cloudflare Access, which asks for a payment card. |
+| 2026-11-09 | Iteration 2 type: BIZ UDPGothic for all text and numbers, with no monospace | It descends from the type of Tokyo station signs, and its numbers read well at small sizes. Monospace capitals were the most generic part of iteration 1. |
+| 2026-11-09 | The app follows the phone's light or dark setting: OpenFreeMap Positron by day, Dark at night | Paper and ink reads as print, not as a dashboard template. Both styles are free with no key. |
+| 2026-11-09 | Routes use each railway's own color, and a numbered badge tells people apart | Line colors make the map read like a 路線図. Every marker already shows the number, so color does not have to identify a person. |
+| 2026-11-09 | The example group is Shizuku (聖蹟桜ヶ丘) and Tora (柴又), and the empty name field hints "Hitori" | Each lives at that station in their story. The engine sends them to 神保町, the book town, within 3 minutes of each other. |
+| 2026-11-09 | The station a meeting end ruled out comes from a second rank without the end | The engine's exclusion reasons are English sentences. Ranking again (under 1 ms) gives the people and last trains, so the note works in both languages. |
+| 2026-11-09 | Draw-in animates by calling GeoJSONSource.setData each frame with cut-off legs | MapLibre has no line trim. The routes have a few hundred points, so a frame costs little. |
 | 2026-11-09 | Wrangler runs through `npx` at a pinned version (4.153.0), not as a dependency | Only a deploy needs it, and it is large. The deploy uses the owner's own Cloudflare account, not a temporary account, because a temporary account expires and accepts Cloudflare's terms for the owner. |
 | 2026-11-09 | The Pages project is on classic Pages (created once with `--force`) | Wrangler 4.153 sends new Pages projects to Workers. That setup added a Cloudflare Vite plugin, an unpinned Wrangler and a `wrangler.jsonc`, and needed an account-wide workers.dev name. Classic Pages needs none of these, and later deploys go to it without `--force`. |
 | 2026-11-09 | After a host ignores a Range request once, the app keeps the whole route file and cuts later blocks from it | Cloudflare Pages answers Range with 200 and the whole 4.9 MB file. Without this, each station tap downloads both route files again (about 9.6 MB). |

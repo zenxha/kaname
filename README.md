@@ -57,7 +57,7 @@ npm --prefix web install
 npm --prefix web run dev        # http://localhost:5173/
 ```
 
-The app reads the files in `data/` as static files. It needs no API key and no backend. The basemap is the OpenFreeMap dark style. Add `?basemap=none` to the address for a plain background with no tile requests.
+The app reads the files in `data/` as static files. It needs no API key and no backend. The basemap follows the device's light or dark setting: OpenFreeMap Positron or Dark. Add `?basemap=none` to the address for a plain background with no tile requests.
 
 Build a static site into `web/dist/`, which any static host can serve:
 

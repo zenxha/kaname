@@ -22,7 +22,7 @@ Source of truth for scope: `BRIEF.md`. Decisions with reasons go in `DECISIONS.m
 | M0 | Data feasibility spike | A source whose sample times land within ±5 min on ≥18 of 20 pairs, or stop and report | **yes, stop at the gate** |
 | M1 | Matrix pipeline | Full matrix for the candidate set, no unreachable candidate pairs, build documented in the README | **done** |
 | M2 | Scoring engine and CLI | All acceptance tests in BRIEF.md pass | **done** |
-| M3 | Web UI | 5-person scenario end to end on a phone viewport | **iteration 1** (gate test passes) |
+| M3 | Web UI | 5-person scenario end to end on a phone viewport | **iteration 2** (journey redesign, gate test passes) |
 | M4 | Validation and polish | README limits section and a demo scenario | no |
 | M5 | Stretch | Time-of-day matrices, last-train detail, venue search | no |
 
@@ -64,9 +64,10 @@ Spike code lives in `spike/m0/`. It is throwaway, but versioned so the numbers c
 - `web/tests/`: written first. Vitest and fast-check. Every acceptance row of BRIEF.md runs on the real data.
 - `cli/`: `rank` (flags or a JSON scenario, text or `--json` output) and `spotcheck`.
 
-## M3: web UI (iteration 1 done 2026-11-09, see DECISIONS.md "M3 web UI")
+## M3: web UI (iteration 2 done 2026-11-09, see DECISIONS.md "M3 web UI")
 
-- `web/src/`: React and MapLibre, direction G of the design canvas. `npm --prefix web run dev`.
-- `web/e2e/`: Playwright, phone and desktop. The 5-person gate scenario passes.
-- Next iterations: owner feedback on the design, the shareable URL, kana search, the remaining Japanese copy,
-  animated route drawing, and track shapes from MLIT N02.
+- `web/src/`: React and MapLibre. Iteration 1 built direction G of the design canvas. Iteration 2 is the journey
+  redesign: a result sheet over the map, the ticket, trips as train lists, line colors, draw-in motion.
+- `web/src/map/`: the map, its layers, markers and the draw-in animation. `web/src/model/`: pure, tested logic.
+- `web/e2e/`: Playwright, phone and desktop. The journey gate passes.
+- Next iterations: owner feedback on iteration 2, the shareable URL, kana search, and track shapes from MLIT N02.
