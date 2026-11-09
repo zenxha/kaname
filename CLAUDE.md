@@ -10,6 +10,7 @@ Tokyo meetup optimizer. Read these before doing anything:
 
 - **2026-11-09: M0 done.** Gate met: 18/20 pairs within ±5 min, plus 6/6 late-evening checks (commit `d060d81`). The work was done on the owner's Mac, then moved to the desktop.
 - **2026-11-09: the owner approved Mini Tokyo 3D as the M1/M2 build source** (in chat, on the desktop). This approval covers local builds and tests only. Clear the license (DECISIONS.md, "What I need from you", item 2) before any public deploy.
+- **2026-11-09: M1 done.** Gate met (`kaname-pipeline check` passes): 207 candidates, no unreachable candidate pairs, all routes rebuild. Held-out router accuracy 24/26 within ±5 min. Next: M2 (scoring engine and CLI, tests first).
 - **Session scope set by the owner:** M0, M1 and M2 only (data pipeline, scoring engine and CLI). **Do not build the web UI** (M3+) unless the owner says so.
 
 ## Rules
@@ -31,8 +32,10 @@ Tokyo meetup optimizer. Read these before doing anything:
 ```bash
 git clone https://zenxha@github.com/zenxha/kaname.git && cd kaname
 git config --local user.name zenxha && git config --local user.email komays5042@gmail.com
-bash spike/m0/fetch_mt3d.sh            # ~110 MB, data/ folder only
-python3 -I spike/m0/run_spike.py       # expect 18/20 and 6/6; takes about a minute
+bash pipeline/fetch_mt3d.sh            # ~110 MB, data/ folder only, into .cache/mt3d
+cd pipeline && uv run kaname-pipeline build && uv run kaname-pipeline check   # ~30 s
+uv run pytest --cov                    # pipeline tests
+uv run kaname-pipeline validate        # router vs reference journey times
 ```
 
-The spike uses only the Python standard library (3.9 or later). M1 sets up the real `pipeline/` with `uv`.
+The M0 spike (`spike/m0/`, standard library only) still runs with `bash spike/m0/fetch_mt3d.sh && python3 -I spike/m0/run_spike.py`.

@@ -91,6 +91,41 @@ All checked 2026-11-09 against the live catalogs and terms, not from memory.
 
 ---
 
+## M1 gate: matrix pipeline (2026-11-09) · STATUS: gate met
+
+### TL;DR
+
+- **Gate met.** `uv run kaname-pipeline build` builds the data from the pinned Mini Tokyo 3D commit in about 30 seconds. `uv run kaname-pipeline check` then verifies the files against their checksums and runs the gate. All 42,642 directed candidate pairs are reachable in both windows, every candidate pair has a last train, and all routes rebuild. The README documents the build.
+- **Router accuracy on fresh pairs: 24 of 26 within ±5 min** of Yahoo!乗換案内 (13 exact, MAE 1.31, mean signed −0.62). The M0 set improved from MAE 2.25 to 1.55 (18/20, 11 exact), and the late set stays at 6/6 exact.
+- **One change to the M0 plan: routes ship as exact route blocks, not as a predecessor matrix.** A recursive rebuild from a predecessor (or next-hop) matrix looped for 12% of pairs. Each pair keeps its own median journey, so the rest of one route is not the route stored for the next station. The route blocks serve the same purpose (draw each person's route on the real rail geometry) and are exact.
+- **Size:** 1,419 stations (1,417 within 60 km, plus 2 that routes pass through), 207 candidates, 12 MB raw, about 3.3 MB gzipped. The app needs the 1.2 MB of matrices and station data at start. Route blocks of about 5 KB gzipped load per selected candidate.
+
+### Held-out validation
+
+The transfer tables were committed (f931bc5) before the router saw the held-out pairs, and they were not changed after. Pairs, settings and provenance are in `pipeline/validation/`. Rows c20 and c11 repeat M0 pairs to confirm that the query settings match M0 exactly.
+
+Outside ±5 min, all optimistic:
+
+| Pair | Ref | Ours | Cause |
+|---|---|---|---|
+| 武蔵小杉→上野 (c11, M0 #11) | 35 | 29 | 5-min change at 新橋 from the deep Yokosuka platforms (B5) to the Tokaido surface platforms. The planner allows more. |
+| 南浦和→新木場 (h18) | 62 | 56 | 12-min change at 東京 from the surface to the Keiyo platforms. The planner does not make this connection and takes the Yurakucho line. |
+| 千葉→渋谷 (M0 #5) | 68 | 62 | Walk from the deep JR 馬喰町 platforms to 馬喰横山 (Toei), then the 九段下 cross-platform change. |
+
+h14 (舞浜→新宿, Keiyo→Chuo at 東京) sits at exactly −5. **Pattern:** changes to and from deep underground JR platforms (東京 Keiyo and Sobu, 新橋, 馬喰町) are still too short. **Follow-up for M4:** raise the deep-platform allowance and add 新橋, 馬喰町 and 新日本橋, then validate on another fresh set, not these pairs.
+
+### Candidate set
+
+207 complexes within 30 km of Tokyo Station served by at least 2 line families (`data/candidates.csv`). A branch counts as its parent line, so 鶴見線大川支線 is 鶴見線. Before that rule, industrial stops such as 安善 and 浅野 counted as 2-line stations. One override: 浜川崎 is excluded. It has about 2 trains an hour after 20:00, so from 36 candidates most of the home window has no journey to it. No single-line terminus needed adding.
+
+### Open items for M2 and later
+
+- About 16,700 home cells are unreachable (far stations with no evening train from some candidates). The engine must report them by name, not crash.
+- Kana readings are not in the data. M3 adds them from Wikidata (CC0) or ODPT Basic station data.
+- The license question from M0 is still open. The derived files in `data/` are committed locally. Pushing the repo to a public remote would publish them, so ask the owner first.
+
+---
+
 ## Decision log
 
 | Date | Decision | Reason |
@@ -102,3 +137,17 @@ All checked 2026-11-09 against the live catalogs and terms, not from memory.
 | 2026-11-09 | Reference planner = Yahoo!乗換案内, by hand, route 1 by earliest arrival | Trusted multi-operator planner with current (2026-11) timetables. Google is excluded by the brief. Only 26 summary facts are recorded. |
 | 2026-11-09 | Endpoints = the whole same-name station complex, no access/egress walk | Matches how planners treat "新宿"; participant walking is a separate cost term (`w_i`). |
 | 2026-11-09 | Raw third-party timetables are never committed; fetched at build time from a pinned commit | Keeps the repo clean whatever the license answer turns out to be. |
+| 2026-11-09 | Pipeline router = reverse profile Connection Scan, one scan per target, pure Python with fork workers | One scan gives every origin's full (departure, arrival) profile. The full build takes about 30 s, so numba or a compiled router is not needed. Property tests check it against a brute-force forward search. |
+| 2026-11-09 | Matrix minutes = median over every minute of the window of the planner-style duration (first boarding to arrival) | It is what a planner shows, and it does not depend on the minute someone happens to ask. The representative journey (transfers, route) is the median one with the most weight. |
+| 2026-11-09 | Windows: outbound 17:30-19:30, home 21:00-23:00, horizon 240 min. A pair is unreachable if most of the window has no journey | Carried from the M0 plan. A median that falls on "no journey" means that most people asking in that window get no answer. |
+| 2026-11-09 | Last departure = latest Pareto departure after 21:00 on the same service day | Comes free from the home scan. Trips that start before 03:00 belong to the previous day, so a 00:15 train counts as 24:15. |
+| 2026-11-09 | Input stations: complexes within 60 km of Tokyo Station (1,417), closed under route hops (+2) | Covers the commuter belt (熊谷, 成田, 鎌倉, 八王子). 小田原 (74 km) is out. Every route endpoint needs a station index. |
+| 2026-11-09 | Station complex = stops with the same normalized Japanese name within 550 m | Splits 都電早稲田 (688 m) and TX 浅草 (591 m), which planners list separately. Merges 両国 (408 m). ヶ and ケ count as the same. |
+| 2026-11-09 | Station id = English name slug, plus the operator on a collision (`kasumigaseki-tobu`) | Stable, readable, and safe in a URL for the shareable state in M3. |
+| 2026-11-09 | Line count = distinct line families, ignoring 3 routing segments (山手貨物線, 東海道貨物線, 大崎支線) | A branch is not a separate line for a rider. The count drives the candidate rule and the tie-break. |
+| 2026-11-09 | Transfer model v2 = M0 rules + 18 N02 platform positions (東京, 武蔵小杉) with +2 min per deep platform + 16 cross-platform pairs at 1 min | Mini Tokyo 3D puts all JR lines of a station on one point, which caused the M0 misses at 東京. The positions are CC BY 4.0. The cross-platform pairs are documented station layouts. Fixed before the held-out check. |
+| 2026-11-09 | Routes ship as exact per-candidate route blocks, not a predecessor matrix | A recursive rebuild looped for 12% of pairs (medians are not consistent along a path). Exact routes also carry walks and seated through-running. |
+| 2026-11-09 | Stops without coordinates are bridged; a through-running link counts only if the next trip leaves at or after the arrival | Keeps trips continuous and avoids a seated link that goes back in time. |
+| 2026-11-09 | Held-out references fetched as 26 Yahoo result pages, 3 s apart, summary facts only | robots.txt allows `/search/result`. Same settings as M0, checked on 2 repeated M0 pairs. |
+| 2026-11-09 | Derived files in `data/` are committed | M2 tests and later work run without the 110 MB fetch. The files hold no raw timetables. They are not pushed. |
+| 2026-11-09 | Kana readings deferred to M3 | Not needed for the M1 gate. Mini Tokyo 3D has no kana, and guessing readings is not acceptable. |
