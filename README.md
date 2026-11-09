@@ -2,13 +2,16 @@
 
 kaname ranks Tokyo meeting stations for a group. It counts each person's full evening by train: from their start to the meeting station, and from there to their home.
 
-The project is at milestone M1: the data pipeline is done. The scoring engine (M2) and the web app (M3) do not exist yet. `BRIEF.md` is the scope, `PLAN.md` is the plan, and `DECISIONS.md` records each decision with its reason.
+The project is at milestone M2: the data pipeline (M1) and the scoring engine with its CLI (M2) are done. The web app (M3) does not exist yet. `BRIEF.md` is the scope, `PLAN.md` is the plan, and `DECISIONS.md` records each decision with its reason.
 
 ## Repository layout
 
 | Path | Contents |
 | --- | --- |
 | `pipeline/` | Python pipeline that builds the travel-time data (managed with `uv`) |
+| `web/core/` | The scoring engine: pure TypeScript, no runtime dependencies, no DOM |
+| `web/tests/` | Engine tests, including every row of the BRIEF.md acceptance table |
+| `cli/` | Command line front end for the engine (`rank`, `spotcheck`) |
 | `pipeline/config/` | Build parameters and reviewed tables (paid train types, platform positions, transfers, candidate overrides) |
 | `pipeline/validation/` | Held-out reference journey times and their provenance |
 | `data/` | Generated data files, `meta.json` and `LICENSES.md` |
@@ -43,6 +46,45 @@ The build is deterministic. The same source commit and configuration give the sa
 
 The pipeline needs no API keys, secrets or environment variables.
 
+## Rank meeting stations from the command line
+
+You need Node.js 22.12 or later. Install the tools once.
+
+```bash
+npm --prefix web install
+```
+
+Rank stations for a group. A person is `label:start>home`. A place is a station id, a Japanese or English station name, or `lat,lng`. Without `>home`, the person goes home to the start.
+
+```bash
+npm --prefix web run cli -- --person "Aki:町田" --person "Ben:大宮>船橋" --person "Chie:35.6905,139.7003>千葉" --end 23:30
+```
+
+Other options: `--alpha` (1 is efficient, 0 is fair, default 0.5), `--lambda` (minutes per transfer, default 5), `--top`, `--ignore-home`, `--json`, and `--input scenario.json`. Run with `--help` for the list.
+
+Compare the stored minutes with reference journey times:
+
+```bash
+npm --prefix web run cli -- spotcheck --refs pipeline/validation/heldout_reference.csv
+```
+
+Run the engine tests and the type check:
+
+```bash
+npm --prefix web test
+npm --prefix web run coverage
+npm --prefix web run typecheck
+```
+
+## How the engine scores
+
+For each candidate X and person i, `c_i(X) = t(s_i→X) + t(X→h_i) + λ·transfers + walking`. The group objective is `J(X) = α·average + (1−α)·worst`. The engine reads each value straight from the typed arrays, so 20 people and 207 candidates take well under 1 ms.
+
+- A coordinate snaps to its 3 nearest stations (80 m/min, 1.3 detour factor, at most 2 km away). Each leg uses the cheapest of the 3.
+- With a meeting end, a home option counts only if its last train leaves at or after the end. A candidate that strands anyone moves to `excluded`, with a reason that names the person and the last train.
+- Ties go to the station with more lines, then to the lower spread, then to the station id.
+- The result also holds the Pareto set of (average, worst case), so a UI can show the tradeoff.
+
 ## Data files
 
 All binary files are little-endian and row-major. `meta.json` gives the shape, type and SHA-256 checksum of each file. `stations.json` lists the stations. The candidates come first, so station index `i < n_candidates` is also candidate index `i`.
@@ -75,5 +117,6 @@ A route is `[hop count, then per hop: railway | flags, boarding station (only wi
 
 - On 26 held-out pairs, 24 values land within 5 minutes of Yahoo!乗換案内 (13 exact). The router is slightly optimistic at large terminals, because long transfers there take longer than the model allows. `DECISIONS.md` lists the cases.
 - Stations more than 60 km from Tokyo Station have no data, apart from 2 stations that some routes pass through.
-- About 16,700 home cells are unreachable: some far stations have no train from some candidates in most of the 21:00-23:00 window.
+- About 6,500 home cells are unreachable: some far stations have no train after 21:00 from some candidates. Where the trains stop early in the 21:00-23:00 window, the home minutes describe the trains that still run, and `last_dep.u16` shows the last one.
 - Kana readings are not in the data yet. They will come from an open source in M3.
+- The home minutes describe the 21:00-23:00 window. After midnight, fewer and slower trains run, so a later meeting gets longer trips home than the values show. The last-train check uses the real last departure.

@@ -10,7 +10,8 @@ Tokyo meetup optimizer. Read these before doing anything:
 
 - **2026-11-09: M0 done.** Gate met: 18/20 pairs within ±5 min, plus 6/6 late-evening checks (commit `d060d81`). The work was done on the owner's Mac, then moved to the desktop.
 - **2026-11-09: the owner approved Mini Tokyo 3D as the M1/M2 build source** (in chat, on the desktop). This approval covers local builds and tests only. Clear the license (DECISIONS.md, "What I need from you", item 2) before any public deploy.
-- **2026-11-09: M1 done.** Gate met (`kaname-pipeline check` passes): 207 candidates, no unreachable candidate pairs, all routes rebuild. Held-out router accuracy 24/26 within ±5 min. Next: M2 (scoring engine and CLI, tests first).
+- **2026-11-09: M1 done.** Gate met (`kaname-pipeline check` passes): 207 candidates, no unreachable candidate pairs, all routes rebuild. Held-out router accuracy 24/26 within ±5 min.
+- **2026-11-09: M2 done.** Gate met: every BRIEF.md acceptance test passes (`npm --prefix web test`). The session scope (M0-M2) is complete. M3 (web UI) needs the owner's go-ahead.
 - **Session scope set by the owner:** M0, M1 and M2 only (data pipeline, scoring engine and CLI). **Do not build the web UI** (M3+) unless the owner says so.
 
 ## Rules
@@ -36,6 +37,8 @@ bash pipeline/fetch_mt3d.sh            # ~110 MB, data/ folder only, into .cache
 cd pipeline && uv run kaname-pipeline build && uv run kaname-pipeline check   # ~30 s
 uv run pytest --cov                    # pipeline tests
 uv run kaname-pipeline validate        # router vs reference journey times
+cd .. && npm --prefix web install && npm --prefix web test   # engine and acceptance tests
+npm --prefix web run cli -- --person "Aki:町田" --person "Ben:大宮>船橋" --end 23:30
 ```
 
 The M0 spike (`spike/m0/`, standard library only) still runs with `bash spike/m0/fetch_mt3d.sh && python3 -I spike/m0/run_spike.py`.

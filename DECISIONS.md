@@ -91,6 +91,14 @@ All checked 2026-11-09 against the live catalogs and terms, not from memory.
 
 ---
 
+## M2 gate: scoring engine and CLI (2026-11-09) · STATUS: gate met
+
+- **Gate met.** `npm --prefix web test` (91 tests) runs every row of the BRIEF.md acceptance table on the real M1 data, and all pass: identity, permutation invariance, copies of one person, home leg, objective extremes, last-train filter, snapping, the 10-pair spot check, performance and the unroutable-input error. Property tests on random data repeat the first five, the Pareto set and the last-train filter.
+- **Spot check (10 pairs):** held-out pairs h01 to h10, chosen by their order in the file, compare the stored median minutes with the Yahoo!乗換案内 time. 10 of 10 are within ±5 min. On all 50 reference rows that are in the matrix, 46 are within ±5 min. The 4 misses are 武蔵小杉→上野 twice (−6, the 新橋 transfer from M1), 立川→錦糸町 (−8: the window median uses a faster Chuo special rapid than the 18:30 query) and 新宿→立川 at 00:10 (−7: after midnight only slower trains run, and the matrix describes 21:00-23:00).
+- **Speed:** 20 people on the real data score in well under 1 ms on a desktop. The test budget is 20 ms, a 5× margin under the 100 ms phone target.
+- **Review.** A TypeScript review found no error in the cost model or the matrix indexing. It found defects at the edges, now fixed with regression tests: home cells marked unreachable while an early train still ran (fixed in the pipeline, see the M1 decision log), unbounded route decoding, a spot check that passed with nothing compared, a non-transitive comparator, and scenario options that were ignored when misspelled.
+- **Tests were written first** (commit 01b0bfe) and failed before the engine existed (commit 59e4d32). Two test expectations were wrong and were corrected, not the engine: 25:00 is valid timetable notation for 01:00, and in the real data the Shibuya person also misses last trains from a few far stations at 23:45.
+
 ## M1 gate: matrix pipeline (2026-11-09) · STATUS: gate met
 
 ### TL;DR
@@ -120,7 +128,7 @@ h14 (舞浜→新宿, Keiyo→Chuo at 東京) sits at exactly −5. **Pattern:**
 
 ### Open items for M2 and later
 
-- About 16,700 home cells are unreachable (far stations with no evening train from some candidates). The engine must report them by name, not crash.
+- About 6,500 home cells are unreachable: far stations with no train after 21:00 from some candidates. The engine reports them by name.
 - Kana readings are not in the data. M3 adds them from Wikidata (CC0) or ODPT Basic station data.
 - The license question from M0 is still open. The derived files in `data/` are committed locally. Pushing the repo to a public remote would publish them, so ask the owner first.
 
@@ -139,7 +147,7 @@ h14 (舞浜→新宿, Keiyo→Chuo at 東京) sits at exactly −5. **Pattern:**
 | 2026-11-09 | Raw third-party timetables are never committed; fetched at build time from a pinned commit | Keeps the repo clean whatever the license answer turns out to be. |
 | 2026-11-09 | Pipeline router = reverse profile Connection Scan, one scan per target, pure Python with fork workers | One scan gives every origin's full (departure, arrival) profile. The full build takes about 30 s, so numba or a compiled router is not needed. Property tests check it against a brute-force forward search. |
 | 2026-11-09 | Matrix minutes = median over every minute of the window of the planner-style duration (first boarding to arrival) | It is what a planner shows, and it does not depend on the minute someone happens to ask. The representative journey (transfers, route) is the median one with the most weight. |
-| 2026-11-09 | Windows: outbound 17:30-19:30, home 21:00-23:00, horizon 240 min. A pair is unreachable if most of the window has no journey | Carried from the M0 plan. A median that falls on "no journey" means that most people asking in that window get no answer. |
+| 2026-11-09 | Windows: outbound 17:30-19:30, home 21:00-23:00, horizon 240 min. If the trains stop early in the window, the value is the median over the minutes that still have a train. A pair is unreachable only with no train after the window opens | Carried from the M0 plan. The first rule made about 10,000 home cells "unreachable" although a train ran at, say, 21:14, so a meeting that ended at 21:00 wrongly excluded them (found in the M2 review). `last_dep` now decides feasibility. |
 | 2026-11-09 | Last departure = latest Pareto departure after 21:00 on the same service day | Comes free from the home scan. Trips that start before 03:00 belong to the previous day, so a 00:15 train counts as 24:15. |
 | 2026-11-09 | Input stations: complexes within 60 km of Tokyo Station (1,417), closed under route hops (+2) | Covers the commuter belt (熊谷, 成田, 鎌倉, 八王子). 小田原 (74 km) is out. Every route endpoint needs a station index. |
 | 2026-11-09 | Station complex = stops with the same normalized Japanese name within 550 m | Splits 都電早稲田 (688 m) and TX 浅草 (591 m), which planners list separately. Merges 両国 (408 m). ヶ and ケ count as the same. |
@@ -151,3 +159,19 @@ h14 (舞浜→新宿, Keiyo→Chuo at 東京) sits at exactly −5. **Pattern:**
 | 2026-11-09 | Held-out references fetched as 26 Yahoo result pages, 3 s apart, summary facts only | robots.txt allows `/search/result`. Same settings as M0, checked on 2 repeated M0 pairs. |
 | 2026-11-09 | Derived files in `data/` are committed | M2 tests and later work run without the 110 MB fetch. The files hold no raw timetables. They are not pushed. |
 | 2026-11-09 | Kana readings deferred to M3 | Not needed for the M1 gate. Mini Tokyo 3D has no kana, and guessing readings is not acceptable. |
+| 2026-11-09 | Engine in `web/core/` with no runtime dependencies; validation is hand-written narrowing of `unknown` | The format is small and fixed. No dependency keeps the browser bundle small and the engine portable. |
+| 2026-11-09 | Engine input: station id, Japanese or English name, alias, or `{lat, lng}`. A name that matches 2 stations is an error that lists both ids | 霞ケ関 is both a Tokyo Metro station and a Tobu station 40 km apart. Guessing would score the wrong place. |
+| 2026-11-09 | Snapped options are chosen per leg: the cheapest start option and the cheapest feasible home option | The two legs are independent in the cost formula, so the per-leg minimum is the brief's "minimum cost over the three". |
+| 2026-11-09 | Snapping refuses points more than 2 km from every station | Buses are out of scope. A 26-minute walk is the most the train model can honestly cover. |
+| 2026-11-09 | Last train: a home option is feasible if its last departure is at or after the meeting end. Living at the candidate is always feasible | The brief's hard constraint. The person is already at the station when the meeting ends. |
+| 2026-11-09 | "Homes ignored" in the acceptance test = `ignoreHome: true` (outbound-only), also checked against "home = start" | The brief leaves the comparison open. The engine exposes `ignoreHome` so a UI can show what outbound-only tools would pick. |
+| 2026-11-09 | Sums use the costs in sorted order; the worst person's label is the first in sort order on a tie; the ranking and the Pareto set compare values rounded to 1e-6 minutes | Results are identical for any participant order, and the comparator stays transitive with a fractional lambda (an epsilon comparison is not). |
+| 2026-11-09 | Labels must be unique; `ignoreHome` together with a meeting end is an error; a meeting end after 26:59 is an error | A label names a person in every result and reason. The last-train filter needs the home leg. The last departures stop around 25:00, so a later end could only exclude everything. |
+| 2026-11-09 | All 3 snap options must be within 2 km; farther ones are dropped | The nearest station may be close while the 2nd and 3rd are 10 km away, and those are not walkable. |
+| 2026-11-09 | Scenario files accept only known option names with the right types | A misspelled `meeting_end` used to switch the last-train filter off silently. |
+| 2026-11-09 | CLI exit codes: 0 ranked, 1 no station gets everyone home or the spot check fails, 2 bad input or data | Scripts can tell an empty result from an error. A spot check that compares nothing fails. |
+| 2026-11-09 | Clock input accepts up to 26:59 and treats 00:00-02:59 as after midnight | Japanese timetables write 25:00 for 01:00. The service day matches the pipeline's. |
+| 2026-11-09 | At most 50 participants | The brief targets 2 to 20. The cap guards against runaway input; the engine accepts 1 so the "N copies" test can compare against N = 1. |
+| 2026-11-09 | Toolchain pinned to versions at least two weeks old: TypeScript 7.0.2, Vitest 5.0.5, Vite 8.3.4, fast-check 4.10.2, tsx 4.23.15 | Reproducible installs. Vite is listed explicitly because it is Vitest's peer and the M3 build tool. |
+| 2026-11-09 | `web/.npmrc` sets `legacy-peer-deps=true` | npm 10.9 crashes (`Cannot read properties of null (reading 'edgesOut')`) on Vitest's optional peers. With Vite listed explicitly, nothing that is needed goes missing. |
+| 2026-11-09 | CLI paths are relative to where the user ran npm (`INIT_CWD`) | `npm --prefix web run` runs in `web/`, so repo-relative paths failed when tried by hand. |

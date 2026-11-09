@@ -21,7 +21,7 @@ Source of truth for scope: `BRIEF.md`. Decisions with reasons go in `DECISIONS.m
 |---|---|---|---|
 | M0 | Data feasibility spike | A source whose sample times land within ±5 min on ≥18 of 20 pairs, or stop and report | **yes, stop at the gate** |
 | M1 | Matrix pipeline | Full matrix for the candidate set, no unreachable candidate pairs, build documented in the README | **done** |
-| M2 | Scoring engine and CLI | All acceptance tests in BRIEF.md pass | after M1 |
+| M2 | Scoring engine and CLI | All acceptance tests in BRIEF.md pass | **done** |
 | M3 | Web UI | 5-person scenario end to end on a phone viewport | no |
 | M4 | Validation and polish | README limits section and a demo scenario | no |
 | M5 | Stretch | Time-of-day matrices, last-train detail, venue search | no |
@@ -57,9 +57,9 @@ Spike code lives in `spike/m0/`. It is throwaway, but versioned so the numbers c
 - Gate checks pass. The held-out validation gives 24/26 within ±5 min.
 - Carried to M4: longer transfers at deep JR platforms, validated on a fresh pair set.
 
-## M2: scoring engine and CLI (outline)
+## M2: scoring engine and CLI (done 2026-11-09, see DECISIONS.md "M2 gate")
 
-- Pure TypeScript `rank(participants, options, data) → candidates[]` in `web/core/` with no DOM, so the CLI and the later UI share it.
-- Tests first (Vitest + fast-check): every row of the acceptance table in BRIEF.md, including property tests, a 20×250 performance test, and the unroutable-input error.
-- `cli/`: rank from JSON or flags. It also runs the 10-pair real-world spot check.
-- Pareto set of (average, worst-case) and the tie-break (more lines, then lower spread) as specified.
+- `web/core/`: pure TypeScript `rank(participants, options, data)`, plus `parseData`, station lookup and
+  snapping, the clock parser and the route decoder that M3 needs to draw routes.
+- `web/tests/`: written first. Vitest and fast-check. Every acceptance row of BRIEF.md runs on the real data.
+- `cli/`: `rank` (flags or a JSON scenario, text or `--json` output) and `spotcheck`.
