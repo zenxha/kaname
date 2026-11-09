@@ -35,7 +35,7 @@ You need `git`, `bash` and [uv](https://docs.astral.sh/uv/). If Python 3.11 or l
    ```bash
    uv run kaname-pipeline check
    ```
-4. Compare the router with the reference journey times, and recompute 40 random stored values from scratch. The command fails if a reference set has fewer than 90% of its pairs within 5 minutes, or if a stored value differs.
+4. Compare the router with the reference journey times, and recompute 40 random stored values from scratch. If a reference set has fewer than 90% of its pairs within 5 minutes, or if a stored value differs, the command fails.
    ```bash
    uv run kaname-pipeline validate
    ```
@@ -64,6 +64,28 @@ Build a static site into `web/dist/`, which any static host can serve:
 ```bash
 npm --prefix web run build
 ```
+
+## Deploy to Cloudflare Pages
+
+The owner approved a public preview on Cloudflare Pages on 2026-11-09, with the data license question still open (see DECISIONS.md). The site sends `X-Robots-Tag: noindex, nofollow` (from `web/deploy/_headers`), so that search engines do not list it.
+
+Do these two steps one time only. Log in to your own Cloudflare account, then create the project:
+
+```bash
+npx wrangler@4.153.0 login
+npx wrangler@4.153.0 pages project create kaname --production-branch main
+```
+
+Build and deploy:
+
+```bash
+npm --prefix web run deploy
+```
+
+If the machine has no browser for the login, set these environment variables instead of logging in:
+
+- `CLOUDFLARE_API_TOKEN`: an API token with the "Cloudflare Pages: Edit" permission.
+- `CLOUDFLARE_ACCOUNT_ID`: your account ID, from the Cloudflare dashboard.
 
 Run the end-to-end tests. The first run needs the browser once (`npx --prefix web playwright install chromium`).
 
@@ -106,7 +128,7 @@ npm --prefix web run typecheck
 For each candidate X and person i, `c_i(X) = t(s_i→X) + t(X→h_i) + λ·transfers + walking`. The group objective is `J(X) = α·average + (1−α)·worst`. The engine reads each value straight from the typed arrays, so 20 people and 207 candidates take well under 1 ms.
 
 - A coordinate snaps to its 3 nearest stations (80 m/min, 1.3 detour factor, at most 2 km away). Each leg uses the cheapest of the 3.
-- With a meeting end, a home option counts only if its last train leaves at or after the end. A candidate that strands anyone moves to `excluded`, with a reason that names the person and the last train.
+- If you set a meeting end, each home option must have a last train at or after that end. A candidate that strands anyone moves to `excluded`, with a reason that names the person and the last train.
 - Ties go to the station with more lines, then to the lower spread, then to the station id.
 - The result also holds the Pareto set of (average, worst case), so a UI can show the tradeoff.
 

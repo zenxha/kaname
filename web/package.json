@@ -14,6 +14,7 @@
     "cli": "tsx ../cli/rank.ts",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "deploy": "npm run build && cp deploy/_headers dist/_headers && npx --yes wrangler@4.153.0 pages deploy dist --project-name kaname --branch main",
     "preview": "vite preview",
     "e2e": "playwright test"
   },
