@@ -4,7 +4,7 @@ Non-obvious decisions, one line of reasoning each. The M0 gate write-up comes fi
 
 ---
 
-## M0 gate: data source (2026-11-09) · STATUS: awaiting owner approval
+## M0 gate: data source (2026-11-09) · STATUS: approved for M1/M2 builds (owner, 2026-11-09); license still to clear before any public deploy
 
 ### TL;DR
 

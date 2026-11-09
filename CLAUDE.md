@@ -9,7 +9,7 @@ Tokyo meetup optimizer. Read these before doing anything:
 ## Status (update this section when it changes)
 
 - **2026-11-09: M0 done.** Gate met: 18/20 pairs within ±5 min, plus 6/6 late-evening checks (commit `d060d81`). The work was done on the owner's Mac, then moved to the desktop.
-- **Blocked: M1 waits for the owner to approve the data source in chat.** The source is the Mini Tokyo 3D timetables, whose license is unclear; see DECISIONS.md, "What I need from you". If the owner hasn't approved it in the current conversation, ask before starting M1. When they approve, update this line.
+- **2026-11-09: the owner approved Mini Tokyo 3D as the M1/M2 build source** (in chat, on the desktop). This approval covers local builds and tests only. Clear the license (DECISIONS.md, "What I need from you", item 2) before any public deploy.
 - **Session scope set by the owner:** M0, M1 and M2 only (data pipeline, scoring engine and CLI). **Do not build the web UI** (M3+) unless the owner says so.
 
 ## Rules
