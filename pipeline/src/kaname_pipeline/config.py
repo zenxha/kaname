@@ -78,6 +78,7 @@ class BuildConfig:
     stop_positions: tuple[StopPosition, ...]
     transfer_overrides: tuple[TransferOverride, ...]
     candidate_overrides: tuple[CandidateOverride, ...]
+    config_dir: Path = CONFIG_DIR
 
 
 def _require(table: dict, key: str, kind: type, where: str):
@@ -221,4 +222,5 @@ def load_config(config_dir: Path = CONFIG_DIR) -> BuildConfig:
         stop_positions=load_stop_positions(config_dir / "stop_positions.csv"),
         transfer_overrides=load_transfer_overrides(config_dir / "transfer_overrides.csv"),
         candidate_overrides=load_candidate_overrides(config_dir / "candidate_overrides.csv"),
+        config_dir=config_dir,
     )

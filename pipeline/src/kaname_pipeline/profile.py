@@ -56,6 +56,7 @@ class Hop:
     alight_stop: int
     board_time: int
     alight_time: int
+    seated: bool = False  # True when the train runs through from the previous hop (no transfer)
 
 
 @dataclass(frozen=True)
@@ -160,22 +161,24 @@ def reconstruct(rd: RouterData, res: ScanResult, entry: Entry, max_steps: int = 
     """Follow the decisions recorded by the scan from one origin entry to the target."""
     i = res.conn[entry.stop][entry.index]
     hops: list[Hop] = []
-    board, board_t, transfers = rd.u[i], rd.dep[i], 0
+    board, board_t, transfers, seated = rd.u[i], rd.dep[i], 0, False
     for _ in range(max_steps):
         k = res.kind[i - res.lo]
         if k == STAY:
             i = rd.next_in_trip[i]
             continue
-        hop = Hop(rd.trip_railway[rd.trip[i]], board, rd.v[i], board_t, rd.arr[i])
+        hop = Hop(rd.trip_railway[rd.trip[i]], board, rd.v[i], board_t, rd.arr[i], seated)
         hops.append(hop)
         if k == ALIGHT:
             return Journey(entry.dep, rd.arr[i], transfers, tuple(hops))
         if k == THROUGH:
             i = rd.trip_first_conn[res.ref1[i - res.lo]]
+            seated = True
         elif k == TRANSFER:
             w, x = res.ref1[i - res.lo], res.ref2[i - res.lo]
             i = res.conn[w][x]
             transfers += 1
+            seated = False
         else:
             raise RuntimeError(f"journey reconstruction hit an undecided connection {i}")
         board, board_t = rd.u[i], rd.dep[i]

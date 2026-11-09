@@ -14,6 +14,7 @@ from .timeutil import unwrap_trip_times
 
 _SUFFIX = re.compile(r"[（(〈<].*$")
 _SLUG = re.compile(r"[^a-z0-9]+")
+_BRANCH = re.compile(r"^(.+?線).*支線$")
 
 
 class NetworkError(ValueError):
@@ -70,6 +71,13 @@ def display_name(text: str) -> str:
 def name_key(ja: str) -> str:
     """Key under which same-named stops are merged: ヶ and ケ count as the same kana."""
     return display_name(ja).replace("ヶ", "ケ").replace("ヵ", "カ")
+
+
+def line_family(title_ja: str) -> str:
+    """'鶴見線大川支線' -> '鶴見線'; '川越線(川越-高麗川間)' -> '川越線'. A branch is not a separate line."""
+    base = display_name(title_ja)
+    m = _BRANCH.match(base)
+    return m.group(1) if m else base
 
 
 def slugify(text: str) -> str:
@@ -183,7 +191,8 @@ def _make_complex(stops, members, railways_by_id, line_exclude, center) -> Compl
     lon = sum(s.lon for s in ss) / len(ss)
     lat = sum(s.lat for s in ss) / len(ss)
     railways = tuple(sorted({s.railway for s in ss}))
-    titles = {railways_by_id[r].title_ja for r in railways if r in railways_by_id and r not in line_exclude}
+    titles = {line_family(railways_by_id[r].title_ja) for r in railways
+              if r in railways_by_id and r not in line_exclude}
     aliases = tuple(sorted({s.name_ja for s in ss} | {s.name_en for s in ss}))
     return Complex(id="", name_ja=_most_common([s.name_ja for s in ss]), name_en=_most_common([s.name_en for s in ss]),
                    aliases=aliases, lon=round(lon, 6), lat=round(lat, 6), stops=tuple(members),
