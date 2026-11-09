@@ -15,7 +15,7 @@ export function stationName(s: StationRecord | undefined, lang: Lang): string {
 export function placeName(data: MatrixData, place: Place | null, lang: Lang, here: string): string {
   if (place === null) return "";
   if ("station" in place) return stationName(stationById(data, place.station), lang);
-  return here;
+  return place.address ?? here;
 }
 
 export function railwayName(data: MatrixData, index: number, lang: Lang): string {

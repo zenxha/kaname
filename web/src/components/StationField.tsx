@@ -1,7 +1,11 @@
 import { useId, useMemo, useState, type KeyboardEvent } from "react";
-import type { MatrixData } from "../../core/data";
-import type { Lang } from "../model/i18n";
+import type { MatrixData, StationRecord } from "../../core/data";
+import { useAddresses } from "../data/addresses";
+import { looksLikeAddress, searchAddresses, type Town } from "../model/address";
+import { t, type Lang } from "../model/i18n";
+import type { Place } from "../model/scenario";
 import { searchStations } from "../model/search";
+import { useStationSearch } from "./searchContext";
 
 interface Props {
   readonly data: MatrixData;
@@ -9,21 +13,42 @@ interface Props {
   readonly label: string;
   readonly value: string;
   readonly placeholder: string;
-  readonly onPick: (stationId: string) => void;
+  readonly onPick: (place: Place) => void;
 }
 
-/** Combobox: type a station in Japanese or English and pick it from the list. */
+type Option = { readonly kind: "station"; readonly station: StationRecord } | { readonly kind: "address"; readonly town: Town };
+
+const STATIONS_SHOWN = 6;
+const ADDRESSES_SHOWN = 4;
+
+function toPlace(o: Option): Place {
+  if (o.kind === "station") return { station: o.station.id };
+  return { lng: o.town.at[0], lat: o.town.at[1], address: `${o.town.city}${o.town.name}` };
+}
+
+/**
+ * Combobox: type a station (Japanese, English or kana) or an address, and pick it from the list.
+ * Stations come first; addresses follow in their own group once the address index has loaded.
+ */
 export function StationField({ data, lang, label, value, placeholder, onPick }: Props) {
   const id = useId();
+  const { kana, base } = useStationSearch();
   const [query, setQuery] = useState<string | null>(null);
   const [active, setActive] = useState(0);
-  const options = useMemo(() => (query ? searchStations(data, query, 6) : []), [data, query]);
+  const addresses = useAddresses(base, query !== null && looksLikeAddress(query));
+  const options = useMemo<Option[]>(() => {
+    if (!query) return [];
+    const stations = searchStations(data, query, STATIONS_SHOWN, kana).map((station): Option => ({ kind: "station", station }));
+    const towns = addresses.status === "ready" ? searchAddresses(addresses.index, query, ADDRESSES_SHOWN) : [];
+    return [...stations, ...towns.map((town): Option => ({ kind: "address", town }))];
+  }, [data, kana, query, addresses]);
   const open = query !== null && options.length > 0;
+  const firstAddress = options.findIndex((o) => o.kind === "address");
 
   const pick = (i: number) => {
-    const s = options[i];
-    if (s === undefined) return;
-    onPick(s.id);
+    const o = options[i];
+    if (o === undefined) return;
+    onPick(toPlace(o));
     setQuery(null);
   };
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -70,20 +95,31 @@ export function StationField({ data, lang, label, value, placeholder, onPick }: 
           onBlur={() => setQuery(null)}
         />
         {open && (
-          <ul className="options" role="listbox" id={`${id}-list`}>
-            {options.map((s, i) => (
+          <ul className="options" role="listbox" id={`${id}-list`} aria-label={label}>
+            {options.map((o, i) => (
               <li
-                key={s.id}
+                key={o.kind === "station" ? o.station.id : `${o.town.city}${o.town.name}`}
                 id={`${id}-${i}`}
                 role="option"
                 aria-selected={i === active}
+                className={i === firstAddress ? `${o.kind} first-address` : o.kind}
+                data-group={i === firstAddress ? t(lang, "addresses") : undefined}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   pick(i);
                 }}
               >
-                <span>{lang === "ja" ? s.ja : s.en}</span>
-                <small>{lang === "ja" ? s.en : s.ja}</small>
+                {o.kind === "station" ? (
+                  <>
+                    <span>{lang === "ja" ? o.station.ja : o.station.en}</span>
+                    <small>{lang === "ja" ? o.station.en : o.station.ja}</small>
+                  </>
+                ) : (
+                  <>
+                    <span>{o.town.name}</span>
+                    <small>{o.town.city}</small>
+                  </>
+                )}
               </li>
             ))}
           </ul>

@@ -144,6 +144,39 @@ test("a plan travels in the link: stations, names and settings", async ({ page, 
   await expect(friend.locator(".mk-label")).toContainText(["Shizuku", "Tora", "Hitori"]);
 });
 
+test("a person can be added by typing kana or a street address", async ({ page }) => {
+  await page.goto(APP);
+  await openSheet(page);
+  await page.getByRole("button", { name: "+ Add person" }).click();
+  const editor = page.locator("section.editor");
+  await editor.getByLabel("Name").fill("Hitori");
+  await editor.getByLabel("From", { exact: true }).fill("かなざわはっ");
+  await editor.getByRole("option", { name: /Kanazawa-hakkei/ }).first().click();
+  await editor.getByRole("button", { name: "Done" }).click();
+  await expect(page.locator(".t-name b")).toHaveText("品川");
+
+  await page.getByRole("button", { name: "+ Add person" }).click();
+  await editor.getByLabel("Name").fill("Eri");
+  await editor.getByLabel("From", { exact: true }).fill("渋谷区神南1-2-3");
+  const address = editor.getByRole("option", { name: /神南一丁目/ });
+  await expect(address).toHaveAttribute("data-group", "Addresses");
+  await address.click();
+  await expect(editor.getByLabel("From", { exact: true })).toHaveValue("東京都渋谷区神南一丁目");
+  await expect(editor.locator(".snap")).toContainText(/→ Shibuya · \d+ min/);
+  await editor.getByRole("button", { name: "Done" }).click();
+  await expect(page.locator(".mk-person")).toHaveCount(4);
+  await expect(page).toHaveURL(/p=shibuya_Eri/); // the link carries the station, never the address
+  expect(page.url()).not.toMatch(/%E7%A5%9E%E5%8D%97/);
+});
+
+test("addresses appear on the very first search, while the index loads", async ({ page }) => {
+  await page.goto(APP);
+  await openSheet(page);
+  await page.getByRole("button", { name: "+ Add person" }).click();
+  await page.locator("section.editor").getByLabel("From", { exact: true }).fill("中目黒");
+  await expect(page.locator("section.editor").getByRole("option", { name: /中目黒一丁目/ })).toBeVisible();
+});
+
 test("a link with a station the data does not have says so and keeps the rest", async ({ page }) => {
   await page.goto("/?basemap=none&p=tokyo&p=atlantis&p=ueno");
   await expect(page.locator(".notice")).toHaveText("Some stations in the link are not in the data, so they are left out (1).");

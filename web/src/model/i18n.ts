@@ -50,7 +50,8 @@ const en = {
   loadError: "Could not load the train data: {msg}",
   needTwo: "Add at least two people with a start station.",
   noFeasible: "No station can be reached by everyone in this group.",
-  searchPlaceholder: "Station, like 金沢八景",
+  searchPlaceholder: "Station or address, like 金沢八景",
+  addresses: "Addresses",
   example: "Example group",
   sharedPlan: "Shared plan",
   share: "Share plan",
@@ -67,7 +68,7 @@ const en = {
   mapLabel: "Map of everyone's routes",
   routesError: "The routes could not load, so the map shows straight lines.",
   locationError: "Could not get your location.",
-  attribution: "Train times: Mini Tokyo 3D (MIT) · platform positions: MLIT 国土数値情報 (CC BY 4.0)",
+  attribution: "Train times: Mini Tokyo 3D (MIT) · platform positions: MLIT 国土数値情報 (CC BY 4.0) · addresses: 大字・町丁目レベル位置参照情報 国土交通省 · kana: Wikidata (CC0)",
 };
 
 export type StringKey = keyof typeof en;
@@ -121,7 +122,8 @@ const ja: Record<StringKey, string> = {
   loadError: "時刻データを読み込めませんでした: {msg}",
   needTwo: "出発駅のある参加者を2人以上追加してください。",
   noFeasible: "全員が行ける駅がありません。",
-  searchPlaceholder: "駅名（例: 金沢八景）",
+  searchPlaceholder: "駅名・住所（例: 金沢八景）",
+  addresses: "住所",
   example: "例のグループ",
   sharedPlan: "共有されたプラン",
   share: "プランを共有",
@@ -138,7 +140,7 @@ const ja: Record<StringKey, string> = {
   mapLabel: "全員の経路の地図",
   routesError: "経路を読み込めなかったため、地図は直線で表示しています。",
   locationError: "現在地を取得できませんでした。",
-  attribution: "時刻: Mini Tokyo 3D (MIT) · ホーム位置: 国土数値情報 (CC BY 4.0)",
+  attribution: "時刻: Mini Tokyo 3D (MIT) · ホーム位置: 国土数値情報 (CC BY 4.0) · 住所: 大字・町丁目レベル位置参照情報 国土交通省 · 読み: Wikidata (CC0)",
 };
 
 export const STRINGS: Record<Lang, Record<StringKey, string>> = { en, ja };

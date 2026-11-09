@@ -71,4 +71,5 @@ Spike code lives in `spike/m0/`. It is throwaway, but versioned so the numbers c
 - `web/src/map/`: the map, its layers, markers and the draw-in animation. `web/src/model/`: pure, tested logic.
 - `web/e2e/`: Playwright, phone and desktop. The journey gate passes.
 - Done after iteration 2: trips as line pills and a compact rail, the link preview, and the shareable link (brought forward from M4).
-- Next iterations: owner feedback, kana search, and track shapes from MLIT N02.
+- Done 2026-11-10: kana search and address search (M4).
+- Next iterations: owner feedback, and track shapes from MLIT N02.

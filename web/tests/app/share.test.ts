@@ -84,6 +84,15 @@ describe("planOf and peopleOf", () => {
     expect(encodePlan(plan, new URLSearchParams())).not.toMatch(/35\.68|139\.76/);
   });
 
+  it("sends an address home as the station it snapped to, and never its text", () => {
+    const withAddress: Person[] = [
+      { id: "p1", label: "Eri", start: { station: "shinjuku" }, home: { lat: 35.663, lng: 139.700, address: "東京都渋谷区神南一丁目" } },
+    ];
+    const plan = planOf(withAddress, (i, which) => (which === "home" ? "shibuya" : null), 0.5, null);
+    expect(plan.people).toEqual([{ start: "shinjuku", home: "shibuya", name: "Eri" }]);
+    expect(encodePlan(plan, new URLSearchParams())).not.toMatch(/神南|%E7%A5%9E/);
+  });
+
   it("skips a location that has not snapped yet", () => {
     expect(planOf(people, () => null, 0.5, null).people).toHaveLength(2);
   });

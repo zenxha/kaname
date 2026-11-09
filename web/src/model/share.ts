@@ -89,16 +89,18 @@ export function decodePlan(search: string, isStation: (id: string) => boolean): 
 }
 
 /**
- * The plan of the people on screen. `snapped(i)` is the station person i's location snapped to, or null
- * when it has not snapped yet; such a person is left out.
+ * The plan of the people on screen. `snapped(i, which)` is the station person i's start or home point
+ * (a location or an address) snapped to, or null when it has not snapped yet. A start that has not
+ * snapped leaves the person out; a home that has not snapped becomes the start.
  */
-export function planOf(people: readonly Person[], snapped: (index: number) => string | null, alpha: number,
-  at: string | null): Plan {
+export function planOf(people: readonly Person[], snapped: (index: number, which: "start" | "home") => string | null,
+  alpha: number, at: string | null): Plan {
   const shared = people.flatMap((p, i): SharedPerson[] => {
     if (p.start === null) return [];
-    const start = "station" in p.start ? p.start.station : snapped(i);
+    const start = "station" in p.start ? p.start.station : snapped(i, "start");
     if (start === null) return [];
-    const home = p.home !== null && "station" in p.home && p.home.station !== start ? p.home.station : null;
+    const homeStation = p.home === null ? null : "station" in p.home ? p.home.station : snapped(i, "home");
+    const home = homeStation !== null && homeStation !== start ? homeStation : null;
     return [{ start, home, name: cleanName(p.label) }];
   });
   return { people: shared, alpha, at };

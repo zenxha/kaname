@@ -4,7 +4,7 @@ import type { Snap } from "../../core/types";
 import { t, type Lang } from "../model/i18n";
 import { placeName } from "../model/names";
 import { MAX_NAME } from "../model/share";
-import type { Person, Place } from "../model/scenario";
+import type { Person } from "../model/scenario";
 import { StationField } from "./StationField";
 
 interface Props {
@@ -30,7 +30,6 @@ export function PersonEditor({ data, lang, person, index, startSnap, onChange, o
       { enableHighAccuracy: false, timeout: 10_000 },
     );
   };
-  const station = (id: string): Place => ({ station: id });
   return (
     <section className="editor" aria-label={t(lang, "editPerson", { who: person.label || `#${index + 1}` })}>
       <div className="editor-head">
@@ -47,7 +46,7 @@ export function PersonEditor({ data, lang, person, index, startSnap, onChange, o
         label={t(lang, "from")}
         value={placeName(data, person.start, lang, here)}
         placeholder={t(lang, "searchPlaceholder")}
-        onPick={(id) => onChange({ start: station(id) })}
+        onPick={(place) => onChange({ start: place })}
       />
       {"geolocation" in navigator && (
         <button type="button" className="btn" onClick={locate}>{t(lang, "useLocation")}</button>
@@ -67,7 +66,7 @@ export function PersonEditor({ data, lang, person, index, startSnap, onChange, o
           label={t(lang, "home")}
           value={placeName(data, person.home, lang, here)}
           placeholder={t(lang, "searchPlaceholder")}
-          onPick={(id) => onChange({ home: station(id) })}
+          onPick={(place) => onChange({ home: place })}
         />
       )}
       <div className="row">

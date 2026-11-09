@@ -1,7 +1,13 @@
 /** The group being planned, as the UI edits it. Every update returns a new array. */
 import type { LocationInput, ParticipantInput } from "../../core/types";
 
-export type Place = LocationInput;
+/** A station, or a point: a location from the phone, or an address with the text the person picked. */
+export type Place = { readonly station: string } | { readonly lat: number; readonly lng: number; readonly address?: string };
+
+/** What the engine takes: the station, or the point without its address text. */
+function toLocation(p: Place): LocationInput {
+  return "station" in p ? { station: p.station } : { lat: p.lat, lng: p.lng };
+}
 
 export interface Person {
   readonly id: string;
@@ -47,6 +53,6 @@ export function toParticipants(people: readonly Person[], unnamed: (n: number) =
   return people.flatMap((p, i): ParticipantInput[] => {
     if (p.start === null) return [];
     const label = p.label.trim() || unnamed(i + 1);
-    return [p.home === null ? { label, start: p.start } : { label, start: p.start, home: p.home }];
+    return [p.home === null ? { label, start: toLocation(p.start) } : { label, start: toLocation(p.start), home: toLocation(p.home) }];
   });
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alternatives, SHOWN } from "./components/Alternatives";
 import { Controls } from "./components/Controls";
 import { PeopleList } from "./components/PeopleList";
+import { StationSearchContext } from "./components/searchContext";
 import { Sheet } from "./components/Sheet";
 import { Ticket } from "./components/Ticket";
 import type { AppData } from "./data/load";
@@ -79,13 +80,14 @@ function Planner({ data, lang, setLang }: PlannerProps) {
   const plan = useMemo(() => {
     const slots = scoredIndexes(people);
     const participants = outcome.kind === "ok" ? outcome.result.participants : [];
-    const snapped = (i: number) => participants[slots.indexOf(i)]?.start[0]?.station.id ?? null;
+    const snapped = (i: number, which: "start" | "home") => participants[slots.indexOf(i)]?.[which][0]?.station.id ?? null;
     return planOf(people, snapped, alpha, selected);
   }, [people, outcome, alpha, selected]);
   const untouched = isExample(people) && alpha === 0.5 && selected === null;
   useLinkSync(plan, untouched);
   const { share, toast } = useShare(lang, best ? name(best.station) : null);
   const fromLink = opening.shared && people === opening.people;
+  const search = useMemo(() => ({ kana: data.kana, base: data.base }), [data.kana, data.base]);
   /** With no answer to show, the sheet opens far enough to edit the people. */
   const sheetSnap: Snap = best === null && snap === "peek" ? "half" : snap;
   const padding = useMemo<Padding>(() => (stacked
@@ -115,6 +117,7 @@ function Planner({ data, lang, setLang }: PlannerProps) {
   };
 
   return (
+    <StationSearchContext value={search}>
     <div className="app">
       <MapView theme={theme} basemap={BASEMAP} text={mapText} people={mapPeople} meet={meet} others={others}
         focus={focus} drawKey={fitKey(best)} fitKey={`${fitKey(best)}|${stacked ? sheetSnap : "panel"}`} padding={padding}
@@ -149,5 +152,6 @@ function Planner({ data, lang, setLang }: PlannerProps) {
         <footer className="attribution">{t(lang, "attribution")}</footer>
       </Sheet>
     </div>
+    </StationSearchContext>
   );
 }

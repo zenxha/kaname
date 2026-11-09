@@ -1,6 +1,7 @@
 /** Fetch the data files the pipeline wrote (served next to the app). */
 import { MATRIX_FILES, parseData, type MatrixData } from "../../core/data";
 import { RankError } from "../../core/errors";
+import { parseKana, type KanaIndex } from "../model/search";
 
 export interface RouteIndex {
   readonly out: Uint32Array;
@@ -11,6 +12,8 @@ export interface AppData {
   readonly matrix: MatrixData;
   readonly routeIndex: RouteIndex;
   readonly base: string;
+  /** Kana readings for station search; empty when kana.json is missing. */
+  readonly kana: KanaIndex;
 }
 
 async function get(url: string, init?: RequestInit): Promise<Response> {
@@ -57,7 +60,9 @@ export function readU16(raw: Uint8Array): Uint16Array {
 }
 
 export async function loadAppData(base: string): Promise<AppData> {
-  const [meta, stations, ...rest] = await Promise.all([
+  const [kanaDoc, meta, stations, ...rest] = await Promise.all([
+    // Optional: without it, station search still works by name.
+    fetch(`${base}kana.json`).then((r) => (r.ok ? (r.json() as Promise<unknown>) : null)).catch(() => null),
     get(`${base}meta.json`).then((r) => r.json() as Promise<unknown>),
     get(`${base}stations.json`).then((r) => r.json() as Promise<unknown>),
     ...MATRIX_FILES.map((f) => bytes(`${base}${f}`)),
@@ -71,7 +76,7 @@ export async function loadAppData(base: string): Promise<AppData> {
   if (routeIndex.out.length !== matrix.nCandidates + 1 || routeIndex.home.length !== matrix.nCandidates + 1) {
     throw new RankError("BAD_DATA", "route index does not match the station data");
   }
-  return { matrix, routeIndex, base };
+  return { matrix, routeIndex, base, kana: parseKana(kanaDoc, matrix) };
 }
 
 function cutBlock(file: Uint8Array, start: number, end: number, candidate: number): Uint16Array {
