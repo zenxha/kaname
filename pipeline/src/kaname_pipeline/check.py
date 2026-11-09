@@ -1,8 +1,7 @@
-"""M1 gate checks on the written files, and validation against reference journey times."""
+"""M1 gate checks on the written data files (no router needed)."""
 
 from __future__ import annotations
 
-import csv
 import hashlib
 import json
 import sys
@@ -12,19 +11,7 @@ from pathlib import Path
 from statistics import mean
 
 from .build import U8_NONE, U16_NONE
-from .config import REPO_DIR, BuildConfig
-from .emit import LAYOUT, RAILWAY_MASK, SEATED_FLAG, U32, WALK_FLAG
-from .graph import Network
-from .profile import RouterData, origin_entries, scan
-from .summary import first_after
-from .timeutil import parse_hhmm
-
-TOLERANCE_MIN = 5
-REFERENCE_SETS = (
-    ("M0 gate set (18:30)", REPO_DIR / "spike" / "m0" / "reference_times.csv"),
-    ("M0 late set", REPO_DIR / "spike" / "m0" / "reference_times_late.csv"),
-    ("M1 held-out set", REPO_DIR / "pipeline" / "validation" / "heldout_reference.csv"),
-)
+from .emit import LAYOUT, RAILWAY_MASK, SEATED_FLAG, WALK_FLAG
 
 
 class ArtifactError(ValueError):
@@ -53,6 +40,16 @@ class Report:
 
 
 def load_artifacts(out_dir: Path) -> Artifacts:
+    """Read and verify every data file. Raises ArtifactError on any inconsistency."""
+    try:
+        return _load_artifacts(out_dir)
+    except (KeyError, TypeError, ValueError, OSError) as exc:
+        if isinstance(exc, ArtifactError):
+            raise
+        raise ArtifactError(f"cannot read the data files in {out_dir}: {exc!r}") from exc
+
+
+def _load_artifacts(out_dir: Path) -> Artifacts:
     meta_path = out_dir / "meta.json"
     if not meta_path.exists():
         raise ArtifactError(f"{meta_path} not found. Run: uv run kaname-pipeline build")
@@ -64,7 +61,7 @@ def load_artifacts(out_dir: Path) -> Artifacts:
     stations = json.loads((out_dir / "stations.json").read_text(encoding="utf-8"))
     arrays = {}
     for name, (typecode, _, _) in LAYOUT.items():
-        arr = array(U32 if typecode == "I" else typecode)
+        arr = array(typecode)
         arr.frombytes((out_dir / name).read_bytes())
         if sys.byteorder != "little":
             arr.byteswap()
@@ -97,9 +94,12 @@ def decode_routes(a: Artifacts, prefix: str, candidate: int) -> list[list[tuple[
     values, idx = a.arrays[f"{prefix}_routes.u16"], a.arrays[f"{prefix}_routes_idx.u32"]
     pos, end = idx[candidate], idx[candidate + 1]
     routes = []
-    for s in range(a.n):
-        route, pos = decode_route(values, pos, s if prefix == "out" else candidate)
-        routes.append(route)
+    try:
+        for s in range(a.n):
+            route, pos = decode_route(values, pos, s if prefix == "out" else candidate)
+            routes.append(route)
+    except IndexError as exc:
+        raise ArtifactError(f"{prefix}_routes block {candidate} is truncated") from exc
     if pos != end:
         raise ArtifactError(f"{prefix}_routes block {candidate} has the wrong length")
     return routes
@@ -157,10 +157,11 @@ def _info(a: Artifacts) -> list[str]:
     unreach_out = sum(1 for s in range(n) for c in range(k) if out_min[s * k + c] == U16_NONE)
     unreach_home = sum(1 for c in range(k) for h in range(n) if home_min[c * n + h] == U16_NONE)
     xf = [xfer[x * k + y] for x in range(k) for y in range(k) if x != y and xfer[x * k + y] != U8_NONE]
+    pairs = (f"candidate pairs: median {sorted(cand)[len(cand) // 2]} min, max {max(cand)} min, "
+             f"mean transfers {mean(xf):.2f}") if cand and xf else "candidate pairs: none"
     return [
         f"stations {n}, candidates {k}, railways {len(a.stations['railways'])}",
-        f"candidate pairs: median {sorted(cand)[len(cand) // 2]} min, max {max(cand)} min, "
-        f"mean transfers {mean(xf):.2f}",
+        pairs,
         f"asymmetric candidate pairs (outbound a->b != b->a): {asym} of {k * (k - 1) // 2}",
         f"unreachable cells involving non-candidate stations: outbound {unreach_out}, home {unreach_home}",
     ]
@@ -176,47 +177,3 @@ def gate_report(out_dir: Path) -> Report:
     passed = all(ok for _, ok, _ in checks)
     lines.append("GATE " + ("PASSED" if passed else "FAILED"))
     return Report(passed, "\n".join(lines))
-
-
-def resolve(net: Network, name_ja: str, max_km: float) -> int:
-    hits = [i for i, c in enumerate(net.complexes) if c.name_ja == name_ja and c.dist_km <= max_km]
-    if len(hits) != 1:
-        raise KeyError(f"station {name_ja!r} matches {len(hits)} complexes")
-    return hits[0]
-
-
-def router_answer(net: Network, rd: RouterData, origin: int, dest: int, t: int, horizon: int):
-    res = scan(rd, frozenset(net.complexes[dest].stops), t, t + horizon)
-    return first_after(origin_entries(res, net.complexes[origin].stops), t)
-
-
-def _compare_set(net, rd, cfg, path: Path) -> tuple[list[str], list[int]]:
-    rows, deltas = [], []
-    with path.open(encoding="utf-8") as fh:
-        for ref in csv.DictReader(fh):
-            t = parse_hhmm(ref.get("query_time") or "18:30")
-            o, d = (resolve(net, ref[x], cfg.input_radius_km) for x in ("origin", "destination"))
-            e = router_answer(net, rd, o, d, t, cfg.horizon_min)
-            got = e.arr - e.dep if e else None
-            delta = None if got is None else got - int(ref["ref_minutes"])
-            deltas.append(delta if delta is not None else 10**6)
-            rows.append(f"    {ref['id']:>4} {ref['origin']}→{ref['destination']} ref {ref['ref_minutes']} "
-                        f"ours {got} Δ {delta:+d}" if delta is not None else f"    {ref['id']} UNROUTABLE")
-    return rows, deltas
-
-
-def validation_report(net: Network, cfg: BuildConfig, sets=REFERENCE_SETS) -> str:
-    rd = RouterData.from_network(net)
-    lines = ["Router vs reference planner (planner-style answer at the query time)"]
-    for name, path in sets:
-        if not path.exists():
-            lines.append(f"  {name}: {path} not found, skipped")
-            continue
-        rows, deltas = _compare_set(net, rd, cfg, path)
-        ok = sum(abs(x) <= TOLERANCE_MIN for x in deltas)
-        exact = sum(x == 0 for x in deltas)
-        mae = mean(abs(x) for x in deltas)
-        lines.append(f"  {name}: within ±{TOLERANCE_MIN} {ok}/{len(deltas)}, exact {exact}, MAE {mae:.2f}, "
-                     f"mean signed {mean(deltas):+.2f}")
-        lines.extend(rows)
-    return "\n".join(lines)

@@ -10,6 +10,7 @@ from pathlib import Path
 
 from . import mt3d
 from .check import ArtifactError
+from .validate import ValidationError
 from .config import CONFIG_DIR, DEFAULT_MT3D_DIR, DEFAULT_OUT_DIR, ConfigError, load_config
 from .network import NetworkError
 
@@ -50,11 +51,13 @@ def cmd_check(args) -> int:
 
 
 def cmd_validate(args) -> int:
-    from .check import validation_report
+    from .check import load_artifacts
+    from .validate import validation_report
 
     cfg, net = _load_network(args)
-    print(validation_report(net, cfg))
-    return 0
+    report = validation_report(net, cfg, load_artifacts(Path(args.out)))
+    print(report.text)
+    return 0 if report.passed else 1
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -66,13 +69,13 @@ def main(argv: list[str] | None = None) -> int:
     b = sub.add_parser("build", help="route all pairs and write the data files")
     b.add_argument("--workers", type=int, default=None, help="worker processes (default: CPUs - 1)")
     sub.add_parser("check", help="run the M1 gate checks on the written data files")
-    sub.add_parser("validate", help="compare the router with the reference journey times")
+    sub.add_parser("validate", help="compare the router with reference journey times and recompute stored cells")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     handlers = {"build": cmd_build, "check": cmd_check, "validate": cmd_validate}
     try:
         return handlers[args.cmd](args)
-    except (ConfigError, mt3d.SourceDataError, NetworkError, ArtifactError) as exc:
+    except (ConfigError, mt3d.SourceDataError, NetworkError, ArtifactError, ValidationError) as exc:
         log.error("error: %s", exc)
         return 2
 

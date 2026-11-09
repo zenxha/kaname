@@ -37,6 +37,13 @@ def _edit(path: Path, old: str, new: str) -> None:
     ("candidate_min_lines = 2\n", "", "missing key"),
     ("center = [139.76704, 35.6813]", "center = [139.7]", "lon, lat"),
     ("[windows]", "[windows\n", "build.toml"),
+    ('outbound = ["17:30", "19:30"]', 'outbound = ["17:30", "19:70"]', "outbound"),
+    ("horizon_min = 240", "horizon_min = 0", "greater than 0"),
+    ("input_radius_km = 60.0", "input_radius_km = 10.0", "must not exceed"),
+    ("detour = 1.3", "detour = 0.5", "at least 1.0"),
+    ("same_stop_min = 1", "same_stop_min = -1", "must not be negative"),
+    ("center = [139.76704, 35.6813]", "center = [10.0, 35.6813]", "outside Japan"),
+    ("center = [139.76704, 35.6813]", 'center = ["a", 35.6813]', "lon, lat"),
 ])
 def test_bad_build_toml_fails_fast(cfg_dir, old, new, msg):
     _edit(cfg_dir / "build.toml", old, new)

@@ -113,6 +113,16 @@ def test_pareto_entries_on_a_line():
     assert [(e.dep - BASE, e.arr - BASE) for e in origin_entries(res, (0,))] == [(10, 15)]
 
 
+def test_scan_end_bounds_whole_journeys():
+    """A journey whose later leg departs after t_end is not found: callers pass window end + horizon,
+    so only journeys longer than the horizon are lost."""
+    trips = [RawTrip("A", "RA", "x", (("S0", None, "06:00"), ("S1", "06:05", "06:30"), ("S2", "06:35", None)), ())]
+    rd = make_router(3, trips, {})
+    assert origin_entries(scan(rd, frozenset({2}), BASE, BASE + 10), (0,)) == []
+    (e,) = origin_entries(scan(rd, frozenset({2}), BASE, BASE + 40), (0,))
+    assert (e.dep - BASE, e.arr - BASE) == (0, 35)
+
+
 def test_through_running_counts_no_transfer():
     trips = [RawTrip("A", "RA", "x", (("S0", None, "06:00"), ("S1", "06:05", None)), ("B",)),
              RawTrip("B", "RB", "x", (("S2", None, "06:06"), ("S3", "06:10", None)), ())]

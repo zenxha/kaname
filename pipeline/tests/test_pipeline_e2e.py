@@ -10,7 +10,8 @@ import pytest
 
 from fakedata import railway, station, write
 from kaname_pipeline.__main__ import main
-from kaname_pipeline.check import decode_route, gate_report, load_artifacts, validation_report
+from kaname_pipeline.check import ArtifactError, decode_route, gate_report, load_artifacts
+from kaname_pipeline.validate import ValidationError, recompute_sample, validation_report
 from kaname_pipeline.config import CONFIG_DIR, load_config
 from kaname_pipeline import mt3d
 from kaname_pipeline.graph import build_network
@@ -133,15 +134,57 @@ def test_minutes_and_routes(built):
     assert 21 * 60 <= last <= 25 * 60
 
 
-def test_validation_report_on_synthetic_refs(built, tmp_path):
+def _net(built):
     tmp, _, _, cfg_dir = built
     cfg = load_config(cfg_dir)
-    net = build_network(mt3d.load(tmp / "mt3d", cfg.mt3d_commit, cfg.calendar, cfg.paid_train_types), cfg)
-    ref = tmp_path / "ref.csv"
-    ref.write_text("id,origin,destination,query_time,ref_minutes\nx1,丁,戊,18:30,6\nx2,甲,己,18:30,30\n",
+    return cfg, build_network(mt3d.load(tmp / "mt3d", cfg.mt3d_commit, cfg.calendar, cfg.paid_train_types), cfg)
+
+
+def test_validation_report_on_synthetic_refs(built, tmp_path):
+    cfg, net = _net(built)
+    good = tmp_path / "good.csv"
+    good.write_text("id,origin,destination,query_time,ref_minutes\nx1,丁,戊,18:30,6\n", encoding="utf-8")
+    report = validation_report(net, cfg, load_artifacts(built[2]), (("good", good),))
+    assert report.passed and "within ±5 1/1" in report.text and "recomputed from scratch" in report.text
+    bad = tmp_path / "bad.csv"
+    bad.write_text("id,origin,destination,query_time,ref_minutes\nx1,丁,戊,18:30,6\nx2,甲,己,18:30,30\n",
                    encoding="utf-8")
-    text = validation_report(net, cfg, (("synthetic", ref), ("missing", tmp_path / "none.csv")))
-    assert "within ±5 1/2" in text and "not found, skipped" in text
+    assert not validation_report(net, cfg, None, (("bad", bad),)).passed
+
+
+def test_validation_errors_are_clean(built, tmp_path):
+    cfg, net = _net(built)
+    with pytest.raises(ValidationError, match="not found"):
+        validation_report(net, cfg, None, (("missing", tmp_path / "none.csv"),))
+    ref = tmp_path / "ref.csv"
+    ref.write_text("id,origin,destination,query_time,ref_minutes\nx1,無,戊,18:30,6\n", encoding="utf-8")
+    with pytest.raises(ValidationError, match="matches 0"):
+        validation_report(net, cfg, None, (("unknown", ref),))
+    ref.write_text("id,origin,destination,query_time,ref_minutes\nx1,丁,戊,18:30,six\n", encoding="utf-8")
+    with pytest.raises(ValidationError, match="x1"):
+        validation_report(net, cfg, None, (("badrow", ref),))
+
+
+def test_recompute_sample_detects_tampering(built, tmp_path):
+    cfg, net = _net(built)
+    a = load_artifacts(built[2])
+    assert recompute_sample(net, cfg, a) == []
+    shifted = type(a)(a.meta, a.stations, {**a.arrays, "out_min.u16": type(a.arrays["out_min.u16"])(
+        "H", [v + 1 if v not in (0, 65535) else v for v in a.arrays["out_min.u16"]])})
+    assert recompute_sample(net, cfg, shifted, seed=3)
+
+
+def test_cli_validate_runs(built):
+    _, args, _, _ = built
+    assert main(args + ["validate"]) == 2  # the repo reference sets name stations the synthetic network lacks
+
+
+def test_malformed_meta_is_an_artifact_error(built, tmp_path):
+    copy = tmp_path / "data"
+    shutil.copytree(built[2], copy)
+    (copy / "meta.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(ArtifactError, match="cannot read"):
+        load_artifacts(copy)
 
 
 def test_tampered_file_fails_check(built, tmp_path):

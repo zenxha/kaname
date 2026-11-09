@@ -92,7 +92,10 @@ class ScanResult:
 
 
 def scan(rd: RouterData, targets: frozenset[int], t_start: int, t_end: int) -> ScanResult:
-    """Scan connections departing in [t_start, t_end], latest first."""
+    """Scan connections departing in [t_start, t_end], latest first.
+
+    Every leg of a journey must depart by t_end, not only the first one. Callers pass the window
+    end plus the horizon, so only journeys longer than the horizon are lost."""
     dep, arr, uu, vv, trip = rd.dep, rd.arr, rd.u, rd.v, rd.trip
     nxt, first, tnext, transfers = rd.next_in_trip, rd.trip_first_conn, rd.trip_next, rd.transfers
     lo, hi = bisect_left(dep, t_start), bisect_right(dep, t_end)

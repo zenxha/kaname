@@ -1,4 +1,4 @@
-import json
+import subprocess
 
 import pytest
 
@@ -82,13 +82,39 @@ def test_parse_railway_and_groups_reject_bad_input():
 def test_invalid_json_fails(tmp_path):
     commit = _basic(tmp_path)
     (tmp_path / "data" / "railways.json").write_text("{", encoding="utf-8")
+    subprocess.run(["git", "-C", str(tmp_path), "update-index", "--assume-unchanged", "data/railways.json"], check=True)
     with pytest.raises(SourceDataError, match="invalid JSON"):
+        mt3d.load(tmp_path, commit, "Weekday", frozenset())
+
+
+def test_non_list_and_non_object_files_fail(tmp_path):
+    commit = _basic(tmp_path)
+    (tmp_path / "data" / "railways.json").write_text("{}", encoding="utf-8")
+    subprocess.run(["git", "-C", str(tmp_path), "update-index", "--assume-unchanged", "data/railways.json"], check=True)
+    with pytest.raises(SourceDataError, match="expected a JSON list"):
+        mt3d.load(tmp_path, commit, "Weekday", frozenset())
+
+
+def test_local_changes_fail(tmp_path):
+    commit = _basic(tmp_path)
+    (tmp_path / "data" / "stations.json").write_text("[]", encoding="utf-8")
+    with pytest.raises(SourceDataError, match="local changes"):
+        mt3d.load(tmp_path, commit, "Weekday", frozenset())
+
+
+def test_trip_entries_must_be_objects(tmp_path):
+    commit = _basic(tmp_path)
+    (tmp_path / "data" / "train-timetables" / "op-a.json").write_text('["x"]', encoding="utf-8")
+    subprocess.run(["git", "-C", str(tmp_path), "update-index", "--assume-unchanged",
+                    "data/train-timetables/op-a.json"], check=True)
+    with pytest.raises(SourceDataError, match="JSON object"):
         mt3d.load(tmp_path, commit, "Weekday", frozenset())
 
 
 def test_missing_file_fails(tmp_path):
     commit = _basic(tmp_path)
     (tmp_path / "data" / "railways.json").unlink()
+    subprocess.run(["git", "-C", str(tmp_path), "update-index", "--assume-unchanged", "data/railways.json"], check=True)
     with pytest.raises(SourceDataError, match="missing"):
         mt3d.load(tmp_path, commit, "Weekday", frozenset())
 
@@ -96,5 +122,7 @@ def test_missing_file_fails(tmp_path):
 def test_missing_timetables_fails(tmp_path):
     commit = _basic(tmp_path)
     (tmp_path / "data" / "train-timetables" / "op-a.json").unlink()
+    subprocess.run(["git", "-C", str(tmp_path), "update-index", "--assume-unchanged",
+                    "data/train-timetables/op-a.json"], check=True)
     with pytest.raises(SourceDataError, match="no timetables"):
         mt3d.load(tmp_path, commit, "Weekday", frozenset())

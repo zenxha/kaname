@@ -30,7 +30,7 @@ You need `git`, `bash` and [uv](https://docs.astral.sh/uv/). If Python 3.11 or l
    ```bash
    uv run kaname-pipeline check
    ```
-4. Optional: compare the router with the reference journey times.
+4. Compare the router with the reference journey times, and recompute 40 random stored values from scratch. The command fails if a reference set has fewer than 90% of its pairs within 5 minutes, or if a stored value differs.
    ```bash
    uv run kaname-pipeline validate
    ```

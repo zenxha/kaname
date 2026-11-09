@@ -17,6 +17,7 @@ from .timeutil import fmt_hhmm
 from .universe import Universe
 
 FORMAT_VERSION = 1
+CONFIG_SUFFIXES = (".toml", ".txt", ".csv")
 
 SEATED_FLAG = 0x8000   # the train runs through from the previous hop: no change of train
 WALK_FLAG = 0x4000     # the hop boards at another station than the previous hop ended at
@@ -52,16 +53,18 @@ def _sha256(data: bytes) -> str:
 def config_digest(config_dir: Path = CONFIG_DIR) -> str:
     h = hashlib.sha256()
     for p in sorted(config_dir.iterdir()):
-        if p.is_file():
+        if p.is_file() and p.suffix in CONFIG_SUFFIXES:
             h.update(p.name.encode() + b"\0" + p.read_bytes() + b"\0")
     return h.hexdigest()
 
 
-U32 = "I" if array("I").itemsize == 4 else "L"
+U32 = "I"
+if array(U32).itemsize != 4:  # pragma: no cover - every mainstream platform has a 4-byte unsigned int
+    raise RuntimeError("this platform has no 4-byte array typecode 'I'; the uint32 files cannot be written")
 
 
 def _pack(typecode: str, values) -> bytes:
-    arr = array(U32 if typecode == "I" else typecode, values)
+    arr = array(typecode, values)
     if sys.byteorder != "little":
         arr.byteswap()
     return arr.tobytes()

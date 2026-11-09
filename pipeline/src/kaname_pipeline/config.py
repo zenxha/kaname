@@ -96,7 +96,10 @@ def _window(table: dict, key: str) -> tuple[int, int]:
     raw = _require(table, key, list, "[windows]")
     if len(raw) != 2:
         raise ConfigError(f"[windows] {key} must be [start, end]")
-    start, end = parse_hhmm(raw[0]), parse_hhmm(raw[1])
+    try:
+        start, end = parse_hhmm(raw[0]), parse_hhmm(raw[1])
+    except ValueError as exc:
+        raise ConfigError(f"[windows] {key}: {exc}") from exc
     if end <= start:
         raise ConfigError(f"[windows] {key}: end {raw[1]} must be after start {raw[0]}")
     return start, end
@@ -174,6 +177,29 @@ def load_candidate_overrides(path: Path) -> tuple[CandidateOverride, ...]:
     return tuple(out)
 
 
+def _positive(value: float, name: str) -> float:
+    if not value > 0:
+        raise ConfigError(f"{name} must be greater than 0, got {value}")
+    return value
+
+
+def _check_ranges(cfg: "BuildConfig") -> "BuildConfig":
+    t = cfg.transfer
+    for name, value in (("input_radius_km", cfg.input_radius_km), ("candidate_radius_km", cfg.candidate_radius_km),
+                        ("merge_radius_m", cfg.merge_radius_m), ("horizon_min", cfg.horizon_min),
+                        ("walk_m_per_min", t.walk_m_per_min), ("candidate_min_lines", cfg.candidate_min_lines)):
+        _positive(value, name)
+    if cfg.candidate_radius_km > cfg.input_radius_km:
+        raise ConfigError("candidate_radius_km must not exceed input_radius_km")
+    if t.detour < 1.0:
+        raise ConfigError(f"detour must be at least 1.0, got {t.detour}")
+    if min(t.same_stop_min, t.same_subgroup_min, t.cross_subgroup_base_min, t.cross_subgroup_min) < 0:
+        raise ConfigError("[transfer] minutes must not be negative")
+    if not (120.0 < cfg.center[0] < 150.0 and 20.0 < cfg.center[1] < 50.0):
+        raise ConfigError(f"[area] center {cfg.center} is outside Japan")
+    return cfg
+
+
 def _transfer_params(table: dict) -> TransferParams:
     where = "[transfer]"
     return TransferParams(
@@ -202,9 +228,9 @@ def load_config(config_dir: Path = CONFIG_DIR) -> BuildConfig:
     if not _COMMIT_RE.match(commit):
         raise ConfigError("[source] mt3d_commit must be a full 40-character commit hash")
     center = _require(area, "center", list, "[area]")
-    if len(center) != 2:
+    if len(center) != 2 or not all(isinstance(c, (int, float)) and not isinstance(c, bool) for c in center):
         raise ConfigError("[area] center must be [lon, lat]")
-    return BuildConfig(
+    return _check_ranges(BuildConfig(
         mt3d_repo=_require(src, "mt3d_repo", str, "[source]"),
         mt3d_commit=commit,
         calendar=_require(src, "calendar", str, "[source]"),
@@ -223,4 +249,4 @@ def load_config(config_dir: Path = CONFIG_DIR) -> BuildConfig:
         transfer_overrides=load_transfer_overrides(config_dir / "transfer_overrides.csv"),
         candidate_overrides=load_candidate_overrides(config_dir / "candidate_overrides.csv"),
         config_dir=config_dir,
-    )
+    ))

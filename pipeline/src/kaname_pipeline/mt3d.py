@@ -50,13 +50,23 @@ class RawData:
     trips: tuple[RawTrip, ...]
 
 
-def _load_json(path: Path):
+def _load_json(path: Path) -> list:
+    """Every Mini Tokyo 3D file this pipeline reads is a JSON list of objects."""
     if not path.exists():
         raise SourceDataError(f"missing {path}. Run: bash pipeline/fetch_mt3d.sh")
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise SourceDataError(f"{path.name}: invalid JSON ({exc})") from exc
+    if not isinstance(data, list):
+        raise SourceDataError(f"{path.name}: expected a JSON list")
+    return data
+
+
+def _objects(items: list, name: str) -> list[dict]:
+    if not all(isinstance(x, dict) for x in items):
+        raise SourceDataError(f"{name}: every entry must be a JSON object")
+    return items
 
 
 def _str(obj: dict, key: str, where: str) -> str:
@@ -133,13 +143,20 @@ def parse_groups(raw) -> tuple[tuple[tuple[str, ...], ...], ...]:
     return tuple(out)
 
 
-def git_commit(repo_dir: Path) -> str:
+def _git(repo_dir: Path, *args: str) -> str:
     try:
-        res = subprocess.run(["git", "-C", str(repo_dir), "rev-parse", "HEAD"],
-                             capture_output=True, text=True, check=True)
+        res = subprocess.run(["git", "-C", str(repo_dir), *args], capture_output=True, text=True, check=True)
     except (OSError, subprocess.CalledProcessError) as exc:
         raise SourceDataError(f"{repo_dir} is not a git checkout. Run: bash pipeline/fetch_mt3d.sh") from exc
     return res.stdout.strip()
+
+
+def git_commit(repo_dir: Path) -> str:
+    """The checked-out commit. Local changes under data/ are an error: the build must match the pin."""
+    commit = _git(repo_dir, "rev-parse", "HEAD")
+    if _git(repo_dir, "status", "--porcelain", "--", "data"):
+        raise SourceDataError(f"{repo_dir / 'data'} has local changes. Run: bash pipeline/fetch_mt3d.sh")
+    return commit
 
 
 def load(repo_dir: Path, expected_commit: str, calendar: str, excluded_types: frozenset[str]) -> RawData:
@@ -150,8 +167,9 @@ def load(repo_dir: Path, expected_commit: str, calendar: str, excluded_types: fr
         raise SourceDataError(f"Mini Tokyo 3D checkout is at {commit}, config pins {expected_commit}. "
                               "Run: bash pipeline/fetch_mt3d.sh")
     data = repo_dir / "data"
-    stations = tuple(s for s in map(parse_station, _load_json(data / "stations.json")) if s is not None)
-    railways = tuple(parse_railway(r) for r in _load_json(data / "railways.json"))
+    stations = tuple(s for s in map(parse_station, _objects(_load_json(data / "stations.json"), "stations.json"))
+                     if s is not None)
+    railways = tuple(parse_railway(r) for r in _objects(_load_json(data / "railways.json"), "railways.json"))
     groups = parse_groups(_load_json(data / "station-groups.json"))
     files = sorted((data / "train-timetables").glob("*.json"))
     if not files:
@@ -160,8 +178,8 @@ def load(repo_dir: Path, expected_commit: str, calendar: str, excluded_types: fr
     trips = tuple(
         parse_trip(t)
         for f in files
-        for t in _load_json(f)
-        if str(t.get("id", "")).endswith(suffix) and t.get("y") not in excluded_types
+        for t in _objects(_load_json(f), f.name)
+        if str(t.get("id", "")).endswith(suffix) and str(t.get("y")) not in excluded_types
     )
     if not trips:
         raise SourceDataError(f"no trips for calendar {calendar!r}")
