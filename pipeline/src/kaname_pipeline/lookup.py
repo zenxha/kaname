@@ -12,6 +12,7 @@ data/stations.json and writes data/kana.json and data/addresses.json.
 from __future__ import annotations
 
 import csv
+import http.client
 import io
 import json
 import math
@@ -106,7 +107,8 @@ def match_kana(stations: list[dict], rows: list[dict]) -> dict[str, list[str]]:
     for s in stations:
         near = Counter(k for lng, lat, k in by_name.get(plain_name(s["ja"]), []) if k and _km(lng, lat, s["lng"], s["lat"]) <= MATCH_KM)
         if near:
-            out[s["id"]] = [k for k, _ in near.most_common()]
+            # Most common first; a tie goes in kana order, so the file is the same on every run.
+            out[s["id"]] = sorted(near, key=lambda k: (-near[k], k))
     return out
 
 
@@ -119,15 +121,34 @@ def kana_doc(kana: dict[str, list[str]], n_stations: int, fetched: str) -> dict:
     }
 
 
+def _position(row: dict[str, str]) -> tuple[float, float] | None:
+    try:
+        return float(row["経度"]), float(row["緯度"])
+    except ValueError:
+        return None
+
+
 def read_isj(data: bytes) -> list[tuple[str, str, float, float]]:
-    """(prefecture + city, town, lng, lat) for every row of one prefecture's zip (Shift_JIS CSV)."""
-    with zipfile.ZipFile(io.BytesIO(data)) as z:
-        names = [n for n in z.namelist() if n.lower().endswith(".csv")]
-        if len(names) != 1:
-            raise LookupDataError(f"expected one CSV in the MLIT zip, found {names}")
-        text = z.read(names[0]).decode("cp932")
-    rows = csv.DictReader(io.StringIO(text))
-    return [(r["都道府県名"] + r["市区町村名"], r["大字町丁目名"], float(r["経度"]), float(r["緯度"])) for r in rows]
+    """(prefecture + city, town, lng, lat) for every row of one prefecture's zip (Shift_JIS CSV).
+    A row without a position is skipped; a broken file is a LookupDataError."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            names = [n for n in z.namelist() if n.lower().endswith(".csv")]
+            if len(names) != 1:
+                raise LookupDataError(f"expected one CSV in the MLIT zip, found {names}")
+            text = z.read(names[0]).decode("cp932")
+    except (zipfile.BadZipFile, UnicodeDecodeError) as exc:
+        raise LookupDataError(f"the MLIT file is broken: {exc}") from exc
+    towns = []
+    for r in csv.DictReader(io.StringIO(text)):
+        try:
+            city, town = r["都道府県名"] + r["市区町村名"], r["大字町丁目名"]
+        except KeyError as exc:
+            raise LookupDataError(f"the MLIT CSV has no column {exc}") from exc
+        at = _position(r)
+        if at is not None:
+            towns.append((city, town, *at))
+    return towns
 
 
 def address_doc(towns: list[tuple[str, str, float, float]], center: tuple[float, float], radius_km: float,
@@ -144,26 +165,37 @@ def address_doc(towns: list[tuple[str, str, float, float]], center: tuple[float,
     }
 
 
-def _download(url: str, data: bytes | None = None) -> bytes:
-    req = urllib.request.Request(url, data=data, headers={"User-Agent": USER_AGENT, "Accept": "application/sparql-results+json"})
+def _download(url: str, data: bytes | None = None, accept: str = "*/*") -> bytes:
+    req = urllib.request.Request(url, data=data, headers={"User-Agent": USER_AGENT, "Accept": accept})
     try:
         with urllib.request.urlopen(req, timeout=120) as res:
             return res.read()
-    except OSError as exc:
+    except (OSError, http.client.HTTPException) as exc:
         raise LookupDataError(f"download failed: {url}: {exc}") from exc
+
+
+def _write(path: Path, data: bytes) -> None:
+    """Write through a temporary file, so a failed run never leaves half a file in the cache."""
+    tmp = path.with_name(path.name + ".part")
+    tmp.write_bytes(data)
+    tmp.replace(path)
 
 
 def fetch(cache: Path = CACHE_DIR) -> list[Path]:
     """Downloads the Wikidata readings and the MLIT prefecture files into the cache."""
     (cache / ISJ_DIR).mkdir(parents=True, exist_ok=True)
     query = urllib.parse.urlencode({"query": WIKIDATA_QUERY}).encode()
-    result = json.loads(_download(WIKIDATA_URL, query))
+    try:
+        result = json.loads(_download(WIKIDATA_URL, query, accept="application/sparql-results+json"))
+        result["results"]["bindings"]
+    except (ValueError, KeyError, TypeError) as exc:
+        raise LookupDataError(f"Wikidata did not answer with query results: {exc!r}") from exc
     wiki = cache / WIKIDATA_FILE
-    wiki.write_text(json.dumps({"fetched": date.today().isoformat(), "results": result}, ensure_ascii=False), encoding="utf-8")
+    _write(wiki, json.dumps({"fetched": date.today().isoformat(), "results": result}, ensure_ascii=False).encode())
     written = [wiki]
     for p in ISJ_PREFECTURES:
         path = cache / ISJ_DIR / f"{p}000-{ISJ_VERSION}.zip"
-        path.write_bytes(_download(ISJ_URL.format(v=ISJ_VERSION, p=p)))
+        _write(path, _download(ISJ_URL.format(v=ISJ_VERSION, p=p), accept="application/zip"))
         written.append(path)
     return written
 
@@ -178,7 +210,11 @@ def build(out_dir: Path, center: tuple[float, float], radius_km: float, cache: P
         raise LookupDataError(f"run `kaname-pipeline fetch-lookup` first: {exc}") from exc
     if len(zips) != len(ISJ_PREFECTURES):
         raise LookupDataError(f"expected {len(ISJ_PREFECTURES)} MLIT files in {cache / ISJ_DIR}, found {len(zips)}")
-    kana = kana_doc(match_kana(stations, wiki["results"]["results"]["bindings"]), len(stations), wiki["fetched"])
+    try:
+        rows = wiki["results"]["results"]["bindings"]
+        kana = kana_doc(match_kana(stations, rows), len(stations), wiki["fetched"])
+    except (KeyError, TypeError) as exc:
+        raise LookupDataError(f"the cached Wikidata file is malformed: {exc!r}; run fetch-lookup again") from exc
     towns = [t for z in zips for t in read_isj(z.read_bytes())]
     addresses = address_doc(towns, center, radius_km, ISJ_VERSION, [z.name for z in zips])
     for name, doc in (("kana.json", kana), ("addresses.json", addresses)):

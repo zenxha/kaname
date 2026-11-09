@@ -3,22 +3,23 @@ import { useEffect, useState } from "react";
 import { RankError } from "../../core/errors";
 import { parseAddresses, type AddressIndex } from "../model/address";
 
-let pending: Promise<AddressIndex> | null = null;
+const pending = new Map<string, Promise<AddressIndex>>();
 
+/** One load per data address; a failed load is tried again next time. */
 export function loadAddresses(base: string): Promise<AddressIndex> {
-  if (pending === null) {
-    const load = fetch(`${base}addresses.json`)
-      .then((r) => {
-        if (!r.ok) throw new RankError("BAD_DATA", `addresses.json: HTTP ${r.status}`);
-        return r.json() as Promise<unknown>;
-      })
-      .then(parseAddresses);
-    pending = load;
-    load.catch(() => {
-      if (pending === load) pending = null; // a failed load is tried again next time
-    });
-  }
-  return pending;
+  const cached = pending.get(base);
+  if (cached !== undefined) return cached;
+  const load = fetch(`${base}addresses.json`)
+    .then((r) => {
+      if (!r.ok) throw new RankError("BAD_DATA", `addresses.json: HTTP ${r.status}`);
+      return r.json() as Promise<unknown>;
+    })
+    .then(parseAddresses);
+  pending.set(base, load);
+  load.catch(() => {
+    if (pending.get(base) === load) pending.delete(base);
+  });
+  return load;
 }
 
 export type AddressState =
@@ -38,8 +39,12 @@ export function useAddresses(base: string, wanted: boolean): AddressState {
     let live = true;
     setFailed(false);
     loadAddresses(base)
-      .then((i) => live && setIndex(i))
-      .catch(() => live && setFailed(true));
+      .then((i) => {
+        if (live) setIndex(i);
+      })
+      .catch(() => {
+        if (live) setFailed(true);
+      });
     return () => {
       live = false;
     };

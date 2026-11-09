@@ -31,22 +31,34 @@ function kanjiNumber(text: string): number {
   return t * 10 + (ones === "" ? 0 : KANJI_DIGITS[ones] ?? 0);
 }
 
-/** NFKC, no spaces, ヶ = ケ, and 丁目 numbers in digits: 神南一丁目 and 神南１丁目 both become 神南1丁目. */
+/** A kanji number from 一 to 九十九 just before 丁目, and not part of a longer run of numerals. */
+const KANJI_CHOME = /(?<![一二三四五六七八九十])([一二三四五六七八九]?十[一二三四五六七八九]?|[一二三四五六七八九])丁目/g;
+/** Typed text longer than this is cut: no address is that long, and it keeps every search quick. */
+export const MAX_QUERY = 100;
+
+/**
+ * NFKC, no spaces, ヶ = ケ = が (place names are written all three ways), and 丁目 numbers in digits:
+ * 神南一丁目 and 神南１丁目 both become 神南1丁目.
+ */
 export function addressKey(text: string): string {
   return text
     .normalize("NFKC")
     .replace(/\s+/g, "")
-    .replace(/ヶ/g, "ケ")
-    .replace(/([一二三四五六七八九十]+)丁目/g, (_, n: string) => `${kanjiNumber(n)}丁目`);
+    .replace(/[ヶが]/g, "ケ")
+    .replace(KANJI_CHOME, (_, n: string) => `${kanjiNumber(n)}丁目`);
 }
 
-/** The key of a typed address, cut to its 丁目: 神南1-2-3 and 神南1丁目5番 become 神南1丁目. */
-function queryKey(text: string): string {
-  const key = addressKey(text);
-  const chome = /^(.*?\d+丁目)/.exec(key);
-  if (chome) return chome[1]!;
-  const block = /^(.*?\D)(\d+)(?:\D.*)?$/.exec(key);
-  return block ? `${block[1]}${block[2]}丁目` : key;
+/**
+ * The keys to try for a typed address: first cut to its 丁目 (神南1-2-3 and 神南1丁目5番 give 神南1丁目),
+ * then, for a town without 丁目, the town alone (小野路町1234 gives 小野路町).
+ */
+function queryKeys(text: string): string[] {
+  const key = addressKey(text.slice(0, MAX_QUERY));
+  const cut = key.indexOf("丁目");
+  const digits = cut < 0 ? null : /\d+$/.exec(key.slice(0, cut));
+  if (digits) return [key.slice(0, cut + 2)];
+  const block = /^(.*?\D)(\d+)/.exec(key);
+  return block ? [`${block[1]}${block[2]}丁目`, block[1]!] : [key];
 }
 
 const CJK = /[぀-ヿ㐀-鿿]/;
@@ -57,21 +69,36 @@ export function looksLikeAddress(text: string): boolean {
   return t.length >= 2 && CJK.test(t);
 }
 
-export function searchAddresses(index: AddressIndex, text: string, limit = 4): Town[] {
-  if (!looksLikeAddress(text)) return [];
-  const q = queryKey(text);
-  const hits: { town: Town; rank: number }[] = [];
+/**
+ * 0: the query starts the town, and its city has the name too (渋谷 finds 渋谷区渋谷 first).
+ * 1: the query starts the town. 2: it runs from the city into the town. 3: anywhere else. -1: no match.
+ */
+function rank(town: Town, q: string): number {
+  if (town.key.startsWith(q, town.townAt)) return town.key.slice(0, town.townAt).includes(q) ? 0 : 1;
+  const at = town.key.indexOf(q);
+  if (at < 0) return -1;
+  return at < town.townAt && at + q.length > town.townAt ? 2 : 3;
+}
+
+function search(index: AddressIndex, q: string, limit: number): Town[] {
+  const hits: { readonly town: Town; readonly rank: number }[] = [];
   for (const town of index.towns) {
-    const at = town.key.indexOf(q);
-    if (at < 0) continue;
-    // Best: the query starts the town, or starts in the city and runs into the town. Then: anywhere.
-    const rank = at === town.townAt || at + q.length > town.townAt && at < town.townAt ? 0 : 1;
-    hits.push({ town, rank });
+    const r = rank(town, q);
+    if (r >= 0) hits.push({ town, rank: r });
   }
   return hits
     .sort((a, b) => a.rank - b.rank || a.town.key.length - b.town.key.length || (a.town.key < b.town.key ? -1 : 1))
     .slice(0, limit)
     .map((h) => h.town);
+}
+
+export function searchAddresses(index: AddressIndex, text: string, limit = 4): Town[] {
+  if (!looksLikeAddress(text.slice(0, MAX_QUERY))) return [];
+  for (const q of queryKeys(text)) {
+    const found = search(index, q, limit);
+    if (found.length > 0) return found;
+  }
+  return [];
 }
 
 function bad(message: string): never {

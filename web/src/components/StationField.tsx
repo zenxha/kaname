@@ -1,7 +1,7 @@
-import { useId, useMemo, useState, type KeyboardEvent } from "react";
+import { useDeferredValue, useId, useMemo, useState, type KeyboardEvent } from "react";
 import type { MatrixData, StationRecord } from "../../core/data";
 import { useAddresses } from "../data/addresses";
-import { looksLikeAddress, searchAddresses, type Town } from "../model/address";
+import { looksLikeAddress, MAX_QUERY, searchAddresses, type Town } from "../model/address";
 import { t, type Lang } from "../model/i18n";
 import type { Place } from "../model/scenario";
 import { searchStations } from "../model/search";
@@ -35,15 +35,23 @@ export function StationField({ data, lang, label, value, placeholder, onPick }: 
   const { kana, base } = useStationSearch();
   const [query, setQuery] = useState<string | null>(null);
   const [active, setActive] = useState(0);
-  const addresses = useAddresses(base, query !== null && looksLikeAddress(query));
+  // The list follows the typing a moment behind, so a slow phone never drops a keystroke.
+  const shown = useDeferredValue(query);
+  const wantsAddress = shown !== null && looksLikeAddress(shown);
+  const addresses = useAddresses(base, wantsAddress);
   const options = useMemo<Option[]>(() => {
-    if (!query) return [];
-    const stations = searchStations(data, query, STATIONS_SHOWN, kana).map((station): Option => ({ kind: "station", station }));
-    const towns = addresses.status === "ready" ? searchAddresses(addresses.index, query, ADDRESSES_SHOWN) : [];
+    if (!shown) return [];
+    const stations = searchStations(data, shown, STATIONS_SHOWN, kana).map((station): Option => ({ kind: "station", station }));
+    const towns = addresses.status === "ready" ? searchAddresses(addresses.index, shown, ADDRESSES_SHOWN) : [];
     return [...stations, ...towns.map((town): Option => ({ kind: "address", town }))];
-  }, [data, kana, query, addresses]);
+  }, [data, kana, shown, addresses]);
   const open = query !== null && options.length > 0;
-  const firstAddress = options.findIndex((o) => o.kind === "address");
+  const groups = [
+    { key: "stations", label: t(lang, "stations"), start: 0, options: options.filter((o) => o.kind === "station") },
+    { key: "addresses", label: t(lang, "addresses"), start: options.findIndex((o) => o.kind === "address"), options: options.filter((o) => o.kind === "address") },
+  ].filter((g) => g.options.length > 0)
+    // Addresses always say what they are; stations need a heading only when addresses follow.
+    .map((g, _, all) => ({ ...g, labelled: g.key === "addresses" || all.length > 1 }));
 
   const pick = (i: number) => {
     const o = options[i];
@@ -85,6 +93,7 @@ export function StationField({ data, lang, label, value, placeholder, onPick }: 
           aria-autocomplete="list"
           aria-activedescendant={open ? `${id}-${active}` : undefined}
           autoComplete="off"
+          maxLength={MAX_QUERY}
           placeholder={placeholder}
           value={query ?? value}
           onChange={(e) => {
@@ -95,36 +104,43 @@ export function StationField({ data, lang, label, value, placeholder, onPick }: 
           onBlur={() => setQuery(null)}
         />
         {open && (
-          <ul className="options" role="listbox" id={`${id}-list`} aria-label={label}>
-            {options.map((o, i) => (
-              <li
-                key={o.kind === "station" ? o.station.id : `${o.town.city}${o.town.name}`}
-                id={`${id}-${i}`}
-                role="option"
-                aria-selected={i === active}
-                className={i === firstAddress ? `${o.kind} first-address` : o.kind}
-                data-group={i === firstAddress ? t(lang, "addresses") : undefined}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  pick(i);
-                }}
-              >
-                {o.kind === "station" ? (
-                  <>
-                    <span>{lang === "ja" ? o.station.ja : o.station.en}</span>
-                    <small>{lang === "ja" ? o.station.en : o.station.ja}</small>
-                  </>
-                ) : (
-                  <>
-                    <span>{o.town.name}</span>
-                    <small>{o.town.city}</small>
-                  </>
-                )}
-              </li>
+          <div className="options" role="listbox" id={`${id}-list`} aria-label={label}>
+            {groups.map((g) => (
+              <ul key={g.key} role="group" aria-labelledby={g.labelled ? `${id}-${g.key}` : undefined}>
+                {g.labelled && <li role="presentation" className="group-label" id={`${id}-${g.key}`}>{g.label}</li>}
+                {g.options.map((o, j) => {
+                  const i = g.start + j;
+                  return (
+                    <li
+                      key={o.kind === "station" ? o.station.id : `${o.town.city}${o.town.name}`}
+                      id={`${id}-${i}`}
+                      role="option"
+                      aria-selected={i === active}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        pick(i);
+                      }}
+                    >
+                      {o.kind === "station" ? (
+                        <>
+                          <span>{lang === "ja" ? o.station.ja : o.station.en}</span>
+                          <small>{lang === "ja" ? o.station.en : o.station.ja}</small>
+                        </>
+                      ) : (
+                        <>
+                          <span>{o.town.name}</span>
+                          <small>{o.town.city}</small>
+                        </>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
             ))}
-          </ul>
+          </div>
         )}
       </div>
+      {wantsAddress && addresses.status === "error" && <p className="snap" role="status">{t(lang, "addressesFailed")}</p>}
     </div>
   );
 }

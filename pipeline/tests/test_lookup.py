@@ -5,7 +5,10 @@ from __future__ import annotations
 import io
 import zipfile
 
+import pytest
+
 from kaname_pipeline.lookup import (
+    LookupDataError,
     address_doc,
     hiragana,
     kana_doc,
@@ -82,6 +85,31 @@ def test_read_isj_reads_the_shift_jis_rows_of_a_prefecture_file():
     towns = read_isj(data)
     assert towns[0] == ("東京都渋谷区", "神南一丁目", 139.700363, 35.663128)
     assert len(towns) == 2
+
+
+def test_read_isj_skips_rows_without_a_position():
+    data = isj_zip([
+        '"13","東京都","13113","渋谷区","131130001001","神南一丁目","","139.700363","0","3"',
+        '"13","東京都","13113","渋谷区","131130001002","神南二丁目","35.664000","139.698000","0","3"',
+    ])
+    assert [t[1] for t in read_isj(data)] == ["神南二丁目"]
+
+
+def test_read_isj_reports_a_broken_file_as_a_lookup_error():
+    with pytest.raises(LookupDataError, match="MLIT"):
+        read_isj(b"not a zip")
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("13000-18.0b/13_2024.csv", '"都道府県名","緯度"\r\n"東京都","35.6"'.encode("cp932"))
+    with pytest.raises(LookupDataError, match="column"):
+        read_isj(buf.getvalue())
+
+
+def test_match_kana_orders_tied_readings_the_same_way_every_time():
+    rows = [row("三田駅", "みたえき", 139.7484, 35.6481), row("三田駅", "さんだえき", 139.7484, 35.6481)]
+    stations = [{"id": "mita", "ja": "三田", "lng": 139.7484, "lat": 35.6481}]
+    assert match_kana(stations, rows) == {"mita": ["さんだ", "みた"]}
+    assert match_kana(stations, list(reversed(rows))) == {"mita": ["さんだ", "みた"]}
 
 
 def test_address_doc_groups_by_city_keeps_the_area_and_credits_the_source():

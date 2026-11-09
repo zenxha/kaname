@@ -149,8 +149,8 @@ button { cursor: pointer; }
 .options li { display: flex; align-items: baseline; gap: 8px; padding: 10px; border-radius: 4px; cursor: pointer; min-height: 44px; }
 .options li[aria-selected="true"] { background: var(--ticket); }
 .options li small { color: var(--muted); font-size: 12px; }
-.options li.first-address { margin-top: 22px; position: relative; }
-.options li.first-address::before { content: attr(data-group); position: absolute; left: 10px; top: -20px; font-size: 11px; color: var(--muted); }
+.options ul { list-style: none; margin: 0; padding: 0; }
+.options li.group-label { min-height: 0; padding: 8px 10px 2px; font-size: 11px; color: var(--muted); cursor: default; }
 .check { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; }
 .check input { width: 20px; height: 20px; accent-color: var(--seal); }
 .row { display: flex; gap: 8px; flex-wrap: wrap; }

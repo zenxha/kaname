@@ -1,6 +1,9 @@
 /** Station autocomplete over Japanese and English names, aliases and kana readings. */
 import type { MatrixData, StationRecord } from "../../core/data";
 
+/** Typed text longer than this is cut; no station name is that long. */
+const MAX_QUERY = 100;
+
 /** Kana readings by station index (data/kana.json). */
 export type KanaIndex = ReadonlyMap<number, readonly string[]>;
 
@@ -48,7 +51,7 @@ function matchLevel(keys: readonly string[], q: string): number {
 }
 
 export function searchStations(data: MatrixData, query: string, limit = 8, kana: KanaIndex = NO_KANA): StationRecord[] {
-  const q = fold(query);
+  const q = fold(query.slice(0, MAX_QUERY));
   if (q.length === 0) return [];
   const index = names(data, kana);
   return data.stations

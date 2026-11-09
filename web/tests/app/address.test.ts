@@ -12,6 +12,14 @@ describe("addressKey", () => {
     expect(addressKey("神南１丁目")).toBe("神南1丁目");
     expect(addressKey("銀座十二丁目")).toBe("銀座12丁目");
     expect(addressKey("霞ヶ関 二丁目")).toBe("霞ケ関2丁目");
+    expect(addressKey("十丁目")).toBe("10丁目");
+    expect(addressKey("九十九丁目")).toBe("99丁目");
+    expect(addressKey("一二丁目")).toBe("一二丁目"); // not a number shape: left alone
+  });
+
+  it("treats ヶ, ケ and が the same, as place names are written all three ways", () => {
+    expect(addressKey("霞ヶ関")).toBe(addressKey("霞が関"));
+    expect(addressKey("自由ヶ丘")).toBe(addressKey("自由が丘"));
   });
 });
 
@@ -28,9 +36,24 @@ describe("searchAddresses", () => {
     expect(hits[0]!.at[0]).toBeCloseTo(139.700363, 4);
   });
 
-  it("puts a town that starts with the query before one that only contains it", () => {
-    expect(top("中町")[0]).toMatch(/中町/);
-    expect(searchAddresses(index, "中町", 10).every((t) => t.name.includes("中町"))).toBe(true);
+  it("puts a town that starts with the query first, even when its city has the same name", () => {
+    expect(top("渋谷")[0]).toBe("東京都渋谷区渋谷一丁目");
+    expect(top("渋谷", 4).every((t) => t.startsWith("東京都渋谷区渋谷"))).toBe(true);
+  });
+
+  it("finds 霞が関 when typed with ヶ", () => {
+    expect(top("霞ヶ関1丁目")[0]).toBe("東京都千代田区霞が関一丁目");
+  });
+
+  it("falls back to the town when the number is a 番地, not a 丁目", () => {
+    expect(top("町田市小野路町1234")[0]).toBe("東京都町田市小野路町");
+  });
+
+  it("stays fast and empty on very long input", () => {
+    const t0 = performance.now();
+    expect(searchAddresses(index, "1".repeat(100_000), 4)).toEqual([]);
+    expect(searchAddresses(index, `${"神".repeat(50_000)}1`, 4)).toEqual([]);
+    expect(performance.now() - t0).toBeLessThan(500);
   });
 
   it("does not search Latin text or a single character", () => {

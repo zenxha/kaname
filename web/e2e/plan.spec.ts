@@ -158,8 +158,7 @@ test("a person can be added by typing kana or a street address", async ({ page }
   await page.getByRole("button", { name: "+ Add person" }).click();
   await editor.getByLabel("Name").fill("Eri");
   await editor.getByLabel("From", { exact: true }).fill("渋谷区神南1-2-3");
-  const address = editor.getByRole("option", { name: /神南一丁目/ });
-  await expect(address).toHaveAttribute("data-group", "Addresses");
+  const address = editor.getByRole("group", { name: "Addresses" }).getByRole("option", { name: /神南一丁目/ });
   await address.click();
   await expect(editor.getByLabel("From", { exact: true })).toHaveValue("東京都渋谷区神南一丁目");
   await expect(editor.locator(".snap")).toContainText(/→ Shibuya · \d+ min/);
