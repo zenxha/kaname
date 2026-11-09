@@ -26,9 +26,20 @@ def test_median_picks_lower_middle_and_representative():
     assert stat.minutes == 20 and stat.entry == E(105, 125) and stat.coverage == 20
 
 
-def test_unreachable_when_most_of_window_has_no_journey():
-    stat = window_median([E(100, 110)], 100, 120)
-    assert stat.minutes == INF and stat.entry is None and stat.coverage == 1
+def test_sparse_window_uses_the_covered_minutes():
+    stat = window_median([E(100, 110), E(104, 118)], 100, 120)  # trains stop after minute 104
+    assert (stat.minutes, stat.sparse, stat.coverage) == (14, True, 5)
+    assert stat.entry == E(104, 118)
+
+
+def test_a_later_train_covers_the_minutes_before_it():
+    stat = window_median([E(130, 150)], 100, 120)
+    assert (stat.minutes, stat.sparse, stat.coverage, stat.entry) == (20, False, 20, E(130, 150))
+
+
+def test_unreachable_only_without_any_journey():
+    stat = window_median([], 100, 120)
+    assert stat.minutes == INF and stat.entry is None and stat.coverage == 0
 
 
 def test_empty_window_rejected():
@@ -58,4 +69,10 @@ def test_median_equals_brute_force(raw, w0, length):
         e = first_after(entries, t)
         per_minute.append(e.arr - e.dep if e else INF)
     expected = sorted(per_minute)[(len(per_minute) - 1) // 2]
-    assert window_median(entries, w0, w1).minutes == expected
+    stat = window_median(entries, w0, w1)
+    if expected < INF:
+        assert stat.minutes == expected and not stat.sparse
+    else:
+        finite = sorted(x for x in per_minute if x < INF)
+        assert stat.minutes == (finite[(len(finite) - 1) // 2] if finite else INF)
+        assert stat.sparse == bool(finite)

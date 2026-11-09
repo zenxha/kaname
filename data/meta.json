@@ -74,7 +74,7 @@
         1419
       ],
       "description": "Home median minutes, candidate -> home station",
-      "sha256": "0848b53bd6e6953daddd9c9b3606ad7cfaa0bf79971820969bf406fa156240e0"
+      "sha256": "bcbe0929de2f53259d4bf6340c6b5ec85e93bda365116d5abafbe4571324c370"
     },
     "home_xfer.u8": {
       "dtype": "uint8",
@@ -83,15 +83,15 @@
         1419
       ],
       "description": "Home transfers of the representative journey",
-      "sha256": "d956adbfe526dcd33bece33e5a9fe8b24f500a3d53d972f14ad60d9c3640542b"
+      "sha256": "59a21671e57cd20351bed90a0cdadcb8dfe1b528a5193a35a389877de107449d"
     },
     "home_routes.u16": {
       "dtype": "uint16",
       "shape": [
-        2246103
+        2345131
       ],
       "description": "Home routes, one block per candidate (see home_routes_idx.u32), one route per home station in index order, same encoding as out_routes.u16",
-      "sha256": "ef1d136fbd249719ee745dbd325b98e013716890a3e55347c527992edd196321"
+      "sha256": "54f6353e4f32f5c91da438655ebb548c1d34b80169183a2b3a5950d0532e2ea6"
     },
     "home_routes_idx.u32": {
       "dtype": "uint32",
@@ -99,7 +99,7 @@
         208
       ],
       "description": "Start of each candidate's block in home_routes.u16",
-      "sha256": "e5f630780c4b012e2ccc78fa54a1a7fad1343acc6c6df4060d0b42d124593460"
+      "sha256": "67be18070de57dcb81fd3e5387f57b58f3c5b4f89e015e0304055c35b21b2102"
     },
     "last_dep.u16": {
       "dtype": "uint16",
