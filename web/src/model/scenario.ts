@@ -11,13 +11,19 @@ export interface Person {
   readonly home: Place | null;
 }
 
-/** The design's sample group: four people from the four corners of the network. */
+/**
+ * The example group the app opens with. Each lives at that station in their story: Shizuku (Whisper of
+ * the Heart) at 聖蹟桜ヶ丘, Tora-san (Otoko wa Tsurai yo) at 柴又. They meet at 神保町, the book town.
+ */
 export const DEFAULT_PEOPLE: readonly Person[] = [
-  { id: "p1", label: "Aiko", start: { station: "omiya" }, home: { station: "kichijoji" } },
-  { id: "p2", label: "Ben", start: { station: "yokohama" }, home: { station: "machida" } },
-  { id: "p3", label: "Chie", start: { station: "chiba" }, home: { station: "kinshicho" } },
-  { id: "p4", label: "Dai", start: { station: "tachikawa" }, home: { station: "ueno" } },
+  { id: "p1", label: "Shizuku", start: { station: "seiseki-sakuragaoka" }, home: null },
+  { id: "p2", label: "Tora", start: { station: "shibamata" }, home: null },
 ];
+
+/** True while the group is still the untouched example. */
+export function isExample(people: readonly Person[]): boolean {
+  return people === DEFAULT_PEOPLE;
+}
 
 function nextId(people: readonly Person[]): string {
   const max = people.reduce((m, p) => Math.max(m, Number(p.id.replace(/^p/, "")) || 0), 0);

@@ -11,14 +11,13 @@ interface Props {
   readonly lang: Lang;
   readonly person: Person;
   readonly index: number;
-  readonly color: string;
   readonly startSnap: Snap | undefined;
   readonly onChange: (change: Partial<Omit<Person, "id">>) => void;
   readonly onRemove: () => void;
   readonly onDone: () => void;
 }
 
-export function PersonEditor({ data, lang, person, index, color, startSnap, onChange, onRemove, onDone }: Props) {
+export function PersonEditor({ data, lang, person, index, startSnap, onChange, onRemove, onDone }: Props) {
   const nameId = useId();
   const [locError, setLocError] = useState(false);
   const here = startSnap ? `${t(lang, "useLocation")} · ${lang === "ja" ? startSnap.station.ja : startSnap.station.en}` : t(lang, "useLocation");
@@ -32,12 +31,13 @@ export function PersonEditor({ data, lang, person, index, color, startSnap, onCh
   };
   const station = (id: string): Place => ({ station: id });
   return (
-    <section className="card editor" aria-label={t(lang, "editPerson", { who: person.label || `#${index + 1}` })}>
+    <section className="editor" aria-label={t(lang, "editPerson", { who: person.label || `#${index + 1}` })}>
       <div className="editor-head">
-        <span className="dot" style={{ background: color }} aria-hidden="true">{index + 1}</span>
+        <span className="badge" aria-hidden="true">{index + 1}</span>
         <div className="field" style={{ flex: 1 }}>
           <label htmlFor={nameId}>{t(lang, "name")}</label>
-          <input id={nameId} className="input" value={person.label} maxLength={40} autoFocus onChange={(e) => onChange({ label: e.target.value })} />
+          <input id={nameId} className="input" value={person.label} maxLength={40} autoFocus placeholder={t(lang, "namePlaceholder")}
+            onChange={(e) => onChange({ label: e.target.value })} />
         </div>
       </div>
       <StationField

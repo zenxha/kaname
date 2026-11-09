@@ -1,26 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { MapView, OPENFREEMAP_DARK, type MapCandidate } from "./components/MapView";
-import { PeoplePanel } from "./components/PeoplePanel";
-import { Controls, NextBest, ResultCard } from "./components/ResultPanel";
+import { Alternatives, SHOWN } from "./components/Alternatives";
+import { Controls } from "./components/Controls";
+import { PeopleList } from "./components/PeopleList";
+import { Sheet } from "./components/Sheet";
+import { Ticket } from "./components/Ticket";
 import type { AppData } from "./data/load";
 import { useAppData, useRouteBlocks } from "./data/useAppData";
+import { MapView, type MapText } from "./map/MapView";
+import type { MapGone, MapStation, Padding } from "./map/types";
 import { t, type Lang } from "./model/i18n";
-import { DEFAULT_PEOPLE, type Person } from "./model/scenario";
-import { buildMapPeople, fitKey, personRoutes, stationIndex, toMapCandidate, useOutcome } from "./usePlan";
-
-/** Below this width the cards stack under the map (the floating columns need about 1000 px). */
-const STACKED = "(max-width: 900px)";
-
-function useStacked(): boolean {
-  const [stacked, setStacked] = useState(() => window.matchMedia(STACKED).matches);
-  useEffect(() => {
-    const mq = window.matchMedia(STACKED);
-    const on = () => setStacked(mq.matches);
-    mq.addEventListener("change", on);
-    return () => mq.removeEventListener("change", on);
-  }, []);
-  return stacked;
-}
+import { DEFAULT_PEOPLE, isExample, type Person } from "./model/scenario";
+import { visibleHeight, type Snap } from "./model/sheet";
+import { buildMapPeople, centre, fitKey, personRoutes, stationIndex, toMapStation, useOutcome } from "./usePlan";
+import { useStacked, useTheme, useViewportHeight } from "./useScreen";
 
 export function App() {
   const loaded = useAppData(import.meta.env.BASE_URL);
@@ -30,7 +22,7 @@ export function App() {
   }, [lang]);
   if (loaded.status !== "ready") {
     const msg = loaded.status === "loading" ? t(lang, "loading") : t(lang, "loadError", { msg: loaded.message });
-    return <main className="notice" role={loaded.status === "error" ? "alert" : "status"}>{msg}</main>;
+    return <main className="notice-page" role={loaded.status === "error" ? "alert" : "status"}>{msg}</main>;
   }
   return <Planner data={loaded.data} lang={lang} setLang={setLang} />;
 }
@@ -42,64 +34,106 @@ interface PlannerProps {
 }
 
 /** `?basemap=none` (tests) or a build with VITE_BASEMAP=none (sandboxed previews that block tile hosts). */
-const BASEMAP = new URLSearchParams(window.location.search).get("basemap") === "none" || import.meta.env.VITE_BASEMAP === "none"
-  ? null : OPENFREEMAP_DARK;
+const BASEMAP = !(new URLSearchParams(window.location.search).get("basemap") === "none" || import.meta.env.VITE_BASEMAP === "none");
+/** Map space the brand bar and the station labels need, beside the sheet or panel. */
+const PHONE_PAD = { top: 64, left: 28, right: 96 };
+const DESKTOP_PAD = { top: 60, bottom: 60, left: 440, right: 120 };
+
+function useMapText(lang: Lang): MapText {
+  return useMemo(() => ({
+    label: t(lang, "mapLabel"),
+    minutes: (n: number) => t(lang, "minutes", { n }),
+    whyHere: (station: string) => t(lang, "whyHere", { station }),
+    showTrip: (who: string) => t(lang, "showTrip", { who }),
+    showStation: (station: string, n: number) => t(lang, "showStation", { station, n }),
+    gone: (station: string) => t(lang, "lastTrainGone", { station }),
+  }), [lang]);
+}
 
 function Planner({ data, lang, setLang }: PlannerProps) {
   const m = data.matrix;
   const stacked = useStacked();
+  const theme = useTheme();
+  const viewport = useViewportHeight();
   const [people, setPeople] = useState<readonly Person[]>(DEFAULT_PEOPLE);
   const [alpha, setAlpha] = useState(0.5);
   const [meetingEnd, setMeetingEnd] = useState<number | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [focus, setFocus] = useState<string | null>(null);
+  const [snap, setSnap] = useState<Snap>("peek");
 
   const outcome = useOutcome(m, people, alpha, meetingEnd, selected);
+  const result = outcome.kind === "ok" ? outcome.result : null;
   const best = outcome.kind === "ok" ? outcome.best : null;
+  const first = result?.candidates[0] ?? null;
   const blocks = useRouteBlocks(data, best ? stationIndex(m, best.station.id) : null);
   const routes = useMemo(() => personRoutes(m, best, blocks.blocks), [m, best, blocks.blocks]);
-  const mapPeople = useMemo(() => buildMapPeople(m, best, routes, people), [m, best, routes, people]);
+  const mapPeople = useMemo(() => buildMapPeople(m, best, routes, people, blocks.error), [m, best, routes, people, blocks.error]);
   const name = useCallback((s: { readonly ja: string; readonly en: string }) => (lang === "ja" ? s.ja : s.en), [lang]);
-  const meet = useMemo<MapCandidate | null>(() => (best ? toMapCandidate(m, best, name(best.station)) : null), [best, m, name]);
-  const others = useMemo<MapCandidate[]>(() => (outcome.kind === "ok" ? outcome.result.candidates.slice(0, 5)
-    .filter((c) => c.station.id !== best?.station.id).map((c) => toMapCandidate(m, c, name(c.station))) : []), [outcome, best, m, name]);
-  const minutesLabel = useCallback((n: number) => t(lang, "minutes", { n }), [lang]);
-  const padding = useMemo(() => (stacked ? { top: 40, bottom: 30, left: 30, right: 30 } : { top: 60, bottom: 60, left: 350, right: 320 }), [stacked]);
+  const meet = useMemo<MapStation | null>(() => (best ? toMapStation(m, best, best.station.ja) : null), [best, m]);
+  const others = useMemo<MapStation[]>(() => (result ? result.candidates.slice(0, SHOWN)
+    .filter((c) => c.station.id !== best?.station.id).map((c) => toMapStation(m, c, name(c.station))) : []), [result, best, m, name]);
+  const dropped = outcome.kind === "ok" ? outcome.dropped : null;
+  const gone = useMemo<MapGone | null>(() => (dropped ? { at: centre(m, dropped.station.id), name: dropped.station.ja } : null), [dropped, m]);
+  const mapText = useMapText(lang);
+  const padding = useMemo<Padding>(() => (stacked
+    ? { ...PHONE_PAD, bottom: visibleHeight(snap === "full" ? "half" : snap, viewport) + 16 }
+    : DESKTOP_PAD), [stacked, snap, viewport]);
 
+  const raise = useCallback(() => setSnap((s) => (s === "peek" ? "half" : s)), []);
+  const openPerson = useCallback((id: string) => {
+    setFocus((f) => (f === id ? null : id));
+    raise();
+  }, [raise]);
+  const pick = useCallback((id: string) => {
+    setSelected(id);
+    setFocus(null);
+  }, []);
   /** Every edit works on the latest state; a change of who goes where drops the hand-picked station. */
   const edit = useCallback((update: (prev: readonly Person[]) => readonly Person[], movesSomeone: boolean) => {
     setPeople(update);
-    if (movesSomeone) setSelected(null);
+    if (movesSomeone) {
+      setSelected(null);
+      setFocus(null);
+    }
   }, []);
+  const reset = () => {
+    setSelected(null);
+    setFocus(null);
+  };
 
   return (
     <div className="app">
-      <MapView basemap={BASEMAP} label={t(lang, "mapLabel")} people={mapPeople} meet={meet} others={others}
-        minutesLabel={minutesLabel} onSelect={setSelected} fitKey={fitKey(best)} padding={padding} />
-      <aside className="column left" aria-label={t(lang, "people", { n: people.length })}>
-        <header className="card brand">
-          <span className="brand-name"><b>Kaname</b><span>要</span></span>
+      <MapView theme={theme} basemap={BASEMAP} text={mapText} people={mapPeople} meet={meet} others={others} gone={gone}
+        focus={focus} drawKey={fitKey(best)} fitKey={fitKey(best)} padding={padding}
+        onPerson={openPerson} onStation={pick} onMeet={raise} />
+      <header className="topbar">
+        <span className="brand"><i aria-hidden="true">要</i>Kaname</span>
+        <span className="topbar-end">
+          {isExample(people) && <span className="pill">{t(lang, "example")}</span>}
           <span className="lang">
             <button type="button" aria-pressed={lang === "en"} onClick={() => setLang("en")}>EN</button>
-            <button type="button" aria-pressed={lang === "ja"} onClick={() => setLang("ja")} style={{ fontFamily: "var(--sans)" }}>日本語</button>
+            <button type="button" aria-pressed={lang === "ja"} onClick={() => setLang("ja")}>日本語</button>
           </span>
-        </header>
-        <PeoplePanel data={m} lang={lang} people={people} outcome={outcome} routes={routes} meetingEnd={meetingEnd} edit={edit} />
-      </aside>
-      <aside className="column right" aria-label={t(lang, "meetAt")}>
-        {outcome.kind === "needTwo" && <p className="card notice">{t(lang, "needTwo")}</p>}
-        {outcome.kind === "error" && <p className="card notice" role="alert">{outcome.message}</p>}
-        {outcome.kind === "ok" && best === null && <p className="card notice" role="alert">{t(lang, "noFeasible")}</p>}
-        {blocks.error && <p className="card notice" role="alert">{t(lang, "routesError")}</p>}
-        {best && <ResultCard lang={lang} best={best} />}
-        {outcome.kind === "ok" && outcome.result.candidates.length > 1 && (
-          <NextBest lang={lang} candidates={outcome.result.candidates} selected={best?.station.id ?? ""} onSelect={setSelected} />
+        </span>
+      </header>
+      <Sheet stacked={stacked} snap={snap} viewport={viewport} onSnap={setSnap} label={t(lang, "result")}
+        moreLabel={t(lang, "showMore")} lessLabel={t(lang, "showLess")}>
+        {outcome.kind === "needTwo" && <p className="notice">{t(lang, "needTwo")}</p>}
+        {outcome.kind === "error" && <p className="notice" role="alert">{outcome.message}</p>}
+        {outcome.kind === "ok" && best === null && <p className="notice" role="alert">{t(lang, "noFeasible")}</p>}
+        {blocks.error && <p className="notice" role="alert">{t(lang, "routesError")}</p>}
+        {best && first && <Ticket lang={lang} shown={best} first={first} dropped={dropped} open={snap !== "peek"} onOpen={raise} />}
+        <PeopleList data={m} lang={lang} people={people} outcome={outcome} routes={routes} meetingEnd={meetingEnd}
+          open={focus} onOpen={openPerson} edit={edit} />
+        {result && result.candidates.length > 1 && (
+          <Alternatives lang={lang} candidates={result.candidates} selected={best?.station.id ?? ""} onSelect={pick} />
         )}
-        <Controls lang={lang} alpha={alpha} meetingEnd={meetingEnd}
-          excluded={outcome.kind === "ok" ? outcome.result.excluded : []}
-          onAlpha={(a) => { setAlpha(a); setSelected(null); }}
-          onMeetingEnd={(e) => { setMeetingEnd(e); setSelected(null); }} />
-      </aside>
-      <footer className="attribution">{t(lang, "attribution")}</footer>
+        <Controls lang={lang} alpha={alpha} meetingEnd={meetingEnd} excluded={result?.excluded ?? []}
+          onAlpha={(a) => { setAlpha(a); reset(); }}
+          onMeetingEnd={(e) => { setMeetingEnd(e); reset(); }} />
+        <footer className="attribution">{t(lang, "attribution")}</footer>
+      </Sheet>
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { addPerson, DEFAULT_PEOPLE, removePerson, toParticipants, updatePerson, type Person } from "../../src/model/scenario";
-import { personColor, PERSON_COLORS } from "../../src/model/palette";
-import { STRINGS, t } from "../../src/model/i18n";
+import { addPerson, DEFAULT_PEOPLE, isExample, removePerson, toParticipants, updatePerson, type Person } from "../../src/model/scenario";
+import { alphaNote, STRINGS, t } from "../../src/model/i18n";
 import { personSummary, spareMinutes, TIGHT_MIN } from "../../src/model/summary";
 import { rank } from "../../core/rank";
 import { real } from "../realData";
@@ -32,22 +31,31 @@ describe("scenario state", () => {
     ]);
   });
 
-  it("the default group ranks on the real data", () => {
+  it("opens on Shizuku and Tora, who meet at 神保町", () => {
     const r = rank(toParticipants(DEFAULT_PEOPLE), {}, real);
     expect(r.candidates.length).toBe(10);
+    expect(r.candidates[0]!.station.ja).toBe("神保町");
+    expect(isExample(DEFAULT_PEOPLE)).toBe(true);
+    expect(isExample(updatePerson(DEFAULT_PEOPLE, "p1", { label: "Mei" }))).toBe(false);
   });
 });
 
-describe("palette and strings", () => {
-  it("gives 20 distinct person colors and repeats after that", () => {
-    expect(new Set(PERSON_COLORS).size).toBe(20);
-    expect(personColor(0)).toBe(personColor(20));
-  });
-
+describe("strings", () => {
   it("has every string in both languages", () => {
     expect(Object.keys(STRINGS.ja).sort()).toEqual(Object.keys(STRINGS.en).sort());
-    expect(t("en", "meetAt")).toBe("MEET AT");
+    expect(t("en", "meetAt")).toBe("Meet at");
     expect(t("ja", "people", { n: 4 })).toContain("4");
+  });
+
+  it("uses no letter-spaced capitals: every English label is sentence case", () => {
+    const shouting = Object.entries(STRINGS.en).filter(([, v]) => /\b[A-Z]{3,}\b/.test(v.replace(/MLIT|MIT|BY/g, "")));
+    expect(shouting).toEqual([]);
+  });
+
+  it("explains the slider position in words", () => {
+    expect(alphaNote(1)).toBe("noteEfficient");
+    expect(alphaNote(0.5)).toBe("noteBalanced");
+    expect(alphaNote(0)).toBe("noteFair");
   });
 });
 

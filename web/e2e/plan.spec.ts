@@ -1,7 +1,15 @@
-/** M3 gate: a 5-person scenario works end to end, on a phone viewport and on a desktop. */
+/** M3 gate, iteration 2: the journey works end to end, on a phone viewport and on a desktop. */
 import { expect, test, type Page } from "@playwright/test";
 
 const APP = "/?basemap=none"; // no tile requests: the test checks the app, not the tile server
+
+/** On a phone the result is a sheet; open it fully so every control is on screen. */
+async function openSheet(page: Page): Promise<void> {
+  const sheet = page.locator(".sheet");
+  if ((await sheet.count()) === 0) return;
+  for (let i = 0; i < 3 && (await sheet.getAttribute("data-snap")) !== "full"; i++) await page.locator(".grab").click();
+  await expect(sheet).toHaveAttribute("data-snap", "full");
+}
 
 async function pickStation(page: Page, label: "From" | "Home", query: string, option: RegExp): Promise<void> {
   const editor = page.locator("section.editor");
@@ -9,74 +17,92 @@ async function pickStation(page: Page, label: "From" | "Home", query: string, op
   await editor.getByRole("option", { name: option }).first().click();
 }
 
-test("the sample group gets a meeting station, routes and a ranking", async ({ page }) => {
+async function addPerson(page: Page, name: string, query: string, option: RegExp): Promise<void> {
+  await page.getByRole("button", { name: "+ Add person" }).click();
+  await page.locator("section.editor").getByLabel("Name").fill(name);
+  await pickStation(page, "From", query, option);
+  await page.locator("section.editor").getByRole("button", { name: "Done" }).click();
+}
+
+async function remove(page: Page, id: string): Promise<void> {
+  await page.locator(`[data-person="${id}"]`).click();
+  await page.locator(".prow.open").getByRole("button", { name: /^Edit / }).click();
+  await page.locator("section.editor").getByRole("button", { name: "Remove" }).click();
+}
+
+test("the example group opens on 神保町: lines draw in, the seal stamps, five stations rank", async ({ page }) => {
   await page.goto(APP);
-  await expect(page.getByText("MEET AT")).toBeVisible();
-  await expect(page.locator(".result-name b")).not.toBeEmpty();
-  await expect(page.getByRole("button", { name: /^Edit / })).toHaveCount(4);
-  await expect(page.locator(".mk-start")).toHaveCount(4);
-  await expect(page.locator(".mk-meet")).toHaveCount(1);
-  await expect(page.locator(".next li")).toHaveCount(5);
+  await expect(page.locator(".t-lab")).toHaveText("Meet at");
+  await expect(page.locator(".t-name b")).toHaveText("神保町");
+  await expect(page.locator(".pill")).toHaveText("Example group");
+  await expect(page.locator(".mk-person")).toHaveCount(2);
+  await expect(page.locator(".mk-meet .seal")).not.toHaveClass(/wait/);
+  await expect(page.locator(".others li")).toHaveCount(5);
+  await expect(page.locator("[data-person]")).toHaveCount(2);
 });
 
-test("a fifth person, a meeting end, a different pick, fairness and Japanese all work", async ({ page }) => {
+test("tapping a person opens their trip and fades everyone else", async ({ page }) => {
   await page.goto(APP);
-  await expect(page.getByText("MEET AT")).toBeVisible();
+  await openSheet(page);
+  await page.locator('[data-person="p2"]').click();
+  await expect(page.locator(".prow.open .itin li").first()).toHaveText("Board the Kanamachi Line at Shibamata");
+  await expect(page.locator(".prow.open .itin")).toContainText("Get off at Jimbocho");
+  await expect(page.locator(".mk-person.dimmed")).toHaveCount(1);
+  await page.locator('[data-person="p2"]').click();
+  await expect(page.locator(".prow.open")).toHaveCount(0);
+  await expect(page.locator(".mk-person.dimmed")).toHaveCount(0);
+});
 
-  await page.getByRole("button", { name: "＋ Add person" }).click();
-  const editor = page.locator("section.editor");
-  await editor.getByLabel("Name").fill("Emi");
-  await pickStation(page, "From", "shibuya", /^渋谷 ?Shibuya|^Shibuya/);
-  await editor.getByLabel("Home is the same as From").uncheck();
-  await pickStation(page, "Home", "funabashi", /Funabashi/);
-  await editor.getByRole("button", { name: "Done" }).click();
+test("another station, the slider, a third person and a meeting end each say what changed", async ({ page }) => {
+  await page.goto(APP);
+  await expect(page.locator(".t-name b")).toHaveText("神保町");
+  await openSheet(page);
 
-  const emi = page.getByRole("button", { name: /^Edit Emi\b/ });
-  await expect(emi).toBeVisible();
-  await expect(emi).toContainText(/Shibuya → .* → Funabashi/);
-  await expect(emi).toContainText(/\d+ min/);
-  await expect(page.getByRole("button", { name: /^Edit / })).toHaveCount(5);
-  await expect(page.locator(".mk-start")).toHaveCount(5);
+  await page.locator(".others li").nth(1).getByRole("button").click();
+  await expect(page.locator(".t-lab")).toHaveText("Number 2 of the ranking");
+  await expect(page.locator(".t-name b")).toHaveText("九段下");
+  await expect(page.locator(".ticket")).toContainText("Same average as Jimbocho. Shizuku's trip is 3 min shorter, Tora's trip is 3 min longer.");
 
-  await page.getByLabel("Meeting ends").fill("23:40");
-  await expect(page.locator(".excluded summary")).toContainText(/\d+ stations left out/);
+  await page.getByLabel("Efficient to fair").fill("0");
+  await expect(page.locator(".t-name b")).toHaveText("日暮里");
+  await expect(page.locator(".note")).toHaveText("Efficient: the lowest average, even if one trip gets long.");
+  await page.getByLabel("Efficient to fair").fill("50");
+  await expect(page.locator(".t-name b")).toHaveText("神保町");
 
-  const second = page.locator(".next li button").nth(1);
-  const secondName = (await second.locator(".name").innerText()).split("\n")[0]!.replace(/[A-Za-z].*$/, "").trim();
-  await second.click();
-  await expect(page.locator(".result-name b")).toHaveText(secondName);
+  await addPerson(page, "Hitori", "kanazawa-hakkei", /Kanazawa-hakkei/);
+  await expect(page.locator(".t-name b")).toHaveText("品川");
+  await expect(page.locator(".pill")).toHaveCount(0);
+  await expect(page.locator(".mk-person")).toHaveCount(3);
 
-  const before = await page.locator(".stat b").last().innerText();
-  await page.getByLabel("Efficient to fair").fill("100");
-  await expect(page.locator(".stat b").last()).not.toHaveText("");
-  expect(Number(await page.locator(".stat b").last().innerText())).toBeLessThanOrEqual(Number(before) + 0);
+  await page.getByLabel("Meeting ends").fill("23:30");
+  await expect(page.locator(".t-name b")).toHaveText("東京");
+  await expect(page.locator(".ticket")).toContainText("Shinagawa would be first, but someone cannot get home from it.");
+  await expect(page.locator(".ticket")).toContainText("Tora's last train home leaves Shinagawa at 23:18.");
+  await expect(page.locator(".mk-gone")).toHaveCount(1);
 
   await page.getByRole("button", { name: "日本語" }).click();
-  await expect(page.getByText("待ち合わせ")).toBeVisible();
+  await expect(page.locator(".t-lab")).toHaveText("待ち合わせ");
   await expect(page.locator("html")).toHaveAttribute("lang", "ja");
 });
 
 test("fewer than two people asks for more", async ({ page }) => {
   await page.goto(APP);
-  for (let i = 0; i < 3; i++) {
-    await page.getByRole("button", { name: /^Edit / }).first().click();
-    await page.locator("section.editor").getByRole("button", { name: "Remove" }).click();
-  }
+  await openSheet(page);
+  await remove(page, "p1");
   await expect(page.getByText("Add at least two people")).toBeVisible();
 });
 
-test("removing someone in the middle renumbers the cards and the map markers together", async ({ page }) => {
+test("removing someone in the middle renumbers the rows and the map markers together", async ({ page }) => {
   await page.goto(APP);
-  await page.getByRole("button", { name: /^Edit Ben\b/ }).click();
-  await page.locator("section.editor").getByRole("button", { name: "Remove" }).click();
-  await expect(page.getByRole("button", { name: "＋ Add person" })).toBeFocused();
-  await expect(page.locator(".person .dot")).toHaveText(["1", "2", "3"]);
-  await expect(page.locator(".mk-start")).toHaveText(["1", "2", "3"]);
-  await page.getByRole("button", { name: "＋ Add person" }).click();
-  await expect(page.locator("section.editor").getByLabel("Name")).toBeFocused();
-  await pickStation(page, "From", "ikebukuro", /Ikebukuro/);
-  await page.locator("section.editor").getByRole("button", { name: "Done" }).click();
-  await expect(page.locator(".person .dot")).toHaveText(["1", "2", "3", "4"]);
-  await expect(page.locator(".mk-start")).toHaveCount(4);
-  await expect(page.locator('[data-person="p5"]')).toBeFocused();
+  await openSheet(page);
+  await addPerson(page, "Hitori", "kanazawa-hakkei", /Kanazawa-hakkei/);
+  await expect(page.locator(".prow .badge")).toHaveText(["1", "2", "3"]);
+  await remove(page, "p2");
+  await expect(page.getByRole("button", { name: "+ Add person" })).toBeFocused();
+  await expect(page.locator(".prow .badge")).toHaveText(["1", "2"]);
+  await expect(page.locator(".mk-badge")).toHaveText(["1", "2"]);
+  await addPerson(page, "Celty", "ikebukuro", /Ikebukuro/);
+  await expect(page.locator(".prow .badge")).toHaveText(["1", "2", "3"]);
+  await expect(page.locator(".mk-person")).toHaveCount(3);
+  await expect(page.locator('[data-person="p4"]')).toBeFocused();
 });
