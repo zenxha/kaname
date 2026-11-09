@@ -8,6 +8,10 @@
  * and goes home to a random town point from data/addresses.json. Town points are densest where most
  * people live, so homes follow the population without a population table. The output shows what each
  * value costs on the average and on the longest trip, and how often it changes the winner.
+ *
+ * Known bias: starts are uniform over the candidates, not weighted by ridership. A person whom the
+ * engine cannot plan with the rest of the group is drawn again, which leans homes toward places with
+ * good evening trains.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -25,6 +29,8 @@ export interface TuneGroup {
 
 const MIN_SIZE = 2;
 const MAX_SIZE = 8;
+/** Draws for one person before the study gives up, so data that plans nobody cannot hang it. */
+const MAX_DRAWS = 200;
 
 /** mulberry32: a small, seeded random number generator, so a study can be run again exactly. */
 function random(seed: number): () => number {
@@ -53,17 +59,23 @@ function samplePerson(data: MatrixData, towns: readonly Town[], next: () => numb
   return { label, start: { station: start.id }, home: { lng: town.at[0], lat: town.at[1] } };
 }
 
-/** `count` groups of 2 to 8 people. A person the engine cannot plan (no train home) is drawn again. */
+/** A person that the engine can plan together with `others`: a train home, and a station for all. */
+function drawPerson(data: MatrixData, towns: readonly Town[], next: () => number, label: string,
+  others: readonly ParticipantInput[]): ParticipantInput {
+  for (let i = 0; i < MAX_DRAWS; i++) {
+    const p = samplePerson(data, towns, next, label);
+    if (plannable(data, [...others, p])) return p;
+  }
+  throw new Error(`could not sample a person that the engine can plan, in ${MAX_DRAWS} draws`);
+}
+
+/** `count` groups of 2 to 8 people, each one a group that the engine can plan. */
 export function sampleGroups(data: MatrixData, towns: readonly Town[], seed: number, count: number): TuneGroup[] {
   const next = random(seed);
   return Array.from({ length: count }, () => {
     const size = MIN_SIZE + Math.floor(next() * (MAX_SIZE - MIN_SIZE + 1));
-    const people = Array.from({ length: size }, (_, i) => {
-      for (;;) {
-        const p = samplePerson(data, towns, next, `p${i + 1}`);
-        if (plannable(data, [p])) return p;
-      }
-    });
+    const people = Array.from({ length: size }).reduce<readonly ParticipantInput[]>(
+      (group, _, i) => [...group, drawPerson(data, towns, next, `p${i + 1}`, group)], []);
     return { people };
   });
 }

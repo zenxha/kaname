@@ -22,6 +22,11 @@ describe("sampleGroups", () => {
     }
   });
 
+  it("stops with a clear error when no person can be planned, instead of trying forever", () => {
+    const osaka = [{ ...towns[0]!, at: [135.5, 34.69] as const }];
+    expect(() => sampleGroups(real, osaka, 1, 1)).toThrow(/could not sample/);
+  });
+
   it("starts each person at a meeting candidate and sends them home to a town point", () => {
     for (const p of groups.flatMap((g) => g.people)) {
       expect("station" in p.start && real.byId.get(p.start.station)! < real.nCandidates).toBe(true);

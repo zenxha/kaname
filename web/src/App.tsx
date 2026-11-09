@@ -138,7 +138,7 @@ function Planner({ data, lang, setLang }: PlannerProps) {
       <Sheet stacked={stacked} snap={sheetSnap} viewport={viewport} onSnap={setSnap} label={t(lang, "result")}
         moreLabel={t(lang, "showMore")} lessLabel={t(lang, "showLess")} head={<>
           {outcome.kind === "needTwo" && <p className="notice">{t(lang, "needTwo")}</p>}
-          {outcome.kind === "error" && <p className="notice" role="alert">{problemText(lang, outcome.error)}</p>}
+          {outcome.kind === "error" && <p className="notice" role="alert">{problemText(lang, outcome.error, m.windows)}</p>}
           {outcome.kind === "ok" && best === null && <p className="notice" role="alert">{t(lang, "noFeasible")}</p>}
           {blocks.error && <p className="notice" role="alert">{t(lang, "routesError")}</p>}
           {fromLink && opening.unknown > 0 && <p className="notice" role="alert">{t(lang, "unknownStations", { n: opening.unknown })}</p>}

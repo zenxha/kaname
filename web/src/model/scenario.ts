@@ -1,5 +1,5 @@
 /** The group being planned, as the UI edits it. Every update returns a new array. */
-import { MAX_PARTICIPANTS } from "../../core/participants";
+import { MAX_LABEL_LENGTH, MAX_PARTICIPANTS } from "../../core/participants";
 import type { LocationInput, ParticipantInput } from "../../core/types";
 
 /** A station, or a point: a location from the phone, or an address with the text the person picked. */
@@ -54,17 +54,29 @@ export function removePerson(people: readonly Person[], id: string): Person[] {
   return people.filter((p) => p.id !== id);
 }
 
+/** The name as typed, trimmed. A name of only spaces or invisible characters counts as no name. */
+export function visibleName(label: string): string {
+  return label.replace(/[\s\p{Cf}]/gu, "") === "" ? "" : label.trim();
+}
+
+/** `base` and then `suffix`, with `base` cut so the whole fits the engine's label limit. */
+function fitLabel(base: string, suffix: string): string {
+  const chars = Array.from(base);
+  while (chars.join("").length + suffix.length > MAX_LABEL_LENGTH) chars.pop();
+  return `${chars.join("")}${suffix}`;
+}
+
 /**
  * The engine needs a different label for each person. Two friends can share a name, so a repeated
  * name gets the person's number in the list: Aki and Aki (3).
  */
 function uniqueLabel(label: string, n: number, taken: ReadonlySet<string>): string {
   if (!taken.has(label)) return label;
-  const numbered = `${label} (${n})`;
+  const numbered = fitLabel(label, ` (${n})`);
   if (!taken.has(numbered)) return numbered;
   let k = 2;
-  while (taken.has(`${numbered} ${k}`)) k++;
-  return `${numbered} ${k}`;
+  while (taken.has(fitLabel(label, ` (${n}) ${k}`))) k++;
+  return fitLabel(label, ` (${n}) ${k}`);
 }
 
 /** People with a start become engine participants; an unnamed person is named by their number. */
@@ -72,7 +84,7 @@ export function toParticipants(people: readonly Person[], unnamed: (n: number) =
   type Step = { readonly taken: ReadonlySet<string>; readonly out: readonly ParticipantInput[] };
   const step = (acc: Step, p: Person, i: number): Step => {
     if (p.start === null) return acc;
-    const label = uniqueLabel(p.label.trim() || unnamed(i + 1), i + 1, acc.taken);
+    const label = uniqueLabel(visibleName(p.label) || unnamed(i + 1), i + 1, acc.taken);
     const start = toLocation(p.start);
     const participant: ParticipantInput = p.home === null ? { label, start } : { label, start, home: toLocation(p.home) };
     return { taken: new Set([...acc.taken, label]), out: [...acc.out, participant] };

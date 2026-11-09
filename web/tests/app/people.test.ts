@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { RankError } from "../../core/errors";
 import { MAX_PARTICIPANTS } from "../../core/participants";
 import { rank } from "../../core/rank";
+import { DEFAULT_WINDOWS } from "../../core/data";
 import { problemText } from "../../src/model/problem";
 import { addPerson, canAddPerson, toParticipants, type Person } from "../../src/model/scenario";
 import { real } from "../realData";
@@ -37,6 +38,17 @@ describe("people with the same name", () => {
     expect(() => rank(toParticipants(people), {}, real)).not.toThrow();
   });
 
+  it("stay within the engine's label limit, even for long names in emoji", () => {
+    const long = "🚃".repeat(40);
+    const people = [person("p1", long, "tokyo"), person("p2", long, "shinjuku")];
+    expect(() => rank(toParticipants(people), {}, real)).not.toThrow();
+  });
+
+  it("treat a name of only invisible characters as no name", () => {
+    const people = [person("p1", "\u200b", "tokyo"), person("p2", "Ben", "shinjuku")];
+    expect(toParticipants(people, (n) => `Person ${n}`)[0]!.label).toBe("Person 1");
+  });
+
   it("stay different when a name looks like the label of an unnamed person", () => {
     const people = [person("p1", "Person 2", "tokyo"), person("p2", "", "shinjuku"), person("p3", "Person 2 (3)", "chiba"), person("p4", "Person 2", "omiya")];
     const labels = toParticipants(people, (n) => `Person ${n}`).map((p) => p.label);
@@ -54,17 +66,20 @@ describe("a group the engine cannot plan", () => {
 
   it("explains the problem in the reader's language, with the person's name", () => {
     const home = new RankError("UNROUTABLE_STATION", "x", { participant: "Aki", place: "home" });
-    expect(problemText("en", home)).toContain("Aki");
-    expect(problemText("ja", home)).toContain("Aki");
-    expect(problemText("ja", home)).not.toBe(problemText("en", home));
+    expect(problemText("en", home, DEFAULT_WINDOWS)).toContain("Aki");
+    expect(problemText("en", home, DEFAULT_WINDOWS)).toContain("21:00");
+    expect(problemText("en", home, { ...DEFAULT_WINDOWS, home: ["20:00", "22:30"] })).toContain("22:30");
+    expect(problemText("ja", home, DEFAULT_WINDOWS)).toContain("Aki");
+    expect(problemText("ja", home, DEFAULT_WINDOWS)).not.toBe(problemText("en", home, DEFAULT_WINDOWS));
     const far = new RankError("LOCATION_TOO_FAR", "x", { participant: "Ben", place: "start" });
-    expect(problemText("en", far)).toMatch(/Ben/);
-    expect(problemText("en", far)).not.toBe(problemText("en", home));
+    expect(problemText("en", far, DEFAULT_WINDOWS)).toMatch(/Ben.*2 km/);
+    expect(problemText("en", far, DEFAULT_WINDOWS)).not.toBe(problemText("en", home, DEFAULT_WINDOWS));
   });
 
-  it("falls back to a general message with the engine's detail", () => {
+  it("falls back to a general message, never the engine's English, in either language", () => {
     const other = new RankError("BAD_OPTION", "no route for station 5");
-    expect(problemText("en", other)).toContain("no route for station 5");
-    expect(problemText("ja", other)).toContain("no route for station 5");
+    expect(problemText("en", other, DEFAULT_WINDOWS)).not.toContain("no route");
+    expect(problemText("ja", other, DEFAULT_WINDOWS)).not.toContain("no route");
+    expect(problemText("ja", other, DEFAULT_WINDOWS)).not.toBe(problemText("en", other, DEFAULT_WINDOWS));
   });
 });

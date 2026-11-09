@@ -4,7 +4,7 @@ import type { MatrixData } from "../../core/data";
 import { MAX_PARTICIPANTS } from "../../core/participants";
 import { earliestLastTrain } from "../model/compare";
 import { t, type Lang } from "../model/i18n";
-import { addPerson, canAddPerson, removePerson, updatePerson, type Person } from "../model/scenario";
+import { addPerson, canAddPerson, removePerson, updatePerson, visibleName, type Person } from "../model/scenario";
 import { scoredIndexes, stationIndex, type Outcome, type PersonRoute } from "../usePlan";
 import { PersonEditor } from "./PersonEditor";
 import { PersonRow } from "./PersonRow";
@@ -49,7 +49,7 @@ export function PeopleList({ data, lang, people, outcome, routes, open, onOpen, 
       <ol className="prows">
         {people.map((p, i) => {
           const j = slots.indexOf(i);
-          const label = p.label.trim() || t(lang, "personN", { n: i + 1 });
+          const label = visibleName(p.label) || t(lang, "personN", { n: i + 1 });
           if (editing === p.id) {
             const snap = outcome.kind === "ok" && j >= 0 ? outcome.result.participants[j]?.start[0] : undefined;
             return (

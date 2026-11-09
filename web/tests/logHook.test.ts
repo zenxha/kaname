@@ -57,6 +57,16 @@ describe("the decision and lesson hook", () => {
     expect(runHook(dir, 'git commit -m "fix: twice"').code).toBe(2);
   });
 
+  it("sees commits made with git options before the subcommand, and paths in Japanese", () => {
+    const dir = repo();
+    commit(dir, "feat: a", ["web/src/a.ts"]);
+    expect(runHook(dir, `git -C ${dir} commit -m "feat: a"`).code).toBe(2);
+    commit(dir, "feat: b", ["web/src/b.ts"]);
+    expect(runHook(dir, 'git --no-pager commit -m "feat: b"').code).toBe(2);
+    commit(dir, "feat: c", ["web/src/駅.ts"]);
+    expect(runHook(dir, 'git commit -m "feat: c"').code).toBe(2);
+  });
+
   it("asks for a decision after a feature that changed code and logged nothing", () => {
     const dir = repo();
     commit(dir, "feat: add a slider", ["pipeline/src/x.py"]);

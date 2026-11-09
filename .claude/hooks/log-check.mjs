@@ -14,7 +14,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const RECENT_S = 120;
-const COMMIT = /\bgit(?:\s+-c\s+\S+)*\s+commit\b/;
+/** `git commit`, also with options before the subcommand: `git -C dir commit`, `git --no-pager commit`. */
+const COMMIT = /\bgit(?:\s+(?:-[cC]\s+\S+|--?[\w-]+(?:=\S+)?))*\s+commit\b/;
 const CODE = /^(?:web\/(?:src|core|scripts|static)\/|web\/[^/]+\.(?:ts|json|html)$|cli\/|pipeline\/(?:src|config)\/|pipeline\/[^/]+\.(?:sh|toml)$)/;
 const LOGS = new Set(["DECISIONS.md", "LESSONS.md"]);
 const ASKS = {
@@ -44,7 +45,7 @@ function check(cwd) {
   if (Date.now() / 1000 - Number(time) > RECENT_S || alreadyReported(cwd, sha)) return null;
   const type = /^(\w+)(?:\([^)]*\))?!?:/.exec(subject)?.[1];
   if (!["feat", "fix", "perf", "refactor"].includes(type)) return null;
-  const files = git(cwd, "diff-tree", "--root", "--no-commit-id", "--name-only", "-r", "HEAD").split("\n");
+  const files = git(cwd, "-c", "core.quotePath=false", "diff-tree", "--root", "--no-commit-id", "--name-only", "-r", "HEAD").split("\n");
   if (files.some((f) => LOGS.has(f)) || !files.some((f) => CODE.test(f))) return null;
   writeFileSync(reported(cwd), `${sha}\n`);
   return [

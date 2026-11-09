@@ -163,7 +163,7 @@ The owner set the goals, the gates and the product calls. Claude Code wrote most
 ### 21. A separate reviewer finds what the author cannot
 
 - What happened: each milestone ended with a code review by a separate agent that saw the code but not the author's reasoning.
-- What we did: every review found real defects, for example a check that never failed, a map race and an address ranking error. Each fix came with a regression test.
+- What we did: every review found real defects, for example a check that never failed, a map race, an address ranking error and a retry loop with no limit. Each fix came with a regression test.
 - Lesson: keep the author and the reviewer apart. Give the reviewer the code, not the conclusion.
 - Where to look: the commits named "fix: address the ... review".
 
