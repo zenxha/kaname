@@ -67,8 +67,11 @@ export function resolveParticipants(data: MatrixData, input: readonly Participan
   if (input.length > MAX_PARTICIPANTS) {
     throw new RankError("TOO_MANY_PARTICIPANTS", `at most ${MAX_PARTICIPANTS} participants, got ${input.length}`);
   }
+  const labels = input.map((p: unknown, i) => validLabel(p, i));
+  const dup = labels.find((l, i) => labels.indexOf(l) !== i);
+  if (dup !== undefined) throw new RankError("BAD_PARTICIPANT", `two participants are called "${dup}"; labels must differ`);
   return input.map((p: unknown, i) => {
-    const label = validLabel(p, i);
+    const label = labels[i]!;
     const raw = p as { start?: LocationInput; home?: LocationInput };
     const start = resolveLocation(data, raw.start, label, "start");
     const home = raw.home === undefined ? start : resolveLocation(data, raw.home, label, "home");

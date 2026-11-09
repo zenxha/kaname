@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MATRIX_FILES, parseData, type MatrixData } from "../web/core/data";
+import { isRecord, MATRIX_FILES, parseData, type MatrixData } from "../web/core/data";
 import { RankError } from "../web/core/errors";
 import { parseRoutes, type RouteData } from "../web/core/routes";
 
@@ -13,17 +13,28 @@ export function defaultDataDir(): string {
   return resolve(dirname(fileURLToPath(import.meta.url)), "..", "data");
 }
 
-function readJson(dir: string, name: string): unknown {
+function parseJson(text: string, where: string): unknown {
   try {
-    return JSON.parse(readFileSync(join(dir, name), "utf-8")) as unknown;
+    return JSON.parse(text) as unknown;
   } catch (e) {
-    throw new RankError("BAD_DATA", `cannot read ${join(dir, name)}: ${e instanceof Error ? e.message : String(e)}`);
+    throw new RankError("BAD_DATA", `${where} is not valid JSON: ${e instanceof Error ? e.message : String(e)}`);
   }
 }
 
+function readMeta(dir: string): unknown {
+  let text: string;
+  try {
+    text = readFileSync(join(dir, "meta.json"), "utf-8");
+  } catch (e) {
+    throw new RankError("BAD_DATA", `cannot read ${join(dir, "meta.json")}: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  return parseJson(text, join(dir, "meta.json"));
+}
+
 function expectedSha(meta: unknown, name: string): string {
-  const files = (meta as { files?: Record<string, { sha256?: unknown }> }).files;
-  const sha = files?.[name]?.sha256;
+  const files = isRecord(meta) && isRecord(meta.files) ? meta.files : {};
+  const info = files[name];
+  const sha = isRecord(info) ? info.sha256 : undefined;
   if (typeof sha !== "string") throw new RankError("BAD_DATA", `meta.json has no checksum for ${name}`);
   return sha;
 }
@@ -42,13 +53,13 @@ function readVerified(dir: string, meta: unknown, name: string): Uint8Array {
 }
 
 export function loadMatrixData(dir: string): MatrixData {
-  const meta = readJson(dir, "meta.json");
-  readVerified(dir, meta, "stations.json");
+  const meta = readMeta(dir);
+  const stations = parseJson(new TextDecoder().decode(readVerified(dir, meta, "stations.json")), "stations.json");
   const buffers = Object.fromEntries(MATRIX_FILES.map((f) => [f, readVerified(dir, meta, f)]));
-  return parseData(meta, readJson(dir, "stations.json"), buffers);
+  return parseData(meta, stations, buffers);
 }
 
 export function loadRouteData(dir: string): RouteData {
-  const meta = readJson(dir, "meta.json");
+  const meta = readMeta(dir);
   return parseRoutes(meta, Object.fromEntries(ROUTE_FILES.map((f) => [f, readVerified(dir, meta, f)])));
 }

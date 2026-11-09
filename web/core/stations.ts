@@ -70,7 +70,7 @@ export function snapToStations(data: MatrixData, lat: number, lng: number): Stat
     const km = first === undefined ? "?" : (first.distanceM / 1000).toFixed(1);
     throw new RankError("LOCATION_TOO_FAR", `${lat}, ${lng} is ${km} km from the nearest station in the data`);
   }
-  return nearest.map((o) => {
+  return nearest.filter((o) => o.distanceM <= MAX_SNAP_M).map((o) => {
     const rounded = Math.round(o.distanceM);
     return { index: o.index, distanceM: rounded, walkMinutes: walkMinutes(rounded) };
   });

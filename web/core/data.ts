@@ -32,7 +32,16 @@ export interface RailwayRecord {
   readonly color: string;
 }
 
+/** The time windows the minutes describe, as "HH:MM" pairs (from meta.json). */
+export interface Windows {
+  readonly outbound: readonly [string, string];
+  readonly home: readonly [string, string];
+}
+
+export const DEFAULT_WINDOWS: Windows = { outbound: ["17:30", "19:30"], home: ["21:00", "23:00"] };
+
 export interface MatrixData {
+  readonly windows: Windows;
   readonly stations: readonly StationRecord[];
   readonly railways: readonly RailwayRecord[];
   readonly nStations: number;
@@ -80,13 +89,28 @@ export function normalizeName(text: string): string {
   return text.normalize("NFKC").toLowerCase().replace(/\s+/g, " ").trim().replace(/ヶ/g, "ケ").replace(/ヵ/g, "カ");
 }
 
-function parseStop(v: unknown, where: string): StopRecord {
-  const a = list(v, where);
-  if (a.length !== 3) bad(`${where} must be [railway, lng, lat]`);
-  return [int(a[0], where), num(a[1], where), num(a[2], where)];
+function railwayIndex(v: unknown, nRailways: number, where: string): number {
+  const r = int(v, where);
+  return r < nRailways ? r : bad(`${where}: railway ${r} does not exist`);
 }
 
-function parseStation(v: unknown, i: number, nCandidates: number): StationRecord {
+function lat(v: unknown, where: string): number {
+  const x = num(v, where);
+  return Math.abs(x) <= 90 ? x : bad(`${where} is not a latitude`);
+}
+
+function lng(v: unknown, where: string): number {
+  const x = num(v, where);
+  return Math.abs(x) <= 180 ? x : bad(`${where} is not a longitude`);
+}
+
+function parseStop(v: unknown, nRailways: number, where: string): StopRecord {
+  const a = list(v, where);
+  if (a.length !== 3) bad(`${where} must be [railway, lng, lat]`);
+  return [railwayIndex(a[0], nRailways, where), lng(a[1], where), lat(a[2], where)];
+}
+
+function parseStation(v: unknown, i: number, nCandidates: number, nRailways: number): StationRecord {
   const where = `station ${i}`;
   if (!isRecord(v)) bad(`${where} must be an object`);
   if (v.i !== i) bad(`${where} has index ${String(v.i)}`);
@@ -98,12 +122,12 @@ function parseStation(v: unknown, i: number, nCandidates: number): StationRecord
     ja: str(v.ja, `${where} ja`),
     en: str(v.en, `${where} en`),
     aliases: list(v.aliases, `${where} aliases`).map((a) => str(a, `${where} alias`)),
-    lat: num(v.lat, `${where} lat`),
-    lng: num(v.lng, `${where} lng`),
+    lat: lat(v.lat, `${where} lat`),
+    lng: lng(v.lng, `${where} lng`),
     lines: int(v.lines, `${where} lines`),
     candidate,
-    railways: list(v.railways, `${where} railways`).map((r) => int(r, `${where} railway`)),
-    stops: list(v.stops, `${where} stops`).map((s) => parseStop(s, `${where} stop`)),
+    railways: list(v.railways, `${where} railways`).map((r) => railwayIndex(r, nRailways, `${where} railway`)),
+    stops: list(v.stops, `${where} stops`).map((s) => parseStop(s, nRailways, `${where} stop`)),
   };
 }
 
@@ -144,6 +168,17 @@ function indexNames(stations: readonly StationRecord[]): Map<string, readonly nu
   return byName;
 }
 
+function parseWindows(meta: Record<string, unknown>): Windows {
+  const w = meta.windows;
+  if (w === undefined) return DEFAULT_WINDOWS;
+  const pair = (v: unknown, name: string): readonly [string, string] => {
+    const a = list(v, `meta windows ${name}`);
+    return [str(a[0], `meta windows ${name}`), str(a[1], `meta windows ${name}`)];
+  };
+  if (!isRecord(w)) bad("meta.json windows must be an object");
+  return { outbound: pair(w.outbound, "outbound"), home: pair(w.home, "home") };
+}
+
 export function parseCounts(meta: unknown): { n: number; k: number } {
   if (!isRecord(meta)) bad("meta.json must be an object");
   if (meta.format !== FORMAT_VERSION) bad(`meta.json format ${String(meta.format)} is not ${FORMAT_VERSION}`);
@@ -157,12 +192,14 @@ export function parseData(meta: unknown, stationsDoc: unknown, buffers: Buffers)
   if (stationsDoc.n_stations !== n || stationsDoc.n_candidates !== k) bad("stations.json counts disagree with meta.json");
   const rawStations = list(stationsDoc.stations, "stations.json stations");
   if (rawStations.length !== n || k > n || k < 1) bad("stations.json has the wrong number of stations");
-  const stations = rawStations.map((s, i) => parseStation(s, i, k));
+  const railways = list(stationsDoc.railways, "stations.json railways").map(parseRailway);
+  const stations = rawStations.map((s, i) => parseStation(s, i, k, railways.length));
   const byId = new Map(stations.map((s) => [s.id, s.index]));
   if (byId.size !== n) bad("stations.json has duplicate station ids");
   return {
+    windows: parseWindows(meta as Record<string, unknown>),
     stations,
-    railways: list(stationsDoc.railways, "stations.json railways").map(parseRailway),
+    railways,
     nStations: n,
     nCandidates: k,
     outMin: readU16(bytes(buffers, "out_min.u16"), n * k, "out_min.u16"),

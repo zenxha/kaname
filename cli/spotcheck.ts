@@ -1,5 +1,6 @@
 /** Compare matrix values with reference journey-planner times (BRIEF.md "real-world spot check"). */
 import type { MatrixData } from "../web/core/data";
+import { RankError } from "../web/core/errors";
 import { rank } from "../web/core/rank";
 import { findStation } from "../web/core/stations";
 import { parseClock } from "../web/core/time";
@@ -21,6 +22,11 @@ export interface SpotCheckResult {
   readonly rows: readonly SpotRow[];
   readonly within: number;
   readonly compared: number;
+}
+
+/** At least 90% of the compared pairs within tolerance, and at least one pair compared. */
+export function spotCheckPassed(r: SpotCheckResult): boolean {
+  return r.compared > 0 && r.within >= 0.9 * r.compared;
 }
 
 /** Minimal CSV reader: comma separated, double-quoted fields may contain commas. */
@@ -55,6 +61,9 @@ export function spotCheck(data: MatrixData, csvText: string, onlyIds?: readonly 
     .map((r): SpotRow => {
       const late = parseClock(r.query_time || "18:30") >= HOME_WINDOW_START;
       const ref = Number(r.ref_minutes);
+      if (!r.ref_minutes?.trim() || !Number.isFinite(ref)) {
+        throw new RankError("BAD_OPTION", `reference row ${r.id ?? "?"}: ref_minutes ${JSON.stringify(r.ref_minutes)} is not a number`);
+      }
       const ours = matrixMinutes(data, r.origin ?? "", r.destination ?? "", late);
       return { id: r.id ?? "", origin: r.origin ?? "", destination: r.destination ?? "", ref, ours,
         delta: ours === null ? null : ours - ref };

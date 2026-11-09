@@ -45,6 +45,13 @@ function routeLength(meta: Record<string, unknown>, name: string): number {
   return typeof shape[0] === "number" ? shape[0] : bad(`meta.json has no shape for ${name}`);
 }
 
+/** Block starts must rise from 0 to the file length, so every block lies inside the file. */
+function checkIndex(idx: Uint32Array, length: number, name: string): Uint32Array {
+  if (idx[0] !== 0 || idx[idx.length - 1] !== length) bad(`${name} does not span its route file`);
+  for (let i = 1; i < idx.length; i++) if (idx[i]! < idx[i - 1]!) bad(`${name} is not in order`);
+  return idx;
+}
+
 export function parseRoutes(meta: unknown, buffers: Buffers): RouteData {
   const { n, k } = parseCounts(meta);
   const m = meta as Record<string, unknown>;
@@ -58,18 +65,19 @@ export function parseRoutes(meta: unknown, buffers: Buffers): RouteData {
     nStations: n,
     nCandidates: k,
     outRoutes: readU16(raw("out_routes.u16"), outLen, "out_routes.u16"),
-    outIdx: readU32(buffers["out_routes_idx.u32"], "out_routes_idx.u32", k + 1),
+    outIdx: checkIndex(readU32(buffers["out_routes_idx.u32"], "out_routes_idx.u32", k + 1), outLen, "out_routes_idx.u32"),
     homeRoutes: readU16(raw("home_routes.u16"), homeLen, "home_routes.u16"),
-    homeIdx: readU32(buffers["home_routes_idx.u32"], "home_routes_idx.u32", k + 1),
+    homeIdx: checkIndex(readU32(buffers["home_routes_idx.u32"], "home_routes_idx.u32", k + 1), homeLen, "home_routes_idx.u32"),
   };
 }
 
-/** Position just after the route that starts at `pos`. */
-function skipRoute(values: Uint16Array, pos: number): number {
-  const count = values[pos]!;
-  let p = pos + 1;
-  for (let h = 0; h < count; h++) p += values[p]! & WALK_FLAG ? 3 : 2;
-  return p;
+/** Reads one value of a block, refusing to leave it. */
+function reader(values: Uint16Array, start: number, end: number, block: number): () => number {
+  let pos = start;
+  return () => {
+    if (pos >= end) bad(`route block ${block} is truncated`);
+    return values[pos++]!;
+  };
 }
 
 /**
@@ -77,22 +85,32 @@ function skipRoute(values: Uint16Array, pos: number): number {
  * "out" is station -> candidate, "home" is candidate -> station. Empty when they are the same.
  */
 export function routeFor(routes: RouteData, direction: "out" | "home", candidate: number, station: number): RouteHop[] {
-  if (!(candidate >= 0 && candidate < routes.nCandidates && station >= 0 && station < routes.nStations)) {
+  const valid = (x: number, max: number) => Number.isInteger(x) && x >= 0 && x < max;
+  if (!valid(candidate, routes.nCandidates) || !valid(station, routes.nStations)) {
     throw new RankError("BAD_OPTION", `no route for candidate ${candidate}, station ${station}`);
   }
   const values = direction === "out" ? routes.outRoutes : routes.homeRoutes;
   const idx = direction === "out" ? routes.outIdx : routes.homeIdx;
-  let pos = idx[candidate]!;
-  for (let s = 0; s < station; s++) pos = skipRoute(values, pos);
-  if (pos >= idx[candidate + 1]!) bad(`route block ${candidate} is shorter than expected`);
-  const count = values[pos++]!;
+  const next = reader(values, idx[candidate]!, idx[candidate + 1]!, candidate);
+  const stationAt = () => {
+    const s = next();
+    return s < routes.nStations ? s : bad(`route block ${candidate} names station ${s}, which does not exist`);
+  };
+  for (let s = 0; s < station; s++) {
+    const skip = next();
+    for (let h = 0; h < skip; h++) {
+      if (next() & WALK_FLAG) next(); // boarding station of a walk
+      next(); // end station
+    }
+  }
+  const count = next();
   const hops: RouteHop[] = [];
   let prev = direction === "out" ? station : candidate;
   for (let h = 0; h < count; h++) {
-    const word = values[pos++]!;
+    const word = next();
     const walk = (word & WALK_FLAG) !== 0;
-    const from = walk ? values[pos++]! : prev;
-    const to = values[pos++]!;
+    const from = walk ? stationAt() : prev;
+    const to = stationAt();
     hops.push({ railway: word & RAILWAY_MASK, from, to, seated: (word & SEATED_FLAG) !== 0, walk });
     prev = to;
   }

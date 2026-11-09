@@ -13,7 +13,7 @@ import { rank } from "../web/core/rank";
 import { formatClock, parseClock } from "../web/core/time";
 import type { CandidateResult, LocationInput, ParticipantInput, RankOptions, RankResult } from "../web/core/types";
 import { defaultDataDir, loadMatrixData } from "./loadData";
-import { SPOT_TOLERANCE_MIN, spotCheck } from "./spotcheck";
+import { SPOT_TOLERANCE_MIN, spotCheck, spotCheckPassed } from "./spotcheck";
 
 export interface CliIO {
   readonly out: (line: string) => void;
@@ -62,8 +62,12 @@ export function parsePerson(spec: string): ParticipantInput {
   const colon = spec.indexOf(":");
   if (colon <= 0 || colon === spec.length - 1) throw new UsageError(`--person "${spec}": expected label:start[>home]`);
   const label = spec.slice(0, colon).trim();
-  const [start, home] = spec.slice(colon + 1).split(">");
-  if (!start?.trim()) throw new UsageError(`--person "${spec}": the start is empty`);
+  const parts = spec.slice(colon + 1).split(">");
+  if (parts.length > 2) throw new UsageError(`--person "${spec}": use one > between start and home`);
+  const [start, home] = parts;
+  if (!start?.trim() || (home !== undefined && !home.trim())) {
+    throw new UsageError(`--person "${spec}": the start or home is empty`);
+  }
   return home === undefined ? { label, start: location(start) } : { label, start: location(start), home: location(home) };
 }
 
@@ -75,7 +79,7 @@ function number(flag: string, value: string | undefined): number {
 
 function value(argv: readonly string[], i: number, flag: string): string {
   const v = argv[i + 1];
-  if (v === undefined) throw new UsageError(`${flag} needs a value`);
+  if (v === undefined || v.startsWith("--")) throw new UsageError(`${flag} needs a value`);
   return v;
 }
 
@@ -122,9 +126,26 @@ function readScenario(file: string): { people: ParticipantInput[]; options: Rank
     throw new UsageError(`${file} is not valid JSON: ${e instanceof Error ? e.message : String(e)}`);
   }
   if (!isRecord(raw) || !Array.isArray(raw.participants)) throw new UsageError(`${file}: expected {"participants": [...]}`);
-  const o = isRecord(raw.options) ? raw.options : {};
-  const end = typeof o.meetingEnd === "string" ? { meetingEnd: parseClock(o.meetingEnd) } : {};
-  return { people: raw.participants as ParticipantInput[], options: { ...(o as RankOptions), ...end } };
+  return { people: raw.participants as ParticipantInput[], options: scenarioOptions(raw.options, file) };
+}
+
+const SCENARIO_OPTIONS: Record<string, "number" | "boolean" | "clock"> = {
+  alpha: "number", lambda: "number", limit: "number", ignoreHome: "boolean", meetingEnd: "clock",
+};
+
+/** Only known option names with the right types; a misspelled name must not switch a filter off silently. */
+function scenarioOptions(raw: unknown, file: string): RankOptions {
+  if (raw === undefined) return {};
+  if (!isRecord(raw)) throw new UsageError(`${file}: options must be an object`);
+  let out: RankOptions = {};
+  for (const [key, v] of Object.entries(raw)) {
+    const kind = SCENARIO_OPTIONS[key];
+    if (kind === undefined) throw new UsageError(`${file}: unknown option "${key}" (known: ${Object.keys(SCENARIO_OPTIONS).join(", ")})`);
+    if (kind === "clock" && typeof v === "string") out = { ...out, meetingEnd: parseClock(v) };
+    else if (kind !== "clock" && typeof v === kind) out = { ...out, [key]: v };
+    else throw new UsageError(`${file}: option "${key}" must be ${kind === "clock" ? 'a time like "23:30"' : `a ${kind}`}`);
+  }
+  return out;
 }
 
 const pad = (s: string | number, w: number) => String(s).padStart(w);
@@ -159,8 +180,9 @@ function runSpotcheck(args: Args, io: CliIO): number {
     const ours = r.ours === null ? "not in the matrix" : `${r.ours} Δ ${r.delta! >= 0 ? "+" : ""}${r.delta}`;
     io.out(`${r.id.padStart(4)} ${r.origin}→${r.destination} ref ${r.ref} ours ${ours}`);
   }
-  io.out(`within ±${SPOT_TOLERANCE_MIN} min: ${result.within}/${result.compared}`);
-  return result.within >= 0.9 * result.compared ? 0 : 1;
+  const skipped = result.rows.length - result.compared;
+  io.out(`within ±${SPOT_TOLERANCE_MIN} min: ${result.within}/${result.compared}` + (skipped ? ` (${skipped} not in the matrix)` : ""));
+  return spotCheckPassed(result) ? 0 : 1;
 }
 
 function runRank(args: Args, io: CliIO): number {
@@ -170,7 +192,7 @@ function runRank(args: Args, io: CliIO): number {
   const result = rank(people, { ...scenario?.options, ...args.options }, loadMatrixData(args.data));
   if (args.json) io.out(JSON.stringify(result, null, 2));
   else printResult(result, io);
-  return 0;
+  return result.candidates.length > 0 ? 0 : 1;
 }
 
 /** Relative paths are relative to where the user ran the command, not to web/. */
@@ -197,6 +219,11 @@ export function main(argv: readonly string[], io: CliIO): number {
 }
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  // `| head` closes stdout early: stop quietly instead of printing a stack trace.
+  process.stdout.on("error", (e: NodeJS.ErrnoException) => {
+    if (e.code === "EPIPE") process.exit(0);
+    throw e;
+  });
   process.exitCode = main(process.argv.slice(2), {
     out: (line) => process.stdout.write(`${line}\n`),
     err: (line) => process.stderr.write(`${line}\n`),

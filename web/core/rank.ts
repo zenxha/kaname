@@ -20,7 +20,11 @@ export const DEFAULT_ALPHA = 0.5;
 export const DEFAULT_LAMBDA = 5;
 export const DEFAULT_LIMIT = 10;
 const MAX_LAMBDA = 60;
-const EPS = 1e-9;
+/** last_dep tops out around 25:00, so a later end would strand everyone; 26:59 is the clock limit. */
+const MAX_MEETING_END = 27 * 60 - 1;
+/** Comparisons use values rounded to 1e-6 minutes: exact for whole minutes, and transitive. */
+const QUANTUM = 1e6;
+const q = (x: number): number => Math.round(x * QUANTUM);
 
 interface Settings {
   readonly alpha: number;
@@ -36,7 +40,8 @@ function badOption(message: string): never {
   throw new RankError("BAD_OPTION", message);
 }
 
-function settings(o: RankOptions): Settings {
+function settings(options: RankOptions | null | undefined): Settings {
+  const o: RankOptions = options ?? {};
   const alpha = o.alpha ?? DEFAULT_ALPHA;
   const lambda = o.lambda ?? DEFAULT_LAMBDA;
   const limit = o.limit ?? DEFAULT_LIMIT;
@@ -46,8 +51,12 @@ function settings(o: RankOptions): Settings {
   }
   if (!Number.isInteger(limit) || limit < 1) badOption("limit must be a whole number of at least 1");
   const end = o.meetingEnd;
-  if (end !== undefined && !(Number.isInteger(end) && end >= 0 && end < 48 * 60)) {
-    badOption("meetingEnd must be whole minutes after 00:00 of the service day");
+  if (end !== undefined && !(Number.isInteger(end) && end >= 0 && end <= MAX_MEETING_END)) {
+    badOption("meetingEnd must be whole minutes after 00:00 of the service day, at most 26:59");
+  }
+  if (o.ignoreHome !== undefined && typeof o.ignoreHome !== "boolean") badOption("ignoreHome must be true or false");
+  if (o.ignoreHome === true && end !== undefined) {
+    badOption("the last-train filter needs the home leg; drop ignoreHome or the meeting end");
   }
   return { alpha, lambda, meetingEnd: end ?? null, limit, ignoreHome: o.ignoreHome === true };
 }
@@ -80,15 +89,13 @@ function outLeg(data: MatrixData, r: Resolved, k: number, lambda: number): Leg |
 function homeLeg(data: MatrixData, r: Resolved, k: number, s: Settings): Leg | string {
   let best: Leg | null = null;
   let latest = -1;
-  let reachable = false;
   for (const o of r.home) {
     const cell = k * data.nStations + o.index;
-    const minutes = data.homeMin[cell]!;
-    if (minutes === UNREACHABLE) continue;
-    reachable = true;
     const last = data.lastDep[cell]!;
     const lastDeparture = last === SAME_STATION || last === UNREACHABLE ? null : last;
     if (lastDeparture !== null) latest = Math.max(latest, lastDeparture);
+    const minutes = data.homeMin[cell]!;
+    if (minutes === UNREACHABLE) continue;
     const feasible = s.meetingEnd === null || last === SAME_STATION || (lastDeparture !== null && lastDeparture >= s.meetingEnd);
     if (!feasible) continue;
     const transfers = data.homeXfer[cell]!;
@@ -98,10 +105,11 @@ function homeLeg(data: MatrixData, r: Resolved, k: number, s: Settings): Leg | s
     }
   }
   if (best !== null) return best;
-  const home = describeStation(data.stations[r.home[0]!.index]!);
-  if (!reachable) return `${r.label} has no train home to ${home} in the 21:00-23:00 window`;
-  const when = latest < 0 ? "no train after 21:00" : `the last train leaves at ${formatClock(latest)}`;
-  return `${r.label}'s last train home to ${home}: ${when}, before the meeting ends at ${formatClock(s.meetingEnd ?? 0)}`;
+  const home = r.home.map((o) => describeStation(data.stations[o.index]!)).join(" or ");
+  const opens = data.windows.home[0];
+  if (latest < 0) return `${r.label} has no train home to ${home} after ${opens}`;
+  if (s.meetingEnd === null) return `${r.label} has no usual train home to ${home} after ${opens} (last train ${formatClock(latest)})`;
+  return `${r.label}'s last train home to ${home} leaves at ${formatClock(latest)}, before the meeting ends at ${formatClock(s.meetingEnd)}`;
 }
 
 function lastTrainOk(lastDeparture: number | null, meetingEnd: number | null): boolean | null {
@@ -146,7 +154,10 @@ function scoreCandidate(data: MatrixData, group: readonly Resolved[], k: number,
   for (const r of group) {
     const out = outLeg(data, r, k, s.lambda);
     const home = s.ignoreHome ? noHome(k) : homeLeg(data, r, k, s);
-    if (out === null) reasons.push(`${r.label} cannot reach ${describeStation(data.stations[k]!)} in the 17:30-19:30 window`);
+    if (out === null) {
+      const [from, to] = data.windows.outbound;
+      reasons.push(`${r.label} cannot reach ${describeStation(data.stations[k]!)} in the ${from}-${to} window`);
+    }
     if (typeof home === "string") reasons.push(home);
     if (out !== null && typeof home !== "string") people.push(person(data, r, out, home, s));
   }
@@ -154,25 +165,29 @@ function scoreCandidate(data: MatrixData, group: readonly Resolved[], k: number,
   return { ok: true, result: { station, people, ...aggregate(people, s.alpha) } };
 }
 
-function compare(a: Omit<CandidateResult, "rank">, b: Omit<CandidateResult, "rank">): number {
-  if (Math.abs(a.objective - b.objective) > EPS) return a.objective - b.objective;
-  if (a.station.lines !== b.station.lines) return b.station.lines - a.station.lines;
-  if (Math.abs(a.spread - b.spread) > EPS) return a.spread - b.spread;
+function byId(a: { readonly station: { readonly id: string } }, b: { readonly station: { readonly id: string } }): number {
   return a.station.id < b.station.id ? -1 : a.station.id > b.station.id ? 1 : 0;
+}
+
+function compare(a: Omit<CandidateResult, "rank">, b: Omit<CandidateResult, "rank">): number {
+  return q(a.objective) - q(b.objective) || b.station.lines - a.station.lines || q(a.spread) - q(b.spread) || byId(a, b);
 }
 
 /** Candidates that no other candidate beats on both average and worst case. */
 export function paretoSet(cands: readonly Omit<CandidateResult, "rank">[]): ParetoPoint[] {
-  const dominated = (p: Omit<CandidateResult, "rank">) =>
-    cands.some((q) => q.average <= p.average && q.worst.cost <= p.worst.cost &&
-      (q.average < p.average || q.worst.cost < p.worst.cost));
-  return cands
+  const pts = cands.map((c) => ({ c, a: q(c.average), w: q(c.worst.cost) }));
+  const dominated = (p: (typeof pts)[number]) => pts.some((o) => o.a <= p.a && o.w <= p.w && (o.a < p.a || o.w < p.w));
+  return pts
     .filter((p) => !dominated(p))
-    .map((p) => ({ station: p.station, average: p.average, worst: p.worst.cost }))
-    .sort((a, b) => a.average - b.average || a.worst - b.worst || (a.station.id < b.station.id ? -1 : 1));
+    .sort((x, y) => x.a - y.a || x.w - y.w || byId(x.c, y.c))
+    .map(({ c }) => ({ station: c.station, average: c.average, worst: c.worst.cost }));
 }
 
-export function rank(participants: readonly ParticipantInput[], options: RankOptions, data: MatrixData): RankResult {
+export function rank(
+  participants: readonly ParticipantInput[],
+  options: RankOptions | null | undefined,
+  data: MatrixData,
+): RankResult {
   const s = settings(options);
   const group = resolveParticipants(data, participants, !s.ignoreHome);
   const scored = Array.from({ length: data.nCandidates }, (_, k) => scoreCandidate(data, group, k, s));
