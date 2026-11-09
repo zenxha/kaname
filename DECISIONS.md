@@ -91,6 +91,13 @@ All checked 2026-11-09 against the live catalogs and terms, not from memory.
 
 ---
 
+## M3 web UI · STATUS: first design iteration (2026-11-09)
+
+- **Design:** direction G of the design canvas "Kaname — Tokyo Meetup Optimizer" (a full-bleed map with floating cards and animated routes). It was the last direction on the canvas, it already takes E's "TIGHT" last-train warning, and it matches the brief's map-as-hero spec. The other six directions (A-F) stay on the canvas for comparison.
+- **Gate test passes:** `npm --prefix web run e2e` runs the 5-person scenario end to end on a 390×844 phone and on a 1280×820 desktop: add a person with station search, set a meeting end, pick another station, slide to fair, switch to Japanese.
+- **Changes from the wireframe:** the list on the right shows the top 5 including the winner, so any of them can be selected (the wireframe's "next best" shows ranks 2-5). The wireframe's numbers were samples; the app shows the real ranking (the sample group meets at 東京, 62 min on average). The station "Rosenzu" lines are drawn station to station along each railway, not along the exact track shape.
+- **Not in this iteration:** the shareable URL, kana search and the remaining Japanese copy (all M4 in the brief), and the animated route drawing of the wireframe (the markers pop in and the meeting marker pulses; both stop under reduced motion).
+
 ## M2 gate: scoring engine and CLI (2026-11-09) · STATUS: gate met
 
 - **Gate met.** `npm --prefix web test` (91 tests) runs every row of the BRIEF.md acceptance table on the real M1 data, and all pass: identity, permutation invariance, copies of one person, home leg, objective extremes, last-train filter, snapping, the 10-pair spot check, performance and the unroutable-input error. Property tests on random data repeat the first five, the Pareto set and the last-train filter.
@@ -175,3 +182,9 @@ h14 (舞浜→新宿, Keiyo→Chuo at 東京) sits at exactly −5. **Pattern:**
 | 2026-11-09 | Toolchain pinned to versions at least two weeks old: TypeScript 7.0.2, Vitest 5.0.5, Vite 8.3.4, fast-check 4.10.2, tsx 4.23.15 | Reproducible installs. Vite is listed explicitly because it is Vitest's peer and the M3 build tool. |
 | 2026-11-09 | `web/.npmrc` sets `legacy-peer-deps=true` | npm 10.9 crashes (`Cannot read properties of null (reading 'edgesOut')`) on Vitest's optional peers. With Vite listed explicitly, nothing that is needed goes missing. |
 | 2026-11-09 | CLI paths are relative to where the user ran npm (`INIT_CWD`) | `npm --prefix web run` runs in `web/`, so repo-relative paths failed when tried by hand. |
+| 2026-11-09 | M3 builds direction G of the design canvas | The latest direction, map first as the brief asks, and it already folds in E's last-train warning. |
+| 2026-11-09 | Basemap: OpenFreeMap dark style (`tiles.openfreemap.org`) | Free, no API key, no registration, no usage limit, commercial use allowed. MapLibre shows the required OpenMapTiles and OpenStreetMap credit. No key ever reaches the browser. |
+| 2026-11-09 | Routes are drawn through each railway's stations (new `railways[].stations` in `stations.json`), the short way round a loop | Uses only the approved source. The MLIT N02 track shapes would be truer and can replace this later without a format change for the engine. |
+| 2026-11-09 | The app fetches one candidate's route block with an HTTP Range request (about 20 KB), with a whole-file fallback | The route files are 9 MB together; a phone should not load them all. Vite and common static hosts answer Range requests. |
+| 2026-11-09 | MapLibre's worker is bundled by Vite (`?worker&url`) and set with `setWorkerUrl` | MapLibre 6 looks for its worker next to its own module, which bundling moves; without this the map has no tiles. |
+| 2026-11-09 | The app reads `data/` as Vite's public folder; `?basemap=none` gives a plain background | No copy step, and the E2E tests do not depend on the tile server. |

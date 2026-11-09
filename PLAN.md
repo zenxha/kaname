@@ -2,7 +2,7 @@
 
 Source of truth for scope: `BRIEF.md`. Decisions with reasons go in `DECISIONS.md`.
 
-**Session scope (2026-11-09):** M0, M1, M2 only. No web UI (M3+) this session.
+**Session scope (2026-11-09):** M0, M1 and M2, then the owner started M3 (first design iteration) the same day.
 **Hard stop:** at the M0 gate (passed; the owner approved the data source on 2026-11-09).
 
 ## Constraints carried from the brief and the owner
@@ -22,7 +22,7 @@ Source of truth for scope: `BRIEF.md`. Decisions with reasons go in `DECISIONS.m
 | M0 | Data feasibility spike | A source whose sample times land within ±5 min on ≥18 of 20 pairs, or stop and report | **yes, stop at the gate** |
 | M1 | Matrix pipeline | Full matrix for the candidate set, no unreachable candidate pairs, build documented in the README | **done** |
 | M2 | Scoring engine and CLI | All acceptance tests in BRIEF.md pass | **done** |
-| M3 | Web UI | 5-person scenario end to end on a phone viewport | no |
+| M3 | Web UI | 5-person scenario end to end on a phone viewport | **iteration 1** (gate test passes) |
 | M4 | Validation and polish | README limits section and a demo scenario | no |
 | M5 | Stretch | Time-of-day matrices, last-train detail, venue search | no |
 
@@ -63,3 +63,10 @@ Spike code lives in `spike/m0/`. It is throwaway, but versioned so the numbers c
   snapping, the clock parser and the route decoder that M3 needs to draw routes.
 - `web/tests/`: written first. Vitest and fast-check. Every acceptance row of BRIEF.md runs on the real data.
 - `cli/`: `rank` (flags or a JSON scenario, text or `--json` output) and `spotcheck`.
+
+## M3: web UI (iteration 1 done 2026-11-09, see DECISIONS.md "M3 web UI")
+
+- `web/src/`: React and MapLibre, direction G of the design canvas. `npm --prefix web run dev`.
+- `web/e2e/`: Playwright, phone and desktop. The 5-person gate scenario passes.
+- Next iterations: owner feedback on the design, the shareable URL, kana search, the remaining Japanese copy,
+  animated route drawing, and track shapes from MLIT N02.

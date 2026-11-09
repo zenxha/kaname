@@ -2,7 +2,7 @@
 
 kaname ranks Tokyo meeting stations for a group. It counts each person's full evening by train: from their start to the meeting station, and from there to their home.
 
-The project is at milestone M2: the data pipeline (M1) and the scoring engine with its CLI (M2) are done. The web app (M3) does not exist yet. `BRIEF.md` is the scope, `PLAN.md` is the plan, and `DECISIONS.md` records each decision with its reason.
+The data pipeline (M1) and the scoring engine with its CLI (M2) are done. The web app (M3) is at its first design iteration: direction G of the design canvas, a full-bleed map with floating cards. `BRIEF.md` is the scope, `PLAN.md` is the plan, and `DECISIONS.md` records each decision with its reason.
 
 ## Repository layout
 
@@ -10,6 +10,8 @@ The project is at milestone M2: the data pipeline (M1) and the scoring engine wi
 | --- | --- |
 | `pipeline/` | Python pipeline that builds the travel-time data (managed with `uv`) |
 | `web/core/` | The scoring engine: pure TypeScript, no runtime dependencies, no DOM |
+| `web/src/` | The web app: React, MapLibre, the map and the floating cards |
+| `web/e2e/` | Playwright tests of the app on a phone and a desktop viewport |
 | `web/tests/` | Engine tests, including every row of the BRIEF.md acceptance table |
 | `cli/` | Command line front end for the engine (`rank`, `spotcheck`) |
 | `pipeline/config/` | Build parameters and reviewed tables (paid train types, platform positions, transfers, candidate overrides) |
@@ -45,6 +47,29 @@ You need `git`, `bash` and [uv](https://docs.astral.sh/uv/). If Python 3.11 or l
 The build is deterministic. The same source commit and configuration give the same files and the same checksums in `meta.json`.
 
 The pipeline needs no API keys, secrets or environment variables.
+
+## Run the web app
+
+You need Node.js 22.12 or later.
+
+```bash
+npm --prefix web install
+npm --prefix web run dev        # http://localhost:5173/
+```
+
+The app reads the files in `data/` as static files. It needs no API key and no backend. The basemap is the OpenFreeMap dark style. Add `?basemap=none` to the address for a plain background with no tile requests.
+
+Build a static site into `web/dist/`, which any static host can serve:
+
+```bash
+npm --prefix web run build
+```
+
+Run the end-to-end tests. The first run needs the browser once (`npx --prefix web playwright install chromium`).
+
+```bash
+npm --prefix web run e2e
+```
 
 ## Rank meeting stations from the command line
 

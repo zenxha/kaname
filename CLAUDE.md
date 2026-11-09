@@ -12,7 +12,7 @@ Tokyo meetup optimizer. Read these before doing anything:
 - **2026-11-09: the owner approved Mini Tokyo 3D as the M1/M2 build source** (in chat, on the desktop). This approval covers local builds and tests only. Clear the license (DECISIONS.md, "What I need from you", item 2) before any public deploy.
 - **2026-11-09: M1 done.** Gate met (`kaname-pipeline check` passes): 207 candidates, no unreachable candidate pairs, all routes rebuild. Held-out router accuracy 24/26 within ±5 min.
 - **2026-11-09: M2 done.** Gate met: every BRIEF.md acceptance test passes (`npm --prefix web test`). The session scope (M0-M2) is complete. M3 (web UI) needs the owner's go-ahead.
-- **Session scope set by the owner:** M0, M1 and M2 only (data pipeline, scoring engine and CLI). **Do not build the web UI** (M3+) unless the owner says so.
+- **2026-11-09: M3 started by the owner** ("M3 first design iteration go"). Iteration 1 builds direction G of the design canvas "Kaname — Tokyo Meetup Optimizer" (https://claude.ai/artifact/24WXup9np7ZxduTBmR2H1T). The E2E gate test passes on a phone viewport. Next: the owner's feedback on the design.
 
 ## Rules
 
