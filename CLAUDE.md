@@ -15,6 +15,14 @@ Tokyo meetup optimizer. Read these before doing anything:
 - **2026-11-09: M3 started by the owner** ("M3 first design iteration go"). Iteration 1 builds direction G of the design canvas "Kaname — Tokyo Meetup Optimizer" (https://claude.ai/artifact/24WXup9np7ZxduTBmR2H1T). The E2E gate test passes on a phone viewport. Next: the owner's feedback on the design.
 - **2026-11-09: M3 iteration 2 built.** It is the journey redesign the owner approved (DECISIONS.md, "Iteration 2"). The E2E gate passes on phone and desktop. Next: the owner's feedback.
 - **2026-11-09: the owner approved a public preview on Cloudflare Pages** with the license question still open (noindex, derived files only). Live at https://kaname-1l6.pages.dev/. Deploy with `npm --prefix web run deploy` from the owner's own Cloudflare account (README, "Deploy to Cloudflare Pages"). Any wider launch still needs the license cleared.
+- **2026-11-09 to 11-10: after iteration 2, all built, tested, committed and deployed, but not pushed.** The owner asked for each of these:
+  - Trips show as line pills in a closed row and a compact rail in an open row.
+  - A link preview, with the owner's line "Find the closest station for all your friends in Tokyo", and icons (`npm --prefix web run og`).
+  - A shareable plan link with stations and names, never locations or typed addresses.
+  - The owner's rule that the last train never changes the place. The meeting-end input is gone, and the ticket proposes the end ("Everyone can stay until 23:30, Tora's last train home").
+  - Kana search (Wikidata) and on-device address search (MLIT 位置参照情報), built by `kaname-pipeline fetch-lookup` and `lookup`.
+  - `LESSONS.md`, the lessons learned for the owner's interviews.
+- **Open items:** the data license question (before any wider launch); M4 tuning of the transfer penalty and the default slider position, plus a README demo; the top 10 instead of 5 and a view of the tradeoff; weekday evenings only; no per-ride minutes; deep JR platform changes still too short; one link preview for every plan; real track shapes; 26 stations without kana.
 
 ## Rules
 
