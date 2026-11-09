@@ -5,10 +5,17 @@ const APP = "/?basemap=none"; // no tile requests: the test checks the app, not 
 
 /** On a phone the result is a sheet; open it fully so every control is on screen. */
 async function openSheet(page: Page): Promise<void> {
+  await expect(page.locator(".ticket")).toBeVisible();
   const sheet = page.locator(".sheet");
   if ((await sheet.count()) === 0) return;
-  for (let i = 0; i < 3 && (await sheet.getAttribute("data-snap")) !== "full"; i++) await page.locator(".grab").click();
-  await expect(sheet).toHaveAttribute("data-snap", "full");
+  // One tap per step, waiting for each height: a tap on a full sheet would close it again.
+  const order = ["peek", "half", "full"];
+  for (let i = 0; i < 2; i++) {
+    const now = (await sheet.getAttribute("data-snap")) ?? "peek";
+    if (now === "full") return;
+    await page.locator(".grab").click();
+    await expect(sheet).toHaveAttribute("data-snap", order[order.indexOf(now) + 1]!);
+  }
 }
 
 async function pickStation(page: Page, label: "From" | "Home", query: string, option: RegExp): Promise<void> {
@@ -48,6 +55,10 @@ test("tapping a person opens their trip and fades everyone else", async ({ page 
   await expect(page.locator(".prow.open .itin li").first()).toHaveText("Board the Kanamachi Line at Shibamata");
   await expect(page.locator(".prow.open .itin")).toContainText("Get off at Jimbocho");
   await expect(page.locator(".mk-person.dimmed")).toHaveCount(1);
+  await page.getByRole("button", { name: "日本語" }).click();
+  await expect(page.locator(".prow.open .itin li").first()).toHaveText("柴又で金町線に乗る");
+  await expect(page.locator(".mk-person.dimmed")).toHaveCount(1);
+  await page.getByRole("button", { name: "EN", exact: true }).click();
   await page.locator('[data-person="p2"]').click();
   await expect(page.locator(".prow.open")).toHaveCount(0);
   await expect(page.locator(".mk-person.dimmed")).toHaveCount(0);
@@ -83,6 +94,25 @@ test("another station, the slider, a third person and a meeting end each say wha
   await page.getByRole("button", { name: "日本語" }).click();
   await expect(page.locator(".t-lab")).toHaveText("待ち合わせ");
   await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+});
+
+test("on a phone the sheet drags to the nearest height and the handle works from the keyboard", async ({ page }) => {
+  await page.goto(APP);
+  await expect(page.locator(".ticket")).toBeVisible();
+  const sheet = page.locator(".sheet");
+  test.skip((await sheet.count()) === 0, "the desktop layout has a panel, not a sheet");
+  await expect(sheet).toHaveAttribute("data-snap", "peek");
+  await expect(page.locator(".sheet-rest")).toHaveAttribute("inert", "");
+  const box = (await page.locator(".grab").boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - i * 30);
+  await page.mouse.up();
+  await expect(sheet).toHaveAttribute("data-snap", "half");
+  await expect(page.locator(".sheet-rest")).not.toHaveAttribute("inert", "");
+  await page.locator(".grab").focus();
+  await page.keyboard.press("Enter");
+  await expect(sheet).toHaveAttribute("data-snap", "full");
 });
 
 test("fewer than two people asks for more", async ({ page }) => {

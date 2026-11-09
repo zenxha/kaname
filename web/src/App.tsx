@@ -76,9 +76,11 @@ function Planner({ data, lang, setLang }: PlannerProps) {
   const dropped = outcome.kind === "ok" ? outcome.dropped : null;
   const gone = useMemo<MapGone | null>(() => (dropped ? { at: centre(m, dropped.station.id), name: dropped.station.ja } : null), [dropped, m]);
   const mapText = useMapText(lang);
+  /** With no answer to show, the sheet opens far enough to edit the people. */
+  const sheetSnap: Snap = best === null && snap === "peek" ? "half" : snap;
   const padding = useMemo<Padding>(() => (stacked
-    ? { ...PHONE_PAD, bottom: visibleHeight(snap === "full" ? "half" : snap, viewport) + 16 }
-    : DESKTOP_PAD), [stacked, snap, viewport]);
+    ? { ...PHONE_PAD, bottom: visibleHeight(sheetSnap === "full" ? "half" : sheetSnap, viewport) + 16 }
+    : DESKTOP_PAD), [stacked, sheetSnap, viewport]);
 
   const raise = useCallback(() => setSnap((s) => (s === "peek" ? "half" : s)), []);
   const openPerson = useCallback((id: string) => {
@@ -105,7 +107,7 @@ function Planner({ data, lang, setLang }: PlannerProps) {
   return (
     <div className="app">
       <MapView theme={theme} basemap={BASEMAP} text={mapText} people={mapPeople} meet={meet} others={others} gone={gone}
-        focus={focus} drawKey={fitKey(best)} fitKey={fitKey(best)} padding={padding}
+        focus={focus} drawKey={fitKey(best)} fitKey={`${fitKey(best)}|${stacked ? sheetSnap : "panel"}`} padding={padding}
         onPerson={openPerson} onStation={pick} onMeet={raise} />
       <header className="topbar">
         <span className="brand"><i aria-hidden="true">要</i>Kaname</span>
@@ -117,13 +119,14 @@ function Planner({ data, lang, setLang }: PlannerProps) {
           </span>
         </span>
       </header>
-      <Sheet stacked={stacked} snap={snap} viewport={viewport} onSnap={setSnap} label={t(lang, "result")}
-        moreLabel={t(lang, "showMore")} lessLabel={t(lang, "showLess")}>
-        {outcome.kind === "needTwo" && <p className="notice">{t(lang, "needTwo")}</p>}
-        {outcome.kind === "error" && <p className="notice" role="alert">{outcome.message}</p>}
-        {outcome.kind === "ok" && best === null && <p className="notice" role="alert">{t(lang, "noFeasible")}</p>}
-        {blocks.error && <p className="notice" role="alert">{t(lang, "routesError")}</p>}
-        {best && first && <Ticket lang={lang} shown={best} first={first} dropped={dropped} open={snap !== "peek"} onOpen={raise} />}
+      <Sheet stacked={stacked} snap={sheetSnap} viewport={viewport} onSnap={setSnap} label={t(lang, "result")}
+        moreLabel={t(lang, "showMore")} lessLabel={t(lang, "showLess")} head={<>
+          {outcome.kind === "needTwo" && <p className="notice">{t(lang, "needTwo")}</p>}
+          {outcome.kind === "error" && <p className="notice" role="alert">{outcome.message}</p>}
+          {outcome.kind === "ok" && best === null && <p className="notice" role="alert">{t(lang, "noFeasible")}</p>}
+          {blocks.error && <p className="notice" role="alert">{t(lang, "routesError")}</p>}
+          {best && first && <Ticket lang={lang} shown={best} first={first} dropped={dropped} onOpen={raise} />}
+        </>}>
         <PeopleList data={m} lang={lang} people={people} outcome={outcome} routes={routes} meetingEnd={meetingEnd}
           open={focus} onOpen={openPerson} edit={edit} />
         {result && result.candidates.length > 1 && (

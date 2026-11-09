@@ -1,5 +1,5 @@
 /** The people: rows that open into a trip, one editor at a time, and the add button. Focus follows the editor. */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { MatrixData } from "../../core/data";
 import { t, type Lang } from "../model/i18n";
 import { addPerson, removePerson, updatePerson, type Person } from "../model/scenario";
@@ -24,6 +24,7 @@ export function PeopleList({ data, lang, people, outcome, routes, meetingEnd, op
   const [editing, setEditing] = useState<string | null>(null);
   const [focus, setFocus] = useState<string | null>(null);
   const addRef = useRef<HTMLButtonElement>(null);
+  const headingId = useId();
   useEffect(() => {
     if (focus === null) return;
     const target = focus === "add" ? addRef.current : document.querySelector<HTMLElement>(`[data-person="${focus}"]`);
@@ -41,8 +42,8 @@ export function PeopleList({ data, lang, people, outcome, routes, meetingEnd, op
   };
 
   return (
-    <section className="people" aria-label={t(lang, "people", { n: people.length })}>
-      <h2 className="sub">{t(lang, "people", { n: people.length })}</h2>
+    <section className="people" aria-labelledby={headingId}>
+      <h2 className="sub" id={headingId}>{t(lang, "people", { n: people.length })}</h2>
       <ol className="prows">
         {people.map((p, i) => {
           const j = slots.indexOf(i);

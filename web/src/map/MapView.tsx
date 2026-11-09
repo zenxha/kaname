@@ -31,7 +31,7 @@ interface Props {
   readonly focus: string | null;
   /** Names the answer on show; a new one draws the lines in again. */
   readonly drawKey: string;
-  /** The map refits only when this changes. */
+  /** The map refits only when this or the focus changes (a new answer, or a new sheet height). */
   readonly fitKey: string;
   readonly padding: Padding;
   readonly onPerson: (id: string) => void;
@@ -46,29 +46,37 @@ const CROWDED_PX = 30;
 const FLIP_SHARE = 0.62;
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/** Creates the map; falls back to a plain background if the basemap style cannot load. */
+/**
+ * Creates the map; falls back to a plain background if the basemap style cannot load. A failed tile is
+ * not a failed style: only an error before the first load that names no source or tile switches over.
+ */
 function useMap(box: RefObject<HTMLDivElement | null>, theme: Theme, basemap: boolean): MapLibreMap | null {
-  const [failed, setFailed] = useState(false);
+  const [failedTheme, setFailedTheme] = useState<Theme | null>(null);
   const [map, setMap] = useState<MapLibreMap | null>(null);
   useEffect(() => {
     if (box.current === null) return;
-    const blank = failed || !basemap;
+    const blank = failedTheme === theme || !basemap;
     const style: string | StyleSpecification = blank ? blankStyle(theme) : BASEMAPS[theme];
     const m = new MapLibreMap({ container: box.current, style, center: [...TOKYO], zoom: 9.5,
       attributionControl: { compact: true }, dragRotate: false });
     m.touchZoomRotate.disableRotation();
+    let live = true;
+    let loaded = false;
     m.on("load", () => {
+      loaded = true;
+      if (!live) return;
       addRouteLayers(m, theme);
       setMap(m);
     });
-    m.on("error", () => {
-      if (!m.isStyleLoaded() && !blank) setFailed(true);
+    m.on("error", (e: object) => {
+      if (live && !loaded && !blank && !("sourceId" in e) && !("tile" in e)) setFailedTheme(theme);
     });
     return () => {
+      live = false;
       setMap(null);
       m.remove();
     };
-  }, [box, theme, basemap, failed]);
+  }, [box, theme, basemap, failedTheme]);
   return map;
 }
 
@@ -80,7 +88,7 @@ function fitPoints(people: readonly MapPerson[], meet: MapStation | null, focus:
 }
 
 export function MapView(props: Props) {
-  const { theme, basemap, text, people, meet, others, gone, focus, drawKey, fitKey, padding, onPerson, onStation, onMeet } = props;
+  const { theme, basemap, text, people, meet, others, gone, focus, drawKey, fitKey, onPerson, onStation, onMeet } = props;
   const box = useRef<HTMLDivElement>(null);
   const map = useMap(box, theme, basemap);
   const drawn = useRef("");
@@ -129,16 +137,16 @@ export function MapView(props: Props) {
     setFocus(map, focus);
     personEls.current.forEach((el, id) => el.classList.toggle("dimmed", focus !== null && id !== focus));
     stationEls.current.forEach((el) => el.classList.toggle("hidden", focus !== null));
-  }, [map, focus, people, others]);
+  }, [map, focus, people, others, meet, gone, text, drawKey]);
 
   useEffect(() => {
     if (map === null) return;
-    const { people: ps, meet: mt, focus: f } = latest.current;
+    const { people: ps, meet: mt, focus: f, padding: pad } = latest.current;
     const pts = fitPoints(ps, mt, f);
     if (pts.length === 0) return;
     const bounds = pts.reduce((b, p) => b.extend([...p]), new LngLatBounds([...pts[0]!], [...pts[0]!]));
-    map.fitBounds(bounds, { padding, maxZoom: 14, duration: reducedMotion() ? 0 : 450 });
-  }, [map, fitKey, focus, padding]);
+    map.fitBounds(bounds, { padding: pad, maxZoom: 14, duration: reducedMotion() ? 0 : 450 });
+  }, [map, fitKey, focus]);
 
   return <div ref={box} className="map" role="region" aria-label={text.label} />;
 }

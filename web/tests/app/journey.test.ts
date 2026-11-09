@@ -5,6 +5,7 @@ import { routeFor } from "../../core/routes";
 import { findStation } from "../../core/stations";
 import { compareToFirst, droppedWinner } from "../../src/model/compare";
 import { drawDuration, partialLegs } from "../../src/model/drawIn";
+import { routeFeatures } from "../../src/map/layers";
 import { routeLegs } from "../../src/model/geometry";
 import { lineChips, rideSteps } from "../../src/model/itinerary";
 import { nearestSnap, nextSnap, visibleHeight } from "../../src/model/sheet";
@@ -56,6 +57,19 @@ describe("routeLegs", () => {
     expect(legs[1]!.path).toHaveLength(2);
     expect(legs[1]!.path[0]).toEqual(legs[0]!.path.at(-1));
     expect(legs[1]!.path[1]).toEqual(legs[2]!.path[0]);
+  });
+});
+
+describe("routeFeatures", () => {
+  it("makes one line per ride and walk, a home line only when there is one, and skips stubs", () => {
+    const legs = routeLegs(real, out("神保町", "柴又"));
+    const fc = routeFeatures([
+      { id: "p2", legs, home: [] },
+      { id: "p3", legs: [{ path: [[139.7, 35.6]], walk: false, color: "#000000" }], home: [[139.7, 35.6], [139.8, 35.7]] },
+    ]);
+    expect(fc.features).toHaveLength(legs.length + 1);
+    expect(fc.features.filter((f) => f.properties?.walk === true)).toHaveLength(2);
+    expect(fc.features.at(-1)!.properties).toMatchObject({ who: "p3", home: true });
   });
 });
 
