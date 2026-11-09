@@ -50,7 +50,7 @@ button { cursor: pointer; }
 .brand { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px 0 8px; border-radius: 8px; background: var(--sheet); box-shadow: 0 1px 3px var(--shadow); font: 700 17px var(--sans); }
 .brand i { font-style: normal; width: 24px; height: 24px; display: grid; place-items: center; background: var(--seal); color: var(--on-seal); border-radius: 3px; font-size: 14px; transform: rotate(-4deg); }
 .topbar-end { display: flex; align-items: center; gap: 8px; }
-.pill { font-size: 12px; color: var(--muted); background: var(--sheet); border-radius: 999px; padding: 4px 10px; box-shadow: 0 1px 3px var(--shadow); }
+.example-tag { font-size: 12px; color: var(--muted); background: var(--sheet); border-radius: 999px; padding: 4px 10px; box-shadow: 0 1px 3px var(--shadow); }
 .lang { display: flex; border-radius: 8px; overflow: hidden; background: var(--sheet); box-shadow: 0 1px 3px var(--shadow); }
 .lang button { height: 40px; min-width: 44px; padding: 0 10px; border: 0; background: none; font: 700 13px var(--sans); color: var(--muted); }
 .lang button[aria-pressed="true"] { color: var(--fg); background: var(--ticket); }
@@ -100,12 +100,32 @@ button { cursor: pointer; }
 .prow-main { width: 100%; display: grid; grid-template-columns: 24px 1fr auto; gap: 4px 10px; align-items: center; padding: 10px 0; min-height: 52px; border: 0; background: none; text-align: left; }
 .pname { font: 700 15px var(--sans); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pmins { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.chips { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--muted); }
-.chip { display: inline-flex; align-items: center; gap: 5px; }
-.chip i { width: 10px; height: 4px; border-radius: 2px; }
-.phome { color: var(--muted); }
+.phome { grid-column: 2 / 4; font-size: 12px; color: var(--muted); }
 .pdetail { display: grid; gap: 8px; padding: 0 0 12px 34px; }
-.itin { margin: 0; padding: 0 0 0 14px; border-left: 2px solid var(--line); list-style: none; display: grid; gap: 4px; font-size: 13px; line-height: 1.45; }
+
+/* Closed row: the lines as pills. A through train joins two pills; a walk or a change sits between them. */
+.pills { grid-column: 2 / 4; display: flex; flex-wrap: wrap; align-items: center; row-gap: 6px; }
+.pill-group { display: inline-flex; align-items: center; }
+.pill { font: 700 11px/20px var(--sans); padding: 0 7px; border-radius: 4px; white-space: nowrap; }
+.pill.join-right { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.pill.join-left { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.joint { display: inline-grid; place-items: center; min-width: 16px; padding: 0 3px; color: var(--muted); line-height: 20px; }
+.joint.through { min-width: 0; width: 1px; padding: 0; height: 20px; background: var(--sheet); }
+.walk-icon { width: 9px; height: 13px; fill: currentColor; stroke: currentColor; }
+
+/* Open row: one row per boarding on a rail in the line's color. */
+.rail { list-style: none; margin: 0; padding: 0; display: grid; }
+.rail li { position: relative; display: grid; grid-template-columns: 18px 1fr auto; gap: 8px; align-items: center; min-height: 32px; }
+.rail li::before { content: ""; position: absolute; left: 7px; top: 16px; height: 100%; width: 4px; background: var(--ride, transparent); }
+.rail li.arrive::before { display: none; }
+.node { position: relative; z-index: 1; width: 12px; height: 12px; margin-left: 3px; border-radius: 50%; border: 2px solid var(--fg); background: var(--sheet); }
+.node.through { width: 8px; height: 8px; margin-left: 5px; border: 0; background: var(--fg); }
+.node.end { background: var(--seal); border-color: var(--seal); border-radius: 2px; }
+.where { font-size: 14px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.tag { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; display: inline-flex; align-items: center; gap: 3px; }
+.tag .walk-icon { width: 8px; height: 11px; }
+.rail .line { font-size: 12px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; color: var(--muted); }
+.rail .line i { width: 10px; height: 4px; border-radius: 2px; }
 .last { margin: 0; font-size: 13px; color: var(--muted); }
 .last.tight { color: var(--seal); font-weight: 700; }
 .pdetail .btn { justify-self: start; }

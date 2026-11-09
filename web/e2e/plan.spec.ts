@@ -41,7 +41,7 @@ test("the example group opens on 神保町: lines draw in, the seal stamps, five
   await page.goto(APP);
   await expect(page.locator(".t-lab")).toHaveText("Meet at");
   await expect(page.locator(".t-name b")).toHaveText("神保町");
-  await expect(page.locator(".pill")).toHaveText("Example group");
+  await expect(page.locator(".example-tag")).toHaveText("Example group");
   await expect(page.locator(".mk-person")).toHaveCount(2);
   await expect(page.locator(".mk-meet .seal")).not.toHaveClass(/wait/);
   await expect(page.locator(".others li")).toHaveCount(5);
@@ -52,15 +52,20 @@ test("tapping a person opens their trip and fades everyone else", async ({ page 
   await page.goto(APP);
   await openSheet(page);
   await page.locator('[data-person="p2"]').click();
-  await expect(page.locator(".prow.open .itin li").first()).toHaveText("Board the Kanamachi Line at Shibamata");
-  await expect(page.locator(".prow.open .itin")).toContainText("Get off at Jimbocho");
+  await expect(page.locator('[data-person="p2"] .pill')).toHaveCount(0); // open: the rail replaces the pills
+  await expect(page.locator(".prow.open .rail li").first()).toContainText("Shibamata");
+  await expect(page.locator(".prow.open .rail li").first()).toContainText("Kanamachi");
+  await expect(page.locator(".prow.open .rail .tag")).toHaveText(["walk", "through train", "walk"]);
+  await expect(page.locator(".prow.open .rail li.arrive")).toContainText("Jimbocho");
   await expect(page.locator(".mk-person.dimmed")).toHaveCount(1);
   await page.getByRole("button", { name: "日本語" }).click();
-  await expect(page.locator(".prow.open .itin li").first()).toHaveText("柴又で金町線に乗る");
+  await expect(page.locator(".prow.open .rail li").first()).toContainText("柴又");
+  await expect(page.locator(".prow.open .rail .tag")).toHaveText(["徒歩", "直通", "徒歩"]);
   await expect(page.locator(".mk-person.dimmed")).toHaveCount(1);
   await page.getByRole("button", { name: "EN", exact: true }).click();
   await page.locator('[data-person="p2"]').click();
   await expect(page.locator(".prow.open")).toHaveCount(0);
+  await expect(page.locator('[data-person="p2"] .pill')).toHaveText(["Kanamachi", "Joban Local", "Chiyoda", "Shinjuku"]);
   await expect(page.locator(".mk-person.dimmed")).toHaveCount(0);
 });
 
@@ -82,7 +87,7 @@ test("another station, the slider, a third person and a meeting end each say wha
 
   await addPerson(page, "Hitori", "kanazawa-hakkei", /Kanazawa-hakkei/);
   await expect(page.locator(".t-name b")).toHaveText("品川");
-  await expect(page.locator(".pill")).toHaveCount(0);
+  await expect(page.locator(".example-tag")).toHaveCount(0);
   await expect(page.locator(".mk-person")).toHaveCount(3);
 
   await page.getByLabel("Meeting ends").fill("23:30");

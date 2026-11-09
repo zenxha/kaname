@@ -112,7 +112,7 @@ function Planner({ data, lang, setLang }: PlannerProps) {
       <header className="topbar">
         <span className="brand"><i aria-hidden="true">要</i>Kaname</span>
         <span className="topbar-end">
-          {isExample(people) && <span className="pill">{t(lang, "example")}</span>}
+          {isExample(people) && <span className="example-tag">{t(lang, "example")}</span>}
           <span className="lang">
             <button type="button" aria-pressed={lang === "en"} onClick={() => setLang("en")}>EN</button>
             <button type="button" aria-pressed={lang === "ja"} onClick={() => setLang("ja")}>日本語</button>

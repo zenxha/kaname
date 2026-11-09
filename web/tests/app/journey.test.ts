@@ -7,7 +7,8 @@ import { compareToFirst, droppedWinner } from "../../src/model/compare";
 import { drawDuration, partialLegs } from "../../src/model/drawIn";
 import { routeFeatures } from "../../src/map/layers";
 import { routeLegs } from "../../src/model/geometry";
-import { lineChips, rideSteps } from "../../src/model/itinerary";
+import { textOn } from "../../src/model/color";
+import { rideRailways, rideSteps } from "../../src/model/itinerary";
 import { nearestSnap, nextSnap, visibleHeight } from "../../src/model/sheet";
 import { real, realRoutes } from "../realData";
 
@@ -36,16 +37,26 @@ describe("rideSteps", () => {
     expect(hops.length).toBeGreaterThan(2);
     const steps = rideSteps(real, hops);
     expect(steps.map((s) => s.kind)).toEqual(["board", "change", "arrive"]);
-    expect(lineChips(real, hops).map(line)).toEqual(["京王線", "山手線"]);
+    expect(rideRailways(steps).map(line)).toEqual(["京王線", "山手線"]);
   });
 
   it("lists every line Tora rides, in order", () => {
-    expect(lineChips(real, out("神保町", "柴又")).map(line)).toEqual(["金町線", "常磐線各駅停車", "千代田線", "新宿線"]);
+    expect(rideRailways(rideSteps(real, out("神保町", "柴又"))).map(line)).toEqual(["金町線", "常磐線各駅停車", "千代田線", "新宿線"]);
   });
 
   it("has nothing to ride when the person is already there", () => {
     expect(rideSteps(real, [])).toEqual([]);
-    expect(lineChips(real, [])).toEqual([]);
+    expect(rideRailways([])).toEqual([]);
+  });
+});
+
+describe("textOn", () => {
+  it("puts ink on light line colors and white on dark ones", () => {
+    expect(textOn("#B0BF1E")).toBe("#17191c"); // Toei Shinjuku Line
+    expect(textOn("#a8a39d")).toBe("#17191c"); // Joban Local Line
+    expect(textOn("#005AAA")).toBe("#ffffff"); // Keisei Kanamachi Line
+    expect(textOn("#DD0077")).toBe("#ffffff"); // Keio Line
+    expect(textOn("not a color")).toBe("#17191c");
   });
 });
 

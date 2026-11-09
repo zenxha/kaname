@@ -31,7 +31,14 @@ export function rideSteps(data: MatrixData, hops: readonly RouteHop[]): RideStep
   return [...rides, { kind: "arrive", station: hops.at(-1)!.to }];
 }
 
-/** The railways a route rides, in order, each ride once. */
-export function lineChips(data: MatrixData, hops: readonly RouteHop[]): number[] {
-  return hops.flatMap((hop, i) => (i > 0 && sameLine(data, hops[i - 1]!.railway, hop.railway) ? [] : [hop.railway]));
+export type Ride = Exclude<RideStep, { readonly kind: "arrive" }>;
+
+/** The rides of a trip: every step but the last, which is getting off. */
+export function rides(steps: readonly RideStep[]): Ride[] {
+  return steps.filter((s): s is Ride => s.kind !== "arrive");
+}
+
+/** The railways a trip rides, in order, each ride once. */
+export function rideRailways(steps: readonly RideStep[]): number[] {
+  return rides(steps).map((s) => s.railway);
 }
