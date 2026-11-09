@@ -151,22 +151,29 @@ The owner set the goals, the gates and the product calls. Claude Code wrote most
 - Lesson: take colors, type and shapes from the subject's own world, here train tickets and station signs.
 - Where to look: DECISIONS.md "Iteration 2".
 
+### 20. A strict core needs a plan at the edge
+
+- What happened: the engine rejects two people with the same label, which is right for the command line. The app passed each friend's name straight in. Two friends called Aki made the whole result disappear behind an English error. A search for more cases found 13 stations with no train home in the evening, with the same kind of message.
+- What we did: we listed each error that the engine can raise and asked how an app user can meet it. A repeated name now gets the person's number (Aki, Aki (3)), so it never reaches the engine. The Add button stops at the limit of 50. The other errors name the person and say what to change, in English or Japanese.
+- Lesson: when a core rejects input, decide for each rejection what the user sees. Real names repeat, so test with the inputs that real groups have.
+- Where to look: commit `fb1aee5`, `web/src/model/problem.ts`.
+
 ## Working with an AI agent
 
-### 20. A separate reviewer finds what the author cannot
+### 21. A separate reviewer finds what the author cannot
 
 - What happened: each milestone ended with a code review by a separate agent that saw the code but not the author's reasoning.
 - What we did: every review found real defects, for example a check that never failed, a map race and an address ranking error. Each fix came with a regression test.
 - Lesson: keep the author and the reviewer apart. Give the reviewer the code, not the conclusion.
 - Where to look: the commits named "fix: address the ... review".
 
-### 21. Decisions written down make the story possible
+### 22. Decisions written down make the story possible
 
 - What happened: two days produced about 70 logged decisions, each with a reason.
 - What we did: every non-obvious decision got one line in DECISIONS.md, and every commit says what changed and why. This file was written from that record.
 - Lesson: the decision log is the cheapest documentation there is. Write the reason while you still know it.
 
-### 22. The agent makes mistakes too, so check its work
+### 23. The agent makes mistakes too, so check its work
 
 - What happened: some bugs came from the agent itself. A `pkill -f` pattern killed its own shell, so a commit did not happen. A page script named a variable `top`, which clashes with the browser's `window.top`. A Python class shadowed the built-in `LookupError`.
 - What we did: each one surfaced because a command, a test or a reviewer checked the result instead of trusting the claim.
