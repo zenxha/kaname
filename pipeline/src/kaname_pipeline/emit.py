@@ -130,10 +130,27 @@ def stations_doc(net: Network, uni: Universe) -> dict:
                          "lng": c.lon, "lat": c.lat, "lines": c.line_count, "candidate": i < uni.n_candidates,
                          "railways": sorted({railway_index[r] for r in c.railways}), "stops": stops,
                          "dist_km": c.dist_km})
-    railways = [{"i": i, "id": r.id, "ja": r.title_ja, "en": r.title_en, "color": r.color}
-                for i, r in enumerate(net.railways)]
+    railways = [{"i": i, "id": r.id, "ja": r.title_ja, "en": r.title_en, "color": r.color,
+                 **railway_sequence(net, uni, r)} for i, r in enumerate(net.railways)]
     return {"format": FORMAT_VERSION, "n_stations": len(stations), "n_candidates": uni.n_candidates,
             "stations": stations, "railways": railways}
+
+
+def railway_sequence(net: Network, uni: Universe, railway) -> dict:
+    """The railway's stations in running order, as station indexes, so the app can draw a hop along
+    the line. Stations outside the matrix are skipped. A loop line (first stop = last) is marked."""
+    stop_index = {s.id: i for i, s in enumerate(net.stops)}
+    station_of = uni.station_of()
+    seq: list[int] = []
+    for sid in railway.stations:
+        stop = stop_index.get(sid)
+        station = station_of.get(net.stop_complex[stop]) if stop is not None else None
+        if station is not None and (not seq or seq[-1] != station):
+            seq.append(station)
+    loop = len(railway.stations) > 2 and railway.stations[0] == railway.stations[-1]
+    if loop and len(seq) > 1 and seq[0] == seq[-1]:
+        seq = seq[:-1]
+    return {"stations": seq, "loop": loop}
 
 
 def candidates_csv(net: Network, uni: Universe) -> str:

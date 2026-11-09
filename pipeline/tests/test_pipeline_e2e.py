@@ -205,6 +205,16 @@ def test_wrong_commit_is_a_clean_error(built, tmp_path):
     assert main(["--mt3d", str(tmp / "mt3d"), "--config", str(bad), "build"]) == 2
 
 
+def test_railways_carry_their_station_order(built):
+    _, _, out, _ = built
+    doc = json.loads((out / "stations.json").read_text(encoding="utf-8"))
+    names = {s["i"]: s["ja"] for s in doc["stations"]}
+    by_id = {r["id"]: r for r in doc["railways"]}
+    assert [names[i] for i in by_id["Op.A"]["stations"]] == ["甲", "乙", "丙"]
+    assert [names[i] for i in by_id["Op.B"]["stations"]] == ["丁", "乙", "戊"]
+    assert by_id["Op.A"]["loop"] is False
+
+
 def test_meta_documents_layout(built):
     _, _, out, _ = built
     meta = json.loads((out / "meta.json").read_text(encoding="utf-8"))
