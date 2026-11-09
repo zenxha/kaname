@@ -69,11 +69,11 @@ npm --prefix web run build
 
 The owner approved a public preview on Cloudflare Pages on 2026-11-09, with the data license question still open (see DECISIONS.md). The site sends `X-Robots-Tag: noindex, nofollow` (from `web/deploy/_headers`), so that search engines do not list it.
 
-Do these two steps one time only. Log in to your own Cloudflare account, then create the project:
+Do these two steps one time only. Log in to your own Cloudflare account, then create the project. The `--force` flag keeps the project on classic Pages (see DECISIONS.md).
 
 ```bash
 npx wrangler@4.153.0 login
-npx wrangler@4.153.0 pages project create kaname --production-branch main
+npx wrangler@4.153.0 pages project create kaname --production-branch main --force
 ```
 
 Build and deploy:
@@ -81,6 +81,8 @@ Build and deploy:
 ```bash
 npm --prefix web run deploy
 ```
+
+The live site is https://kaname-1l6.pages.dev/.
 
 If the machine has no browser for the login, set these environment variables instead of logging in:
 

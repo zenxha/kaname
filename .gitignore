@@ -22,3 +22,4 @@ web/dist/
 web/test-results/
 web/playwright-report/
 web/dist-artifact/
+web/.wrangler/
