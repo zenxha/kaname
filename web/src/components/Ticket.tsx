@@ -12,6 +12,7 @@ interface Props {
   readonly first: CandidateResult;
   readonly dropped: Dropped | null;
   readonly onOpen: () => void;
+  readonly onShare: () => void;
 }
 
 const name = (s: StationInfo, lang: Lang) => (lang === "ja" ? s.ja : s.en);
@@ -32,12 +33,16 @@ function droppedText(d: Dropped, lang: Lang): string {
   return [t(lang, "droppedWinner", { station }), ...why].join(" ");
 }
 
-export function Ticket({ lang, shown, first, dropped, onOpen }: Props) {
+export function Ticket({ lang, shown, first, dropped, onOpen, onShare }: Props) {
   const [why, setWhy] = useState(false);
   const comparison = compareToFirst(shown, first);
   return (
     <section className="ticket">
       <p className="sr-only" aria-live="polite">{`${shown.station.ja} ${shown.station.en}, ${Math.round(shown.average)} ${t(lang, "avgUnit")}`}</p>
+      <button type="button" className="t-share" onClick={onShare}>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2M5 5l3-3 3 3M3 8v5.5h10V8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        {t(lang, "share")}
+      </button>
       <button type="button" className="ticket-head" onClick={onOpen}>
         <span className="t-lab">{shown.station.id === first.station.id ? t(lang, "meetAt") : t(lang, "rankedAt", { n: shown.rank })}</span>
         <span className="t-name"><b>{shown.station.ja}</b><span>{shown.station.en}</span></span>

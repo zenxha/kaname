@@ -42,11 +42,11 @@ export function removePerson(people: readonly Person[], id: string): Person[] {
   return people.filter((p) => p.id !== id);
 }
 
-/** People with a start become engine participants; labels fall back to their number. */
-export function toParticipants(people: readonly Person[]): ParticipantInput[] {
+/** People with a start become engine participants; an unnamed person is named by their number. */
+export function toParticipants(people: readonly Person[], unnamed: (n: number) => string = (n) => `#${n}`): ParticipantInput[] {
   return people.flatMap((p, i): ParticipantInput[] => {
     if (p.start === null) return [];
-    const label = p.label.trim() || `#${i + 1}`;
+    const label = p.label.trim() || unnamed(i + 1);
     return [p.home === null ? { label, start: p.start } : { label, start: p.start, home: p.home }];
   });
 }

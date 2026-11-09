@@ -30,26 +30,28 @@ export function stationIndex(data: MatrixData, id: string): number {
   return i;
 }
 
-function dropped(data: MatrixData, people: readonly Person[], alpha: number, meetingEnd: number | null, result: RankResult): Dropped | null {
+function dropped(data: MatrixData, people: readonly Person[], unnamed: (n: number) => string, alpha: number,
+  meetingEnd: number | null, result: RankResult): Dropped | null {
   if (meetingEnd === null) return null;
-  return droppedWinner(rank(toParticipants(people), { alpha }, data), result, meetingEnd);
+  return droppedWinner(rank(toParticipants(people, unnamed), { alpha }, data), result, meetingEnd);
 }
 
+/** `unnamed` names a person who has no name, by their number in the list. */
 export function useOutcome(data: MatrixData, people: readonly Person[], alpha: number, meetingEnd: number | null,
-  selected: string | null): Outcome {
+  selected: string | null, unnamed: (n: number) => string): Outcome {
   return useMemo((): Outcome => {
-    const participants = toParticipants(people);
+    const participants = toParticipants(people, unnamed);
     if (participants.length < 2) return { kind: "needTwo" };
     try {
       const options = meetingEnd === null ? { alpha } : { alpha, meetingEnd };
       const result = rank(participants, options, data);
       const best = result.candidates.find((c) => c.station.id === selected) ?? result.candidates[0] ?? null;
-      return { kind: "ok", result, best, dropped: dropped(data, people, alpha, meetingEnd, result) };
+      return { kind: "ok", result, best, dropped: dropped(data, people, unnamed, alpha, meetingEnd, result) };
     } catch (e) {
       if (e instanceof RankError) return { kind: "error", message: e.message };
       throw e;
     }
-  }, [data, people, alpha, meetingEnd, selected]);
+  }, [data, people, alpha, meetingEnd, selected, unnamed]);
 }
 
 export interface PersonRoute {

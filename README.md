@@ -65,6 +65,23 @@ Build a static site into `web/dist/`, which any static host can serve:
 npm --prefix web run build
 ```
 
+## Share a plan
+
+"Share plan" on the result ticket shares a link to the current plan. On a phone it opens the share sheet, and on a desktop it copies the link. The address bar always holds the same link.
+
+The link holds station ids and settings only, never names or locations:
+
+```text
+https://kaname-1l6.pages.dev/?p=seiseki-sakuragaoka&p=kanazawa-hakkei.yokohama&fair=75&end=2330&at=tokyo
+```
+
+- `p`: one per person. The start station, then `.` and the home station if home is somewhere else. A location goes as the station it snapped to.
+- `fair`: the slider, from 0 (efficient) to 100 (fair). The default 50 is left out.
+- `end`: the meeting end as `HHMM`. `0015` is 15 minutes after midnight.
+- `at`: a station picked from the ranking.
+
+If a link names a station that the data does not have, the app leaves it out and says so.
+
 ## Link preview and icons
 
 A shared link shows a title, a one-line description and a 1200×630 image. The tags are in `web/index.html`, and the image and icons are in `web/static/`. The build copies `web/static/` into the site.

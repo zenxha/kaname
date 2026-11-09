@@ -120,6 +120,37 @@ test("on a phone the sheet drags to the nearest height and the handle works from
   await expect(sheet).toHaveAttribute("data-snap", "full");
 });
 
+test("a plan travels in the link: stations and settings, never names", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.addInitScript(() => Object.defineProperty(navigator, "share", { value: undefined }));
+  await page.goto(APP);
+  await expect(page).toHaveURL(/\/\?basemap=none$/); // the untouched example keeps a clean address
+  await openSheet(page);
+  await addPerson(page, "Hitori", "kanazawa-hakkei", /Kanazawa-hakkei/);
+  await page.getByLabel("Meeting ends").fill("23:30");
+  await expect(page.locator(".t-name b")).toHaveText("東京");
+  await expect(page).toHaveURL(/\?basemap=none&p=seiseki-sakuragaoka&p=shibamata&p=kanazawa-hakkei&end=2330$/);
+
+  await page.getByRole("button", { name: "Share plan" }).click();
+  await expect(page.locator(".toast")).toHaveText("Link copied");
+  const url = await page.evaluate(() => navigator.clipboard.readText());
+  expect(url).toBe(page.url());
+  expect(url).not.toMatch(/Hitori|Shizuku|Tora/);
+
+  const friend = await context.newPage();
+  await friend.goto(url);
+  await expect(friend.locator(".t-name b")).toHaveText("東京");
+  await expect(friend.locator(".example-tag")).toHaveText("Shared plan");
+  await expect(friend.locator(".mk-person")).toHaveCount(3);
+  await expect(friend.locator(".prow .pname")).toHaveText(["Person 1", "Person 2", "Person 3"]);
+});
+
+test("a link with a station the data does not have says so and keeps the rest", async ({ page }) => {
+  await page.goto("/?basemap=none&p=tokyo&p=atlantis&p=ueno");
+  await expect(page.locator(".notice")).toHaveText("Some stations in the link are not in the data, so they are left out (1).");
+  await expect(page.locator(".mk-person")).toHaveCount(2);
+});
+
 test("fewer than two people asks for more", async ({ page }) => {
   await page.goto(APP);
   await openSheet(page);

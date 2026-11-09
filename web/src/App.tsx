@@ -9,10 +9,12 @@ import { useAppData, useRouteBlocks } from "./data/useAppData";
 import { MapView, type MapText } from "./map/MapView";
 import type { MapGone, MapStation, Padding } from "./map/types";
 import { t, type Lang } from "./model/i18n";
-import { DEFAULT_PEOPLE, isExample, type Person } from "./model/scenario";
+import { isExample, type Person } from "./model/scenario";
+import { planOf } from "./model/share";
 import { visibleHeight, type Snap } from "./model/sheet";
-import { buildMapPeople, centre, fitKey, personRoutes, stationIndex, toMapStation, useOutcome } from "./usePlan";
+import { buildMapPeople, centre, fitKey, personRoutes, scoredIndexes, stationIndex, toMapStation, useOutcome } from "./usePlan";
 import { useStacked, useTheme, useViewportHeight } from "./useScreen";
+import { readOpening, useLinkSync, useShare } from "./useShareLink";
 
 export function App() {
   const loaded = useAppData(import.meta.env.BASE_URL);
@@ -55,14 +57,16 @@ function Planner({ data, lang, setLang }: PlannerProps) {
   const stacked = useStacked();
   const theme = useTheme();
   const viewport = useViewportHeight();
-  const [people, setPeople] = useState<readonly Person[]>(DEFAULT_PEOPLE);
-  const [alpha, setAlpha] = useState(0.5);
-  const [meetingEnd, setMeetingEnd] = useState<number | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [opening] = useState(() => readOpening(m, window.location.search));
+  const [people, setPeople] = useState<readonly Person[]>(opening.people);
+  const [alpha, setAlpha] = useState(opening.alpha);
+  const [meetingEnd, setMeetingEnd] = useState<number | null>(opening.meetingEnd);
+  const [selected, setSelected] = useState<string | null>(opening.selected);
   const [focus, setFocus] = useState<string | null>(null);
   const [snap, setSnap] = useState<Snap>("peek");
 
-  const outcome = useOutcome(m, people, alpha, meetingEnd, selected);
+  const unnamed = useCallback((n: number) => t(lang, "personN", { n }), [lang]);
+  const outcome = useOutcome(m, people, alpha, meetingEnd, selected, unnamed);
   const result = outcome.kind === "ok" ? outcome.result : null;
   const best = outcome.kind === "ok" ? outcome.best : null;
   const first = result?.candidates[0] ?? null;
@@ -76,6 +80,16 @@ function Planner({ data, lang, setLang }: PlannerProps) {
   const dropped = outcome.kind === "ok" ? outcome.dropped : null;
   const gone = useMemo<MapGone | null>(() => (dropped ? { at: centre(m, dropped.station.id), name: dropped.station.ja } : null), [dropped, m]);
   const mapText = useMapText(lang);
+  const plan = useMemo(() => {
+    const slots = scoredIndexes(people);
+    const participants = outcome.kind === "ok" ? outcome.result.participants : [];
+    const snapped = (i: number) => participants[slots.indexOf(i)]?.start[0]?.station.id ?? null;
+    return planOf(people, snapped, alpha, meetingEnd, selected);
+  }, [people, outcome, alpha, meetingEnd, selected]);
+  const untouched = isExample(people) && alpha === 0.5 && meetingEnd === null && selected === null;
+  useLinkSync(plan, untouched);
+  const { share, toast } = useShare(lang, best ? name(best.station) : null);
+  const fromLink = opening.shared && people === opening.people;
   /** With no answer to show, the sheet opens far enough to edit the people. */
   const sheetSnap: Snap = best === null && snap === "peek" ? "half" : snap;
   const padding = useMemo<Padding>(() => (stacked
@@ -109,10 +123,12 @@ function Planner({ data, lang, setLang }: PlannerProps) {
       <MapView theme={theme} basemap={BASEMAP} text={mapText} people={mapPeople} meet={meet} others={others} gone={gone}
         focus={focus} drawKey={fitKey(best)} fitKey={`${fitKey(best)}|${stacked ? sheetSnap : "panel"}`} padding={padding}
         onPerson={openPerson} onStation={pick} onMeet={raise} />
+      <p className="toast" role="status">{toast ?? ""}</p>
       <header className="topbar">
         <span className="brand"><i aria-hidden="true">要</i>Kaname</span>
         <span className="topbar-end">
           {isExample(people) && <span className="example-tag">{t(lang, "example")}</span>}
+          {fromLink && <span className="example-tag">{t(lang, "sharedPlan")}</span>}
           <span className="lang">
             <button type="button" aria-pressed={lang === "en"} onClick={() => setLang("en")}>EN</button>
             <button type="button" aria-pressed={lang === "ja"} onClick={() => setLang("ja")}>日本語</button>
@@ -125,7 +141,8 @@ function Planner({ data, lang, setLang }: PlannerProps) {
           {outcome.kind === "error" && <p className="notice" role="alert">{outcome.message}</p>}
           {outcome.kind === "ok" && best === null && <p className="notice" role="alert">{t(lang, "noFeasible")}</p>}
           {blocks.error && <p className="notice" role="alert">{t(lang, "routesError")}</p>}
-          {best && first && <Ticket lang={lang} shown={best} first={first} dropped={dropped} onOpen={raise} />}
+          {fromLink && opening.unknown > 0 && <p className="notice" role="alert">{t(lang, "unknownStations", { n: opening.unknown })}</p>}
+          {best && first && <Ticket lang={lang} shown={best} first={first} dropped={dropped} onOpen={raise} onShare={share} />}
         </>}>
         <PeopleList data={m} lang={lang} people={people} outcome={outcome} routes={routes} meetingEnd={meetingEnd}
           open={focus} onOpen={openPerson} edit={edit} />

@@ -31,6 +31,15 @@ describe("scenario state", () => {
     ]);
   });
 
+  it("names an unnamed person by their number, in the caller's words", () => {
+    const people: Person[] = [
+      { id: "a", label: " ", start: { station: "shinjuku" }, home: null },
+      { id: "b", label: "", start: { station: "tokyo" }, home: null },
+    ];
+    expect(toParticipants(people).map((p) => p.label)).toEqual(["#1", "#2"]);
+    expect(toParticipants(people, (n) => `Person ${n}`).map((p) => p.label)).toEqual(["Person 1", "Person 2"]);
+  });
+
   it("opens on Shizuku and Tora, who meet at 神保町", () => {
     const r = rank(toParticipants(DEFAULT_PEOPLE), {}, real);
     expect(r.candidates.length).toBe(10);

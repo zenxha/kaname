@@ -47,7 +47,7 @@ export function PeopleList({ data, lang, people, outcome, routes, meetingEnd, op
       <ol className="prows">
         {people.map((p, i) => {
           const j = slots.indexOf(i);
-          const label = p.label.trim() || `#${i + 1}`;
+          const label = p.label.trim() || t(lang, "personN", { n: i + 1 });
           if (editing === p.id) {
             const snap = outcome.kind === "ok" && j >= 0 ? outcome.result.participants[j]?.start[0] : undefined;
             return (
