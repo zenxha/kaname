@@ -30,6 +30,10 @@ export interface RailwayRecord {
   readonly ja: string;
   readonly en: string;
   readonly color: string;
+  /** Station indexes in running order (for drawing a hop along the line). */
+  readonly stations: readonly number[];
+  /** The line is a loop: the last station connects back to the first. */
+  readonly loop: boolean;
 }
 
 /** The time windows the minutes describe, as "HH:MM" pairs (from meta.json). */
@@ -131,11 +135,15 @@ function parseStation(v: unknown, i: number, nCandidates: number, nRailways: num
   };
 }
 
-function parseRailway(v: unknown, i: number): RailwayRecord {
+function parseRailway(v: unknown, i: number, nStations: number): RailwayRecord {
   const where = `railway ${i}`;
   if (!isRecord(v)) bad(`${where} must be an object`);
+  const stations = (v.stations === undefined ? [] : list(v.stations, `${where} stations`)).map((s) => {
+    const x = int(s, `${where} station`);
+    return x < nStations ? x : bad(`${where}: station ${x} does not exist`);
+  });
   return { id: str(v.id, `${where} id`), ja: str(v.ja, `${where} ja`), en: str(v.en, `${where} en`),
-    color: typeof v.color === "string" ? v.color : "#888888" };
+    color: typeof v.color === "string" ? v.color : "#888888", stations, loop: v.loop === true };
 }
 
 function bytes(buffers: Buffers, name: string): Uint8Array {
@@ -192,7 +200,7 @@ export function parseData(meta: unknown, stationsDoc: unknown, buffers: Buffers)
   if (stationsDoc.n_stations !== n || stationsDoc.n_candidates !== k) bad("stations.json counts disagree with meta.json");
   const rawStations = list(stationsDoc.stations, "stations.json stations");
   if (rawStations.length !== n || k > n || k < 1) bad("stations.json has the wrong number of stations");
-  const railways = list(stationsDoc.railways, "stations.json railways").map(parseRailway);
+  const railways = list(stationsDoc.railways, "stations.json railways").map((r, i) => parseRailway(r, i, n));
   const stations = rawStations.map((s, i) => parseStation(s, i, k, railways.length));
   const byId = new Map(stations.map((s) => [s.id, s.index]));
   if (byId.size !== n) bad("stations.json has duplicate station ids");

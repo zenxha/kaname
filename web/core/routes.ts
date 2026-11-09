@@ -91,10 +91,27 @@ export function routeFor(routes: RouteData, direction: "out" | "home", candidate
   }
   const values = direction === "out" ? routes.outRoutes : routes.homeRoutes;
   const idx = direction === "out" ? routes.outIdx : routes.homeIdx;
-  const next = reader(values, idx[candidate]!, idx[candidate + 1]!, candidate);
+  return routeInBlock(values.subarray(idx[candidate]!, idx[candidate + 1]!), direction, candidate, station, routes.nStations);
+}
+
+/**
+ * The same decoding on one candidate's block alone (values from idx[candidate] to idx[candidate + 1]),
+ * so an app can fetch only the block it needs.
+ */
+export function routeInBlock(
+  block: Uint16Array,
+  direction: "out" | "home",
+  candidate: number,
+  station: number,
+  nStations: number,
+): RouteHop[] {
+  if (!(Number.isInteger(station) && station >= 0 && station < nStations)) {
+    throw new RankError("BAD_OPTION", `no route for station ${station}`);
+  }
+  const next = reader(block, 0, block.length, candidate);
   const stationAt = () => {
     const s = next();
-    return s < routes.nStations ? s : bad(`route block ${candidate} names station ${s}, which does not exist`);
+    return s < nStations ? s : bad(`route block ${candidate} names station ${s}, which does not exist`);
   };
   for (let s = 0; s < station; s++) {
     const skip = next();

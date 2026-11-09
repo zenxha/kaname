@@ -1,0 +1,84 @@
+/** UI strings in English and Japanese. Station names come from the data, in both languages. */
+export type Lang = "en" | "ja";
+
+const en = {
+  tagline: "Where the whole evening is easiest, by train",
+  meetAt: "MEET AT",
+  avgMin: "AVG MIN",
+  worstMin: "WORST MIN",
+  worstWho: "worst: {who}",
+  nextBest: "NEXT BEST · AVG / WORST",
+  efficient: "EFFICIENT",
+  fair: "FAIR",
+  alphaLabel: "Efficient to fair",
+  addPerson: "＋ Add person",
+  people: "WHO'S GOING · {n}",
+  name: "Name",
+  from: "From",
+  home: "Home",
+  homeSame: "Home is the same as From",
+  remove: "Remove",
+  done: "Done",
+  useLocation: "Use my location",
+  meetingEnds: "Meeting ends",
+  clearEnd: "Clear",
+  lastTrainOn: "Stations that strand someone are left out",
+  excluded: "{n} stations left out",
+  tight: "TIGHT +{n}",
+  spare: "+{n} min spare",
+  minutes: "{n} min",
+  lastTrain: "last train {t}",
+  loading: "Loading train times…",
+  loadError: "Could not load the train data: {msg}",
+  needTwo: "Add at least two people with a start station.",
+  noFeasible: "No station gets everyone home after this meeting. Try an earlier end.",
+  searchPlaceholder: "Station",
+  editPerson: "Edit {who}",
+  attribution: "Train times: Mini Tokyo 3D (MIT) · positions: MLIT (CC BY 4.0) · map: OpenFreeMap, OpenMapTiles, OpenStreetMap",
+  sample: "sample",
+};
+
+export type StringKey = keyof typeof en;
+
+const ja: Record<StringKey, string> = {
+  tagline: "電車で、みんなの夜がいちばん楽な駅",
+  meetAt: "待ち合わせ",
+  avgMin: "平均 分",
+  worstMin: "最長 分",
+  worstWho: "最長: {who}",
+  nextBest: "次の候補 · 平均 / 最長",
+  efficient: "効率",
+  fair: "公平",
+  alphaLabel: "効率と公平のバランス",
+  addPerson: "＋ 人を追加",
+  people: "参加者 · {n}人",
+  name: "名前",
+  from: "出発",
+  home: "帰宅",
+  homeSame: "帰宅先は出発と同じ",
+  remove: "削除",
+  done: "完了",
+  useLocation: "現在地を使う",
+  meetingEnds: "解散時刻",
+  clearEnd: "解除",
+  lastTrainOn: "終電に間に合わない駅は除外",
+  excluded: "{n}駅を除外",
+  tight: "ギリギリ +{n}",
+  spare: "あと{n}分",
+  minutes: "{n}分",
+  lastTrain: "終電 {t}",
+  loading: "時刻データを読み込み中…",
+  loadError: "時刻データを読み込めませんでした: {msg}",
+  needTwo: "出発駅のある参加者を2人以上追加してください。",
+  noFeasible: "この解散時刻では全員が帰れる駅がありません。早めてください。",
+  searchPlaceholder: "駅名",
+  editPerson: "{who}を編集",
+  attribution: "時刻: Mini Tokyo 3D (MIT) · 位置: 国土数値情報 (CC BY 4.0) · 地図: OpenFreeMap, OpenMapTiles, OpenStreetMap",
+  sample: "サンプル",
+};
+
+export const STRINGS: Record<Lang, Record<StringKey, string>> = { en, ja };
+
+export function t(lang: Lang, key: StringKey, vars: Readonly<Record<string, string | number>> = {}): string {
+  return STRINGS[lang][key].replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? `{${k}}`));
+}

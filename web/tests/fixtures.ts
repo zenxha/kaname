@@ -68,7 +68,7 @@ export function rawFiles(spec: FixtureSpec): RawFiles {
     format: 1,
     n_stations: n,
     n_candidates: k,
-    railways: [{ i: 0, id: "Op.A", ja: "A線", en: "A Line", color: "#000000" }],
+    railways: [{ i: 0, id: "Op.A", ja: "A線", en: "A Line", color: "#000000", stations: spec.stations.map((_, i) => i), loop: false }],
     stations: spec.stations.map((s, i) => ({
       i,
       id: s.id,
