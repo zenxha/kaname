@@ -1,0 +1,120 @@
+{
+  "format": 1,
+  "source": {
+    "name": "Mini Tokyo 3D",
+    "repo": "https://github.com/nagix/mini-tokyo-3d.git",
+    "commit": "fa7833f18a288aeca171b68892bb7f67e229e4ca",
+    "calendar": "Weekday"
+  },
+  "config_sha256": "5a4c3def71ac806b7d4889e8227f5b7497175fea21783cd5cfe6e92675c1cfc8",
+  "windows": {
+    "outbound": [
+      "17:30",
+      "19:30"
+    ],
+    "home": [
+      "21:00",
+      "23:00"
+    ],
+    "horizon_min": 240
+  },
+  "minutes": "median planner-style duration (first boarding to arrival) over a query at every minute of the window; paid limited expresses excluded; station complexes as endpoints, no walk",
+  "counts": {
+    "stations": 1419,
+    "candidates": 207,
+    "railways": 179,
+    "stations_outside_input_radius": 2
+  },
+  "sentinels": {
+    "uint16_none": 65535,
+    "last_dep_same_station": 65534,
+    "uint8_none": 255,
+    "route_seated_flag": 32768,
+    "route_walk_flag": 16384
+  },
+  "files": {
+    "out_min.u16": {
+      "dtype": "uint16",
+      "shape": [
+        1419,
+        207
+      ],
+      "description": "Outbound median minutes, origin station -> candidate",
+      "sha256": "7a40c810b3434eaafd33652786ef81595f5fe6080417357b0a64e9595ef5a7ed"
+    },
+    "out_xfer.u8": {
+      "dtype": "uint8",
+      "shape": [
+        1419,
+        207
+      ],
+      "description": "Outbound transfers of the representative journey",
+      "sha256": "e8d1090b47c41bb0d21bfd11bcc894895e291b0ee34ae4e56eda0b7414904824"
+    },
+    "out_routes.u16": {
+      "dtype": "uint16",
+      "shape": [
+        2449680
+      ],
+      "description": "Outbound routes, one block per candidate (see out_routes_idx.u32), one route per origin station in index order: [hop count, then per hop: railway | flags, boarding station only if flags has 0x4000 (walk from the previous hop's end), station where the hop ends]. 0x8000 = seated through-running, no change of train",
+      "sha256": "49c0e77fca049efd5fa688311f788935735ce4ebb58ee725ebd93ba31fbd8bde"
+    },
+    "out_routes_idx.u32": {
+      "dtype": "uint32",
+      "shape": [
+        208
+      ],
+      "description": "Start of each candidate's block in out_routes.u16",
+      "sha256": "19ea132750ad308cf2ee39554638a919ae666d31bae306d2144074d4f117bda6"
+    },
+    "home_min.u16": {
+      "dtype": "uint16",
+      "shape": [
+        207,
+        1419
+      ],
+      "description": "Home median minutes, candidate -> home station",
+      "sha256": "0848b53bd6e6953daddd9c9b3606ad7cfaa0bf79971820969bf406fa156240e0"
+    },
+    "home_xfer.u8": {
+      "dtype": "uint8",
+      "shape": [
+        207,
+        1419
+      ],
+      "description": "Home transfers of the representative journey",
+      "sha256": "d956adbfe526dcd33bece33e5a9fe8b24f500a3d53d972f14ad60d9c3640542b"
+    },
+    "home_routes.u16": {
+      "dtype": "uint16",
+      "shape": [
+        2246103
+      ],
+      "description": "Home routes, one block per candidate (see home_routes_idx.u32), one route per home station in index order, same encoding as out_routes.u16",
+      "sha256": "ef1d136fbd249719ee745dbd325b98e013716890a3e55347c527992edd196321"
+    },
+    "home_routes_idx.u32": {
+      "dtype": "uint32",
+      "shape": [
+        208
+      ],
+      "description": "Start of each candidate's block in home_routes.u16",
+      "sha256": "e5f630780c4b012e2ccc78fa54a1a7fad1343acc6c6df4060d0b42d124593460"
+    },
+    "last_dep.u16": {
+      "dtype": "uint16",
+      "shape": [
+        207,
+        1419
+      ],
+      "description": "Latest departure from the candidate that still reaches the home station, minutes after 00:00 of the service day (may exceed 1440)",
+      "sha256": "4ff36d2f312f86bd22f5f3746c882319234c9cdc0c5ff0268f9630502f0e36f9"
+    },
+    "stations.json": {
+      "sha256": "13a874ec85bac8e80c0beef5bd1491d2717b5f938559bf458a369d6ba311114e"
+    },
+    "candidates.csv": {
+      "sha256": "e9f8d69c33af62407ea2dd4303ff6d07a894bdba5c001123219e728d8a386ff6"
+    }
+  }
+}
