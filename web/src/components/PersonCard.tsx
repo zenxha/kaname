@@ -6,6 +6,7 @@ import { railwayName, stationById, stationName } from "../model/names";
 import type { PersonSummary } from "../model/summary";
 
 interface Props {
+  readonly id: string;
   readonly data: MatrixData;
   readonly lang: Lang;
   readonly index: number;
@@ -24,12 +25,13 @@ function lines(data: MatrixData, hops: readonly RouteHop[], lang: Lang): string 
   return [...new Set(hops.map((h) => railwayName(data, h.railway, lang)))].join(" / ");
 }
 
-export function PersonCard({ data, lang, index, color, label, meet, result, summary, outHops, homeHops, maxTotal, onEdit }: Props) {
+export function PersonCard({ id, data, lang, index, color, label, meet, result, summary, outHops, homeHops, maxTotal, onEdit }: Props) {
   const from = result ? stationName(stationById(data, result.startStation), lang) : "—";
   const home = result ? stationName(stationById(data, result.homeStation), lang) : "—";
   const scale = (n: number) => `${Math.max(0, (n / Math.max(maxTotal, 1)) * 100)}%`;
   return (
-    <button type="button" className="person" onClick={onEdit} aria-label={t(lang, "editPerson", { who: label })}>
+    <button type="button" className="person" data-person={id} onClick={onEdit}>
+      <span className="sr-only">{t(lang, "edit")} </span>
       <span className="person-head">
         <span className="dot" style={{ background: color }} aria-hidden="true">{index + 1}</span>
         <span className="person-name">{label}</span>

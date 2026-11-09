@@ -78,6 +78,7 @@ export function Controls({ lang, alpha, meetingEnd, excluded, onAlpha, onMeeting
         min={0}
         max={100}
         value={Math.round((1 - alpha) * 100)}
+        aria-valuetext={`${t(lang, "fair")} ${Math.round((1 - alpha) * 100)}%`}
         onChange={(e) => onAlpha(1 - Number(e.target.value) / 100)}
       />
       <label htmlFor={endId} className="label">{t(lang, "meetingEnds")}</label>

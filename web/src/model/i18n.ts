@@ -34,6 +34,10 @@ const en = {
   noFeasible: "No station gets everyone home after this meeting. Try an earlier end.",
   searchPlaceholder: "Station",
   editPerson: "Edit {who}",
+  edit: "Edit",
+  mapLabel: "Map of everyone's routes",
+  routesError: "The routes could not load, so the map shows straight lines.",
+  locationError: "Could not get your location.",
   attribution: "Train times: Mini Tokyo 3D (MIT) · platform positions: MLIT 国土数値情報 (CC BY 4.0)",
   sample: "sample",
 };
@@ -73,6 +77,10 @@ const ja: Record<StringKey, string> = {
   noFeasible: "この解散時刻では全員が帰れる駅がありません。早めてください。",
   searchPlaceholder: "駅名",
   editPerson: "{who}を編集",
+  edit: "編集",
+  mapLabel: "全員の経路の地図",
+  routesError: "経路を読み込めなかったため、地図は直線で表示しています。",
+  locationError: "現在地を取得できませんでした。",
   attribution: "時刻: Mini Tokyo 3D (MIT) · ホーム位置: 国土数値情報 (CC BY 4.0)",
   sample: "サンプル",
 };

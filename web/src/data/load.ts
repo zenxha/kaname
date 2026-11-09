@@ -61,8 +61,12 @@ export async function fetchRouteBlock(data: AppData, direction: "out" | "home", 
   const idx = direction === "out" ? data.routeIndex.out : data.routeIndex.home;
   const start = idx[candidate]! * 2;
   const end = idx[candidate + 1]! * 2;
+  if (end <= start) return new Uint16Array(0);
   const res = await get(`${data.base}${direction}_routes.u16`, { headers: { Range: `bytes=${start}-${end - 1}` } });
   const raw = new Uint8Array(await res.arrayBuffer());
+  if (res.status === 206 && !(res.headers.get("Content-Range") ?? "").startsWith(`bytes ${start}-${end - 1}/`)) {
+    throw new RankError("BAD_DATA", `route block ${candidate}: the server sent another byte range`);
+  }
   const block = res.status === 206 ? raw : raw.subarray(start, end);
   if (block.byteLength !== end - start) throw new RankError("BAD_DATA", `route block ${candidate} is truncated`);
   return readU16(block);

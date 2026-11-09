@@ -27,7 +27,13 @@ export function StationField({ data, lang, label, value, placeholder, onPick }: 
     setQuery(null);
   };
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowDown" && open) {
+    // Enter also confirms a Japanese IME conversion; that must not pick a station.
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+    if (e.key === "ArrowDown" && !open) {
+      e.preventDefault();
+      setQuery(query ?? value);
+      setActive(0);
+    } else if (e.key === "ArrowDown" && open) {
       e.preventDefault();
       setActive((a) => Math.min(a + 1, options.length - 1));
     } else if (e.key === "ArrowUp" && open) {
@@ -50,7 +56,7 @@ export function StationField({ data, lang, label, value, placeholder, onPick }: 
           className="input"
           role="combobox"
           aria-expanded={open}
-          aria-controls={`${id}-list`}
+          aria-controls={open ? `${id}-list` : undefined}
           aria-autocomplete="list"
           aria-activedescendant={open ? `${id}-${active}` : undefined}
           autoComplete="off"
@@ -61,7 +67,7 @@ export function StationField({ data, lang, label, value, placeholder, onPick }: 
             setActive(0);
           }}
           onKeyDown={onKey}
-          onBlur={() => setTimeout(() => setQuery(null), 150)}
+          onBlur={() => setQuery(null)}
         />
         {open && (
           <ul className="options" role="listbox" id={`${id}-list`}>

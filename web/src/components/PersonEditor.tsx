@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 import type { MatrixData } from "../../core/data";
 import type { Snap } from "../../core/types";
 import { t, type Lang } from "../model/i18n";
@@ -20,11 +20,13 @@ interface Props {
 
 export function PersonEditor({ data, lang, person, index, color, startSnap, onChange, onRemove, onDone }: Props) {
   const nameId = useId();
+  const [locError, setLocError] = useState(false);
   const here = startSnap ? `${t(lang, "useLocation")} · ${lang === "ja" ? startSnap.station.ja : startSnap.station.en}` : t(lang, "useLocation");
   const locate = () => {
-    navigator.geolocation?.getCurrentPosition(
+    setLocError(false);
+    navigator.geolocation.getCurrentPosition(
       (pos) => onChange({ start: { lat: pos.coords.latitude, lng: pos.coords.longitude } }),
-      () => undefined,
+      () => setLocError(true),
       { enableHighAccuracy: false, timeout: 10_000 },
     );
   };
@@ -35,7 +37,7 @@ export function PersonEditor({ data, lang, person, index, color, startSnap, onCh
         <span className="dot" style={{ background: color }} aria-hidden="true">{index + 1}</span>
         <div className="field" style={{ flex: 1 }}>
           <label htmlFor={nameId}>{t(lang, "name")}</label>
-          <input id={nameId} className="input" value={person.label} maxLength={40} onChange={(e) => onChange({ label: e.target.value })} />
+          <input id={nameId} className="input" value={person.label} maxLength={40} autoFocus onChange={(e) => onChange({ label: e.target.value })} />
         </div>
       </div>
       <StationField
@@ -49,6 +51,7 @@ export function PersonEditor({ data, lang, person, index, color, startSnap, onCh
       {"geolocation" in navigator && (
         <button type="button" className="btn" onClick={locate}>{t(lang, "useLocation")}</button>
       )}
+      {locError && <div className="snap" role="alert">{t(lang, "locationError")}</div>}
       {person.start !== null && "lat" in person.start && startSnap && (
         <div className="snap">→ {lang === "ja" ? startSnap.station.ja : startSnap.station.en} · {t(lang, "minutes", { n: startSnap.walkMinutes })}</div>
       )}

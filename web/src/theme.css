@@ -111,14 +111,16 @@ button { cursor: pointer; }
 
 /* Map markers */
 .mk-start { width: 32px; height: 32px; border-radius: 50%; color: var(--bg); display: flex; align-items: center; justify-content: center; font: 900 16px var(--sans); box-shadow: 0 0 0 3px var(--bg); }
-.mk-home { width: 20px; height: 20px; background: var(--bg); border: 3px solid; }
+.mk-home { width: 22px; height: 22px; background: var(--bg); border: 3px solid; color: var(--text); font: 700 11px/16px var(--mono); text-align: center; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .mk-meet { position: relative; width: 36px; height: 36px; }
 .mk-meet .core { position: absolute; inset: 0; border-radius: 50%; background: var(--text); color: var(--bg); display: flex; align-items: center; justify-content: center; font: 900 17px var(--sans); }
 .mk-meet .ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--text); animation: kpulse 2.6s ease-out infinite; }
 .mk-meet .name { position: absolute; right: 44px; top: 4px; white-space: nowrap; font: 700 20px var(--sans); text-shadow: 0 0 6px var(--bg), 0 0 2px var(--bg); }
 .mk-chip { white-space: nowrap; padding: 2px 8px; border-radius: 4px; background: var(--bg); border: 2px solid; font: 500 12px var(--mono); color: var(--text); }
 .mk-chip.home { border-style: dashed; }
-.mk-cand { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--accent); background: var(--bg); color: var(--accent); font: 700 12px var(--mono); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.mk-cand { width: 44px; height: 44px; padding: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.mk-cand-dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--accent); background: var(--bg); color: var(--accent); font: 700 12px/22px var(--mono); text-align: center; }
 .pop { animation: kpop 0.45s ease-out backwards; }
 @keyframes kpop { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
 @keyframes kpulse { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(2.4); opacity: 0; } }
@@ -128,7 +130,7 @@ button { cursor: pointer; }
 }
 
 /* Phone: the map on top, the cards below it in one scrolling column. */
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .app { height: auto; min-height: 100dvh; overflow: visible; display: flex; flex-direction: column; gap: 10px; }
   .map { position: relative; inset: auto; height: 52vh; min-height: 300px; order: 1; }
   .column { position: static; width: auto !important; overflow: visible; padding: 0 16px; display: contents; }

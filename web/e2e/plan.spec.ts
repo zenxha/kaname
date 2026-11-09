@@ -31,7 +31,7 @@ test("a fifth person, a meeting end, a different pick, fairness and Japanese all
   await pickStation(page, "Home", "funabashi", /Funabashi/);
   await editor.getByRole("button", { name: "Done" }).click();
 
-  const emi = page.getByRole("button", { name: "Edit Emi" });
+  const emi = page.getByRole("button", { name: /^Edit Emi\b/ });
   await expect(emi).toBeVisible();
   await expect(emi).toContainText(/Shibuya → .* → Funabashi/);
   await expect(emi).toContainText(/\d+ min/);
@@ -63,4 +63,20 @@ test("fewer than two people asks for more", async ({ page }) => {
     await page.locator("section.editor").getByRole("button", { name: "Remove" }).click();
   }
   await expect(page.getByText("Add at least two people")).toBeVisible();
+});
+
+test("removing someone in the middle renumbers the cards and the map markers together", async ({ page }) => {
+  await page.goto(APP);
+  await page.getByRole("button", { name: /^Edit Ben\b/ }).click();
+  await page.locator("section.editor").getByRole("button", { name: "Remove" }).click();
+  await expect(page.getByRole("button", { name: "＋ Add person" })).toBeFocused();
+  await expect(page.locator(".person .dot")).toHaveText(["1", "2", "3"]);
+  await expect(page.locator(".mk-start")).toHaveText(["1", "2", "3"]);
+  await page.getByRole("button", { name: "＋ Add person" }).click();
+  await expect(page.locator("section.editor").getByLabel("Name")).toBeFocused();
+  await pickStation(page, "From", "ikebukuro", /Ikebukuro/);
+  await page.locator("section.editor").getByRole("button", { name: "Done" }).click();
+  await expect(page.locator(".person .dot")).toHaveText(["1", "2", "3", "4"]);
+  await expect(page.locator(".mk-start")).toHaveCount(4);
+  await expect(page.locator('[data-person="p5"]')).toBeFocused();
 });

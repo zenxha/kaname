@@ -5,8 +5,10 @@ import { RankError } from "../core/errors";
 import { rank } from "../core/rank";
 import { routeInBlock, type RouteHop } from "../core/routes";
 import type { CandidateResult, RankResult } from "../core/types";
+import type { MapCandidate, MapPerson } from "./components/MapView";
 import type { Blocks } from "./data/useAppData";
 import { routePath, stationPoint, type LngLat } from "./model/geometry";
+import { personColor } from "./model/palette";
 import { toParticipants, type Person } from "./model/scenario";
 
 export type Outcome =
@@ -14,9 +16,16 @@ export type Outcome =
   | { readonly kind: "error"; readonly message: string }
   | { readonly kind: "ok"; readonly result: RankResult; readonly best: CandidateResult | null };
 
+/** Station index of an id the engine returned; a miss means the data and the engine disagree. */
+export function stationIndex(data: MatrixData, id: string): number {
+  const i = data.byId.get(id);
+  if (i === undefined) throw new Error(`station "${id}" is missing from the loaded data`);
+  return i;
+}
+
 export function useOutcome(data: MatrixData, people: readonly Person[], alpha: number, meetingEnd: number | null,
   selected: string | null): Outcome {
-  return useMemo(() => {
+  return useMemo((): Outcome => {
     const participants = toParticipants(people);
     if (participants.length < 2) return { kind: "needTwo" };
     try {
@@ -37,33 +46,64 @@ export interface PersonRoute {
 }
 
 /** Each person's exact outbound and home route to the shown candidate (empty until its block loads). */
-export function usePersonRoutes(data: MatrixData, best: CandidateResult | null, blocks: Blocks | null): PersonRoute[] {
-  return useMemo(() => {
-    if (best === null) return [];
-    const k = data.byId.get(best.station.id)!;
-    return best.people.map((p) => {
-      if (blocks === null || blocks.candidate !== k) return { out: [], home: [] };
-      const s = data.byId.get(p.startStation)!;
-      const h = data.byId.get(p.homeStation)!;
-      return {
-        out: routeInBlock(blocks.out, "out", k, s, data.nStations),
-        home: routeInBlock(blocks.home, "home", k, h, data.nStations),
-      };
-    });
-  }, [data, best, blocks]);
+export function personRoutes(data: MatrixData, best: CandidateResult | null, blocks: Blocks | null): PersonRoute[] {
+  if (best === null) return [];
+  const k = stationIndex(data, best.station.id);
+  return best.people.map((p) => {
+    if (blocks === null || blocks.candidate !== k) return { out: [], home: [] };
+    return {
+      out: routeInBlock(blocks.out, "out", k, stationIndex(data, p.startStation), data.nStations),
+      home: routeInBlock(blocks.home, "home", k, stationIndex(data, p.homeStation), data.nStations),
+    };
+  });
 }
 
 export function centre(data: MatrixData, id: string): LngLat {
-  const s = data.stations[data.byId.get(id)!]!;
+  const s = data.stations[stationIndex(data, id)]!;
   return [s.lng, s.lat];
 }
 
-export function pathOrStraight(data: MatrixData, hops: readonly RouteHop[], from: string, to: string): LngLat[] {
+function pathOrStraight(data: MatrixData, hops: readonly RouteHop[], from: string, to: string): LngLat[] {
   if (hops.length > 0) return routePath(data, hops);
   return from === to ? [] : [centre(data, from), centre(data, to)];
 }
 
-export function hopStart(data: MatrixData, hops: readonly RouteHop[], fallback: string): LngLat {
+function hopStart(data: MatrixData, hops: readonly RouteHop[], fallback: string): LngLat {
   const h = hops[0];
   return h ? stationPoint(data, h.from, h.railway) : centre(data, fallback);
+}
+
+/** Positions in `people` of the people the engine scores (those with a start), in engine order. */
+export function scoredIndexes(people: readonly Person[]): number[] {
+  return people.flatMap((p, i) => (p.start === null ? [] : [i]));
+}
+
+/** What the map draws per person. Number and color follow the person's place in the list. */
+export function buildMapPeople(data: MatrixData, best: CandidateResult | null, routes: readonly PersonRoute[],
+  people: readonly Person[]): MapPerson[] {
+  if (best === null) return [];
+  const slots = scoredIndexes(people);
+  return best.people.map((p, j) => {
+    const r = routes[j] ?? { out: [], home: [] };
+    const idx = slots[j] ?? j;
+    return {
+      number: idx + 1,
+      color: personColor(idx),
+      start: hopStart(data, r.out, p.startStation),
+      home: centre(data, p.homeStation),
+      out: pathOrStraight(data, r.out, p.startStation, best.station.id),
+      back: pathOrStraight(data, r.home, best.station.id, p.homeStation),
+      outMinutes: p.outMinutes,
+      homeMinutes: p.homeMinutes,
+    };
+  });
+}
+
+export function toMapCandidate(data: MatrixData, c: CandidateResult, name: string): MapCandidate {
+  return { id: c.station.id, rank: c.rank, at: centre(data, c.station.id), name };
+}
+
+/** Changes only when the people or the shown station change, so the map refits only then. */
+export function fitKey(best: CandidateResult | null): string {
+  return best === null ? "" : [best.station.id, ...best.people.map((p) => `${p.startStation}>${p.homeStation}`)].join("|");
 }

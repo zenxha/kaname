@@ -23,10 +23,16 @@ export interface Blocks {
   readonly home: Uint16Array;
 }
 
-/** Route blocks of the selected candidate, cached per candidate. */
-export function useRouteBlocks(data: AppData | null, candidate: number | null): Blocks | null {
+export interface BlockState {
+  readonly blocks: Blocks | null;
+  readonly error: boolean;
+}
+
+/** Route blocks of the selected candidate, cached per candidate. A failed fetch is retried next time. */
+export function useRouteBlocks(data: AppData | null, candidate: number | null): BlockState {
   const cache = useRef(new Map<number, Promise<Blocks>>());
-  const [blocks, setBlocks] = useState<Blocks | null>(null);
+  const [state, setState] = useState<{ readonly candidate: number | null; readonly blocks: Blocks | null; readonly error: boolean }>(
+    { candidate: null, blocks: null, error: false });
   useEffect(() => {
     if (data === null || candidate === null) return;
     let live = true;
@@ -34,13 +40,13 @@ export function useRouteBlocks(data: AppData | null, candidate: number | null): 
       ?? Promise.all([fetchRouteBlock(data, "out", candidate), fetchRouteBlock(data, "home", candidate)])
         .then(([out, home]) => ({ candidate, out, home }));
     cache.current.set(candidate, cached);
-    cached.then((b) => live && setBlocks(b)).catch(() => {
-      cache.current.delete(candidate);
-      if (live) setBlocks(null);
+    cached.then((b) => live && setState({ candidate, blocks: b, error: false })).catch(() => {
+      if (cache.current.get(candidate) === cached) cache.current.delete(candidate);
+      if (live) setState({ candidate, blocks: null, error: true });
     });
     return () => {
       live = false;
     };
   }, [data, candidate]);
-  return blocks !== null && blocks.candidate === candidate ? blocks : null;
+  return state.candidate === candidate ? { blocks: state.blocks, error: state.error } : { blocks: null, error: false };
 }
