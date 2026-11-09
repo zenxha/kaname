@@ -48,6 +48,15 @@ describe("the decision and lesson hook", () => {
     expect(r.message).toContain("fix: stop the add button at the limit");
   });
 
+  it("reports each commit once, even when a later command mentions git commit", () => {
+    const dir = repo();
+    commit(dir, "fix: once", ["web/src/a.ts"]);
+    expect(runHook(dir, 'git commit -m "fix: once"').code).toBe(2);
+    expect(runHook(dir, "cat <<'EOF' > notes.md\nrun git add . && git commit\nEOF").code).toBe(0);
+    commit(dir, "fix: twice", ["web/src/b.ts"]);
+    expect(runHook(dir, 'git commit -m "fix: twice"').code).toBe(2);
+  });
+
   it("asks for a decision after a feature that changed code and logged nothing", () => {
     const dir = repo();
     commit(dir, "feat: add a slider", ["pipeline/src/x.py"]);

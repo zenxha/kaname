@@ -4,11 +4,14 @@
  * but neither DECISIONS.md nor LESSONS.md, it exits with 2. Claude then reads the message on stderr
  * and logs a decision or a lesson, or says in one line why none applies.
  *
- * Everything else exits with 0: other commands, docs and test commits, and a commit that did not
- * happen (HEAD is older than RECENT_S). Tests: web/tests/logHook.test.ts.
+ * Everything else exits with 0: other commands, docs and test commits, a commit that did not
+ * happen (HEAD is older than RECENT_S), and a commit it already reported. The last reported commit
+ * is kept in the git folder, so a later command that only mentions "git commit" stays quiet.
+ * Tests: web/tests/logHook.test.ts.
  */
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 const RECENT_S = 120;
 const COMMIT = /\bgit(?:\s+-c\s+\S+)*\s+commit\b/;
@@ -23,14 +26,27 @@ function git(cwd, ...args) {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
 }
 
+function reported(cwd) {
+  return resolve(cwd, git(cwd, "rev-parse", "--git-path", "kaname-log-check"));
+}
+
+function alreadyReported(cwd, sha) {
+  try {
+    return readFileSync(reported(cwd), "utf8").trim() === sha;
+  } catch {
+    return false;
+  }
+}
+
 /** The message for the newest commit, or null when it needs none. */
 function check(cwd) {
   const [sha, time, subject] = git(cwd, "log", "-1", "--format=%h%x00%ct%x00%s").split("\0");
-  if (Date.now() / 1000 - Number(time) > RECENT_S) return null;
+  if (Date.now() / 1000 - Number(time) > RECENT_S || alreadyReported(cwd, sha)) return null;
   const type = /^(\w+)(?:\([^)]*\))?!?:/.exec(subject)?.[1];
   if (!["feat", "fix", "perf", "refactor"].includes(type)) return null;
   const files = git(cwd, "diff-tree", "--root", "--no-commit-id", "--name-only", "-r", "HEAD").split("\n");
   if (files.some((f) => LOGS.has(f)) || !files.some((f) => CODE.test(f))) return null;
+  writeFileSync(reported(cwd), `${sha}\n`);
   return [
     `Commit ${sha} (${subject}) changed code but neither DECISIONS.md nor LESSONS.md.`,
     ASKS[type === "fix" ? "fix" : "feat"],
