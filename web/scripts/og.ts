@@ -72,12 +72,12 @@ svg { position: absolute; inset: 0; }
 .seal { fill: #fff; font: 700 30px "BIZ UDPGothic"; text-anchor: middle; dominant-baseline: central; }
 .meet { font: 700 30px "BIZ UDPGothic"; fill: ${INK}; paint-order: stroke; stroke: ${PAPER}; stroke-width: 9px; stroke-linejoin: round; }
 .fade { position: absolute; inset: 0; background: linear-gradient(90deg, ${PAPER} 0%, ${PAPER} 40%, rgba(242, 243, 240, 0) 56%); }
-.text { position: absolute; left: 64px; top: 60px; width: 520px; display: grid; gap: 18px; }
+.text { position: absolute; left: 64px; top: 60px; width: 580px; display: grid; gap: 18px; }
 .brand { display: flex; align-items: center; gap: 14px; font: 700 34px "BIZ UDPGothic"; }
 .brand i { font-style: normal; width: 48px; height: 48px; display: grid; place-items: center; background: ${SEAL}; color: #fff; border-radius: 5px; font-size: 28px; transform: rotate(-4deg); }
 h1 { font: 700 66px/1.08 "BIZ UDPGothic"; letter-spacing: -0.01em; margin-top: 18px; }
-.sub { font: 400 25px/1.45 "BIZ UDPGothic"; color: ${MUTED}; }
-.ja { font: 700 25px "BIZ UDPGothic"; }
+.sub { font: 400 25px/1.45 "BIZ UDPGothic"; color: ${MUTED}; max-width: 520px; }
+.ja { font: 700 23px "BIZ UDPGothic"; white-space: nowrap; }
 .ticket { position: absolute; left: 64px; bottom: 56px; display: grid; gap: 2px; padding: 16px 24px; background: #e8eae3; border-radius: 8px; }
 .ticket::before, .ticket::after { content: ""; position: absolute; top: 50%; margin-top: -10px; width: 20px; height: 20px; border-radius: 50%; background: ${PAPER}; }
 .ticket::before { left: -10px; } .ticket::after { right: -10px; }
@@ -90,8 +90,8 @@ h1 { font: 700 66px/1.08 "BIZ UDPGothic"; letter-spacing: -0.01em; margin-top: 1
 <div class="text">
   <div class="brand"><i>要</i>Kaname</div>
   <h1>Where should<br>we meet?</h1>
-  <p class="sub">Short, fair train trips for the whole group, and everyone home by the last train.</p>
-  <p class="ja">みんなが終電で帰れる、待ち合わせ駅。</p>
+  <p class="sub">Find the closest station for all your friends in Tokyo.</p>
+  <p class="ja">みんなにとって最適な集合場所を、東京の駅から。</p>
 </div>
 <div class="ticket"><small>${people.map((p) => p.label).join(" and ")} meet at</small><b>${best.station.ja}<span>${best.station.en} · ${Math.round(best.average)} min on average</span></b></div>
 </body></html>`;
