@@ -9,7 +9,7 @@ The files in this folder are derived data. The pipeline in `pipeline/` builds th
 - Used for: train timetables (weekday), station names in Japanese and English, station coordinates, railway names and colors, and station transfer groups.
 - What ships here: median travel minutes, transfer counts, last departure times, routes as sequences of railways and stations, and station names and coordinates. A timetable cannot be rebuilt from these files.
 - Open question: the Mini Tokyo 3D README says that its data comes from the Public Transportation Open Data Center (ODPT). Parts of the ODPT data have their own terms. DECISIONS.md, "What I need from you", describes the question.
-- Status: the owner approved this source for local builds and tests on 2026-11-09. You must clear the license question before any public deploy.
+- Status: the owner approved this source for local builds and tests on 2026-11-09. On the same day, the owner approved a public preview on Cloudflare Pages (not listed by search engines) with the license question still open. You must clear the license question before a public launch.
 
 ## MLIT 国土数値情報 鉄道データ (N02, 2025 edition)
 

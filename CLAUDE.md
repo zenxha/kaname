@@ -13,6 +13,7 @@ Tokyo meetup optimizer. Read these before doing anything:
 - **2026-11-09: M1 done.** Gate met (`kaname-pipeline check` passes): 207 candidates, no unreachable candidate pairs, all routes rebuild. Held-out router accuracy 24/26 within ±5 min.
 - **2026-11-09: M2 done.** Gate met: every BRIEF.md acceptance test passes (`npm --prefix web test`). The session scope (M0-M2) is complete. M3 (web UI) needs the owner's go-ahead.
 - **2026-11-09: M3 started by the owner** ("M3 first design iteration go"). Iteration 1 builds direction G of the design canvas "Kaname — Tokyo Meetup Optimizer" (https://claude.ai/artifact/24WXup9np7ZxduTBmR2H1T). The E2E gate test passes on a phone viewport. Next: the owner's feedback on the design.
+- **2026-11-09: the owner approved a public preview on Cloudflare Pages** with the license question still open (noindex, derived files only). Deploy with `npm --prefix web run deploy` from the owner's own Cloudflare account (README, "Deploy to Cloudflare Pages"). Any wider launch still needs the license cleared.
 
 ## Rules
 
