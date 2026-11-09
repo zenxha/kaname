@@ -39,7 +39,7 @@ describe("parseData", () => {
   it("accepts ArrayBuffer inputs too", () => {
     const f = rawFiles(spec);
     const buffers = Object.fromEntries(
-      Object.entries(f.buffers).map(([k, v]) => [k, v.buffer.slice(v.byteOffset, v.byteOffset + v.byteLength)]),
+      Object.entries(f.buffers).map(([k, v]) => [k, v.slice().buffer as ArrayBuffer]),
     );
     expect(parseData(f.meta, f.stations, buffers).outMin[1]).toBe(10);
   });

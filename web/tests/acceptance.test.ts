@@ -6,7 +6,7 @@ import { spotCheck } from "../../cli/spotcheck";
 import { RankError } from "../core/errors";
 import { rank } from "../core/rank";
 import { parseClock } from "../core/time";
-import type { ParticipantInput, RankResult } from "../core/types";
+import type { CandidateResult, ParticipantInput, RankResult } from "../core/types";
 import { lineStations, makeData } from "./fixtures";
 import { real, REPO_DIR } from "./realData";
 
@@ -71,10 +71,12 @@ describe("acceptance (BRIEF.md)", () => {
     const late = rank(group, { meetingEnd: end, limit: 1000 }, real);
     expect(late.excluded.length).toBeGreaterThan(0);
     expect(late.candidates.length).toBeGreaterThan(0);
-    for (const e of late.excluded) expect(e.reasons.join(" ")).toMatch(/Ome commuter.*last train/);
+    for (const e of late.excluded) expect(e.reasons.join(" ")).toMatch(/last train/);
+    expect(late.excluded.some((e) => /Ome commuter's last train home to Ome \(青梅\)/.test(e.reasons.join(" ")))).toBe(true);
     for (const c of late.candidates) for (const p of c.people) expect(p.lastTrainOk).not.toBe(false);
-    // the excluded stations are exactly the ones whose last train to 青梅 leaves before 23:45
-    const stranded = open.candidates.filter((c) => (c.people[0]!.lastDeparture ?? Infinity) < end).map((c) => c.station.id);
+    // the excluded stations are exactly the ones where someone's last train leaves before 23:45
+    const strands = (c: CandidateResult) => c.people.some((p) => (p.lastDeparture ?? Infinity) < end);
+    const stranded = open.candidates.filter(strands).map((c) => c.station.id);
     expect(late.excluded.map((e) => e.station.id).sort()).toEqual(stranded.sort());
   });
 

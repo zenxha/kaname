@@ -11,11 +11,12 @@ describe("clock times on the service day", () => {
     ["02:59", 1619],
     ["03:00", 180],
     ["9:05", 545],
+    ["25:00", 1500], // Japanese timetable notation for 01:00
   ])("%s -> %i", (text, minutes) => {
     expect(parseClock(text)).toBe(minutes);
   });
 
-  it.each(["", "1830", "25:00", "18:60", "ab:cd", "-1:00"])("rejects %j", (text) => {
+  it.each(["", "1830", "27:00", "18:60", "ab:cd", "-1:00"])("rejects %j", (text) => {
     expect(() => parseClock(text)).toThrow(RankError);
   });
 
