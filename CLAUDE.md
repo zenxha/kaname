@@ -25,6 +25,7 @@ Tokyo meetup optimizer. Read these before doing anything:
 - Google Maps is not a data source.
 - **Never commit raw third-party timetables.** `bash spike/m0/fetch_mt3d.sh` fetches them into `spike/m0/.cache/` (gitignored) at a pinned commit. Ship only derived data.
 - Log each non-obvious decision in `DECISIONS.md`, one line with its reason.
+- When a bug, a failed test or a review finding teaches something, add a story to `LESSONS.md` in its format (what happened, what we did, lesson, where to look). The owner uses it to learn and to tell the stories in interviews.
 - In M2, write the scoring tests before the engine.
 - Commit at the end of each milestone, and name the gate you met in the message. Don't push unless the owner asks.
 - Secrets come from environment variables, documented in the README, and never go in the repo.
