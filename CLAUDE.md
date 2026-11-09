@@ -24,6 +24,7 @@ Tokyo meetup optimizer. Read these before doing anything:
   - Kana search (Wikidata) and on-device address search (MLIT 位置参照情報), built by `kaname-pipeline fetch-lookup` and `lookup`.
   - `LESSONS.md`, the lessons learned for the owner's interviews.
 - **2026-11-10: pushed to GitHub on the owner's request.** The default branch is now `develop`, and `main` is gone. The repo is public, so `data/` is public too.
+- **2026-11-10: bug fixes and M4 started.** Repeated names, the 50-person limit and engine errors in both languages are fixed and deployed. A project hook (`.claude/settings.json`, `.claude/hooks/log-check.mjs`) asks for a DECISIONS.md or LESSONS.md entry after each code commit. The tuning study keeps α = 0.5. The transfer penalty λ waits for the owner (PLAN.md, "M4").
 - **Open items:** the data license question (before any wider launch); M4 tuning of the transfer penalty and the default slider position, plus a README demo; the top 10 instead of 5 and a view of the tradeoff; weekday evenings only; no per-ride minutes; deep JR platform changes still too short; one link preview for every plan; real track shapes; 26 stations without kana.
 
 ## Rules
