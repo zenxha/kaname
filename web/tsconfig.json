@@ -28,6 +28,7 @@
     "src",
     "tests",
     "e2e",
+    "scripts",
     "../cli",
     "vitest.config.ts",
     "vite.config.ts",

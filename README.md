@@ -65,9 +65,21 @@ Build a static site into `web/dist/`, which any static host can serve:
 npm --prefix web run build
 ```
 
+## Link preview and icons
+
+A shared link shows a title, a one-line description and a 1200×630 image. The tags are in `web/index.html`, and the image and icons are in `web/static/`. The build copies `web/static/` into the site.
+
+Link previews need the image's full address. The build writes `https://kaname-1l6.pages.dev` into the tags. To deploy somewhere else, set `KANAME_SITE_URL` before the build, for example `KANAME_SITE_URL=https://example.org npm --prefix web run build`.
+
+The image and icons are made from the real data. After a design change, render them again (this needs the Playwright browser and a network connection for the font):
+
+```bash
+npm --prefix web run og
+```
+
 ## Deploy to Cloudflare Pages
 
-The owner approved a public preview on Cloudflare Pages on 2026-11-09, with the data license question still open (see DECISIONS.md). The site sends `X-Robots-Tag: noindex, nofollow` (from `web/deploy/_headers`), so that search engines do not list it.
+The owner approved a public preview on Cloudflare Pages on 2026-11-09, with the data license question still open (see DECISIONS.md). The site sends `X-Robots-Tag: noindex, nofollow` (from `web/static/_headers`), so that search engines do not list it.
 
 Do these two steps one time only. Log in to your own Cloudflare account, then create the project. The `--force` flag keeps the project on classic Pages (see DECISIONS.md).
 
