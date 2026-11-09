@@ -3,6 +3,7 @@ import type { MatrixData } from "../../core/data";
 import type { Snap } from "../../core/types";
 import { t, type Lang } from "../model/i18n";
 import { placeName } from "../model/names";
+import { MAX_NAME } from "../model/share";
 import type { Person, Place } from "../model/scenario";
 import { StationField } from "./StationField";
 
@@ -36,7 +37,7 @@ export function PersonEditor({ data, lang, person, index, startSnap, onChange, o
         <span className="badge" aria-hidden="true">{index + 1}</span>
         <div className="field" style={{ flex: 1 }}>
           <label htmlFor={nameId}>{t(lang, "name")}</label>
-          <input id={nameId} className="input" value={person.label} maxLength={40} autoFocus placeholder={t(lang, "namePlaceholder")}
+          <input id={nameId} className="input" value={person.label} maxLength={MAX_NAME} autoFocus placeholder={t(lang, "namePlaceholder")}
             onChange={(e) => onChange({ label: e.target.value })} />
         </div>
       </div>

@@ -1,10 +1,11 @@
 /**
- * The shareable link: the whole plan in the query string, as station ids and settings only.
- * Names and locations stay on the device; a location travels as the station it snapped to.
+ * The shareable link: the whole plan in the query string, as stations, names and settings.
+ * A location never travels: it goes as the station it snapped to.
  *
- *   ?p=seiseki-sakuragaoka&p=kanazawa-hakkei.yokohama&fair=75&at=tokyo
+ *   ?p=seiseki-sakuragaoka_Shizuku&p=kanazawa-hakkei.yokohama_Hitori&fair=75&at=tokyo
  *
- * p: one per person, the start station, and ".home" when home is another station.
+ * p: one per person: the start station, ".home" when home is another station, and "_name" when the
+ * person has a name. Station ids are a-z, 0-9 and "-", so everything after the first "_" is the name.
  * fair: the slider, 0 (efficient) to 100 (fair); 50 is left out. at: a station picked from the ranking.
  * There is no meeting end: the app proposes it (the first last train home), so older links' "end" is ignored.
  */
@@ -14,6 +15,8 @@ import type { Person } from "./scenario";
 export interface SharedPerson {
   readonly start: string;
   readonly home: string | null;
+  /** "" when the person has no name. */
+  readonly name: string;
 }
 
 export interface Plan {
@@ -27,11 +30,22 @@ export interface Plan {
 const KEYS = ["p", "fair", "end", "at"] as const;
 const DEFAULT_FAIR = 50;
 const HOME_SEPARATOR = ".";
+const NAME_SEPARATOR = "_";
+/** The longest name the editor takes. */
+export const MAX_NAME = 40;
+
+/** A name from a link: no control characters, trimmed, and no longer than the editor allows. */
+function cleanName(text: string): string {
+  return [...text.replace(/\p{Cc}/gu, "").trim()].slice(0, MAX_NAME).join("").trim();
+}
 
 /** The plan's query string, keeping any other parameters already in `keep` (such as basemap=none). */
 export function encodePlan(plan: Plan, keep: URLSearchParams): string {
   const params = new URLSearchParams([...keep].filter(([k]) => !(KEYS as readonly string[]).includes(k)));
-  for (const p of plan.people) params.append("p", p.home === null || p.home === p.start ? p.start : `${p.start}${HOME_SEPARATOR}${p.home}`);
+  for (const p of plan.people) {
+    const where = p.home === null || p.home === p.start ? p.start : `${p.start}${HOME_SEPARATOR}${p.home}`;
+    params.append("p", p.name === "" ? where : `${where}${NAME_SEPARATOR}${p.name}`);
+  }
   const fair = Math.round((1 - plan.alpha) * 100);
   if (fair !== DEFAULT_FAIR) params.set("fair", String(fair));
   if (plan.at !== null) params.set("at", plan.at);
@@ -61,9 +75,12 @@ export function decodePlan(search: string, isStation: (id: string) => boolean): 
     return ok;
   };
   const people = params.getAll("p").slice(0, MAX_PARTICIPANTS).flatMap((value): SharedPerson[] => {
-    const [start = "", home] = value.split(HOME_SEPARATOR);
+    const cut = value.indexOf(NAME_SEPARATOR);
+    const where = cut < 0 ? value : value.slice(0, cut);
+    const name = cut < 0 ? "" : cleanName(value.slice(cut + 1));
+    const [start = "", home] = where.split(HOME_SEPARATOR);
     if (!known(start)) return [];
-    return [{ start, home: home !== undefined && known(home) && home !== start ? home : null }];
+    return [{ start, home: home !== undefined && known(home) && home !== start ? home : null, name }];
   });
   const atText = params.get("at");
   const at = atText !== null && known(atText) ? atText : null;
@@ -73,7 +90,7 @@ export function decodePlan(search: string, isStation: (id: string) => boolean): 
 
 /**
  * The plan of the people on screen. `snapped(i)` is the station person i's location snapped to, or null
- * when it has not snapped yet; such a person is left out. Names are never part of a plan.
+ * when it has not snapped yet; such a person is left out.
  */
 export function planOf(people: readonly Person[], snapped: (index: number) => string | null, alpha: number,
   at: string | null): Plan {
@@ -82,14 +99,14 @@ export function planOf(people: readonly Person[], snapped: (index: number) => st
     const start = "station" in p.start ? p.start.station : snapped(i);
     if (start === null) return [];
     const home = p.home !== null && "station" in p.home && p.home.station !== start ? p.home.station : null;
-    return [{ start, home }];
+    return [{ start, home, name: cleanName(p.label) }];
   });
   return { people: shared, alpha, at };
 }
 
-/** The people of a shared plan, unnamed; the app numbers them. */
+/** The people of a shared plan; the app numbers anyone without a name. */
 export function peopleOf(plan: Plan): Person[] {
   return plan.people.map((p, i) => ({
-    id: `p${i + 1}`, label: "", start: { station: p.start }, home: p.home === null ? null : { station: p.home },
+    id: `p${i + 1}`, label: p.name, start: { station: p.start }, home: p.home === null ? null : { station: p.home },
   }));
 }

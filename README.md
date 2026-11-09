@@ -69,13 +69,13 @@ npm --prefix web run build
 
 "Share plan" on the result ticket shares a link to the current plan. On a phone it opens the share sheet, and on a desktop it copies the link. The address bar always holds the same link.
 
-The link holds station ids and settings only, never names or locations:
+The link holds stations, names and settings. A location never goes in the link: it goes as the station it snapped to.
 
 ```text
-https://kaname-1l6.pages.dev/?p=seiseki-sakuragaoka&p=kanazawa-hakkei.yokohama&fair=75&at=tokyo
+https://kaname-1l6.pages.dev/?p=seiseki-sakuragaoka_Shizuku&p=kanazawa-hakkei.yokohama_Hitori&fair=75&at=tokyo
 ```
 
-- `p`: one per person. The start station, then `.` and the home station if home is somewhere else. A location goes as the station it snapped to.
+- `p`: one per person. The start station, then `.` and the home station if home is somewhere else, then `_` and the name if the person has one. Station ids use only `a-z`, `0-9` and `-`, so the name is everything after the first `_`.
 - `fair`: the slider, from 0 (efficient) to 100 (fair). The default 50 is left out.
 - `at`: a station picked from the ranking.
 

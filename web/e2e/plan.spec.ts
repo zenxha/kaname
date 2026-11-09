@@ -119,7 +119,7 @@ test("on a phone the sheet drags to the nearest height and the handle works from
   await expect(sheet).toHaveAttribute("data-snap", "full");
 });
 
-test("a plan travels in the link: stations and settings, never names", async ({ page, context }) => {
+test("a plan travels in the link: stations, names and settings", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.addInitScript(() => Object.defineProperty(navigator, "share", { value: undefined }));
   await page.goto(APP);
@@ -128,20 +128,20 @@ test("a plan travels in the link: stations and settings, never names", async ({ 
   await addPerson(page, "Hitori", "kanazawa-hakkei", /Kanazawa-hakkei/);
   await page.locator(".others li").nth(1).getByRole("button").click();
   await expect(page.locator(".t-name b")).toHaveText("東京");
-  await expect(page).toHaveURL(/\?basemap=none&p=seiseki-sakuragaoka&p=shibamata&p=kanazawa-hakkei&at=tokyo$/);
+  await expect(page).toHaveURL(/\?basemap=none&p=seiseki-sakuragaoka_Shizuku&p=shibamata_Tora&p=kanazawa-hakkei_Hitori&at=tokyo$/);
 
   await page.getByRole("button", { name: "Share plan" }).click();
   await expect(page.locator(".toast")).toHaveText("Link copied");
   const url = await page.evaluate(() => navigator.clipboard.readText());
   expect(url).toBe(page.url());
-  expect(url).not.toMatch(/Hitori|Shizuku|Tora/);
 
   const friend = await context.newPage();
   await friend.goto(url);
   await expect(friend.locator(".t-name b")).toHaveText("東京");
   await expect(friend.locator(".example-tag")).toHaveText("Shared plan");
   await expect(friend.locator(".mk-person")).toHaveCount(3);
-  await expect(friend.locator(".prow .pname")).toHaveText(["Person 1", "Person 2", "Person 3"]);
+  await expect(friend.locator(".prow .pname")).toHaveText(["Shizuku", "Tora", "Hitori"]);
+  await expect(friend.locator(".mk-label")).toContainText(["Shizuku", "Tora", "Hitori"]);
 });
 
 test("a link with a station the data does not have says so and keeps the rest", async ({ page }) => {
