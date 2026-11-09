@@ -41,7 +41,9 @@ interface PlannerProps {
   readonly setLang: (l: Lang) => void;
 }
 
-const BASEMAP = new URLSearchParams(window.location.search).get("basemap") === "none" ? null : OPENFREEMAP_DARK;
+/** `?basemap=none` (tests) or a build with VITE_BASEMAP=none (sandboxed previews that block tile hosts). */
+const BASEMAP = new URLSearchParams(window.location.search).get("basemap") === "none" || import.meta.env.VITE_BASEMAP === "none"
+  ? null : OPENFREEMAP_DARK;
 
 function Planner({ data, lang, setLang }: PlannerProps) {
   const m = data.matrix;

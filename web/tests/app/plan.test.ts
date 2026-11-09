@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { rank } from "../../core/rank";
-import { fetchRouteBlock, type AppData } from "../../src/data/load";
+import { decodeBase64, fetchRouteBlock, type AppData } from "../../src/data/load";
 import { personColor } from "../../src/model/palette";
 import { DEFAULT_PEOPLE, removePerson, toParticipants, updatePerson, type Person } from "../../src/model/scenario";
 import { buildMapPeople, fitKey, personRoutes, scoredIndexes, stationIndex } from "../../src/usePlan";
@@ -38,6 +38,13 @@ describe("person numbering and routes", () => {
 
   it("names a station missing from the data", () => {
     expect(() => stationIndex(real, "atlantis")).toThrow(/atlantis/);
+  });
+});
+
+describe("decodeBase64", () => {
+  it("round-trips bytes", () => {
+    const raw = Uint8Array.from([0, 1, 254, 255, 128]);
+    expect([...decodeBase64(Buffer.from(raw).toString("base64"))]).toEqual([...raw]);
   });
 });
 

@@ -19,8 +19,29 @@ async function get(url: string, init?: RequestInit): Promise<Response> {
   return res;
 }
 
+/** A host that refuses binary file types (a sandboxed preview) gets each file as `<name>.b64.txt`. */
+const BASE64 = import.meta.env.VITE_DATA_ENCODING === "base64";
+
+export function decodeBase64(text: string): Uint8Array {
+  const bin = atob(text.trim());
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
 async function bytes(url: string): Promise<Uint8Array> {
+  if (BASE64) return decodeBase64(await (await get(`${url}.b64.txt`)).text());
   return new Uint8Array(await (await get(url)).arrayBuffer());
+}
+
+const wholeFiles = new Map<string, Promise<Uint8Array>>();
+
+/** Base64 files cannot be fetched by byte range: fetch the whole route file once and cut blocks from it. */
+function wholeFile(url: string): Promise<Uint8Array> {
+  const cached = wholeFiles.get(url) ?? bytes(url);
+  wholeFiles.set(url, cached);
+  cached.catch(() => wholeFiles.delete(url));
+  return cached;
 }
 
 export function readU32(raw: Uint8Array): Uint32Array {
@@ -62,6 +83,11 @@ export async function fetchRouteBlock(data: AppData, direction: "out" | "home", 
   const start = idx[candidate]! * 2;
   const end = idx[candidate + 1]! * 2;
   if (end <= start) return new Uint16Array(0);
+  if (BASE64) {
+    const file = await wholeFile(`${data.base}${direction}_routes.u16`);
+    if (file.byteLength < end) throw new RankError("BAD_DATA", `route block ${candidate} is truncated`);
+    return readU16(file.subarray(start, end));
+  }
   const res = await get(`${data.base}${direction}_routes.u16`, { headers: { Range: `bytes=${start}-${end - 1}` } });
   const raw = new Uint8Array(await res.arrayBuffer());
   if (res.status === 206 && !(res.headers.get("Content-Range") ?? "").startsWith(`bytes ${start}-${end - 1}/`)) {
