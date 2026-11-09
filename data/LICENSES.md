@@ -18,6 +18,19 @@ The files in this folder are derived data. The pipeline in `pipeline/` builds th
 - Used for: 18 platform positions at 東京 and 武蔵小杉 in `pipeline/config/stop_positions.csv`. These positions set transfer walking times. They do not ship as separate data.
 - Attribution: 出典：国土交通省国土数値情報ダウンロードサイト（https://nlftp.mlit.go.jp/ksj/）「国土数値情報（鉄道データ）」を加工して作成
 
+## Wikidata kana readings (station search)
+
+- Source: Wikidata, property "name in kana" (P1814) of railway stations around Tokyo. `pipeline/src/kaname_pipeline/lookup.py` holds the query, and `kana.json` records it with the fetch date.
+- License: CC0 1.0. No attribution is required. The app credits Wikidata anyway.
+- Used for: `kana.json`, the readings that let station search find しばまた or シバマタ. 1,393 of 1,419 stations have a reading. A station without one is still found by its name.
+
+## MLIT 大字・町丁目レベル位置参照情報 (address search)
+
+- Source: [位置参照情報ダウンロードサービス](https://nlftp.mlit.go.jp/isj/), version 18.0b (2024 data), files `08000-18.0b.zip`, `11000-18.0b.zip`, `12000-18.0b.zip`, `13000-18.0b.zip` and `14000-18.0b.zip`.
+- License: the 位置参照情報利用約款. Use is free. A copy or an edited product must name the source, and should give the year, the file names and who edited it.
+- Used for: `addresses.json`, one point for each town or 丁目 within 62 km of Tokyo Station (20,899 points). The app searches it on the device.
+- Credit: 「大字・町丁目レベル位置参照情報 国土交通省」（18.0b、2024年、上記ファイル、加工: kaname）. The app shows the credit in its footer.
+
 ## Not a data source
 
 - Yahoo!乗換案内 gave reference times for validation only. The repo keeps 52 summary facts (times, transfer counts, line names) in `spike/m0/` and `pipeline/validation/`. None of them are in this folder.

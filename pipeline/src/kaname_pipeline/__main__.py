@@ -1,4 +1,4 @@
-"""Command line: `uv run kaname-pipeline build|check|validate`."""
+"""Command line: `uv run kaname-pipeline build|check|validate|fetch-lookup|lookup`."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ from . import mt3d
 from .check import ArtifactError
 from .validate import ValidationError
 from .config import CONFIG_DIR, DEFAULT_MT3D_DIR, DEFAULT_OUT_DIR, ConfigError, load_config
+from .lookup import LookupDataError
 from .network import NetworkError
 
 log = logging.getLogger("kaname_pipeline")
@@ -60,6 +61,30 @@ def cmd_validate(args) -> int:
     return 0 if report.passed else 1
 
 
+def cmd_fetch_lookup(args) -> int:
+    from .lookup import fetch
+
+    for path in fetch():
+        log.info("fetched %s", path)
+    return 0
+
+
+#: The address index reaches a little past the input area, so an address at its edge still finds stations.
+ADDRESS_MARGIN_KM = 2.0
+
+
+def cmd_lookup(args) -> int:
+    from .lookup import build
+
+    cfg = load_config(Path(args.config))
+    kana, addresses = build(Path(args.out), cfg.center, cfg.input_radius_km + ADDRESS_MARGIN_KM)
+    cov = kana["coverage"]
+    towns = sum(len(towns) for _, towns in addresses["cities"])
+    log.info("kana for %d of %d stations (%.1f%%); %d towns and 丁目 in %d cities",
+             cov["with_kana"], cov["stations"], 100 * cov["with_kana"] / cov["stations"], towns, len(addresses["cities"]))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="kaname-pipeline", description=__doc__)
     parser.add_argument("--mt3d", default=str(DEFAULT_MT3D_DIR), help="Mini Tokyo 3D checkout (default: .cache/mt3d)")
@@ -70,12 +95,15 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--workers", type=int, default=None, help="worker processes (default: CPUs - 1)")
     sub.add_parser("check", help="run the M1 gate checks on the written data files")
     sub.add_parser("validate", help="compare the router with reference journey times and recompute stored cells")
+    sub.add_parser("fetch-lookup", help="download Wikidata kana readings and MLIT address points into .cache/lookup")
+    sub.add_parser("lookup", help="write kana.json and addresses.json for station and address search")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    handlers = {"build": cmd_build, "check": cmd_check, "validate": cmd_validate}
+    handlers = {"build": cmd_build, "check": cmd_check, "validate": cmd_validate,
+                "fetch-lookup": cmd_fetch_lookup, "lookup": cmd_lookup}
     try:
         return handlers[args.cmd](args)
-    except (ConfigError, mt3d.SourceDataError, NetworkError, ArtifactError, ValidationError) as exc:
+    except (ConfigError, mt3d.SourceDataError, NetworkError, ArtifactError, ValidationError, LookupDataError) as exc:
         log.error("error: %s", exc)
         return 2
 

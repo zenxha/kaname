@@ -43,6 +43,11 @@ You need `git`, `bash` and [uv](https://docs.astral.sh/uv/). If Python 3.11 or l
    ```bash
    uv run pytest --cov
    ```
+6. Fetch the search helpers (Wikidata kana readings and MLIT address points, about 3 MB into `.cache/lookup`), then write `kana.json` and `addresses.json`. They do not change any travel time, so this step does not touch the other files.
+   ```bash
+   uv run kaname-pipeline fetch-lookup
+   uv run kaname-pipeline lookup
+   ```
 
 The build is deterministic. The same source commit and configuration give the same files and the same checksums in `meta.json`.
 
@@ -75,7 +80,7 @@ The link holds stations, names and settings. A location never goes in the link: 
 https://kaname-1l6.pages.dev/?p=seiseki-sakuragaoka_Shizuku&p=kanazawa-hakkei.yokohama_Hitori&fair=75&at=tokyo
 ```
 
-- `p`: one per person. The start station, then `.` and the home station if home is somewhere else, then `_` and the name if the person has one. Station ids use only `a-z`, `0-9` and `-`, so the name is everything after the first `_`.
+- `p`: one per person. The start station, then `.` and the home station if home is somewhere else, then `_` and the name if the person has one. Station ids use only `a-z`, `0-9` and `-`, so the name is everything after the first `_`. A typed address or a location goes as the station it snapped to, never as text or coordinates.
 - `fair`: the slider, from 0 (efficient) to 100 (fair). The default 50 is left out.
 - `at`: a station picked from the ranking.
 
@@ -177,6 +182,8 @@ All binary files are little-endian and row-major. `meta.json` gives the shape, t
 | `last_dep.u16` | uint16 [candidates × stations] | Latest departure from the candidate that still reaches the home station, in minutes after 00:00 (values over 1440 are after midnight) |
 | `out_routes.u16`, `out_routes_idx.u32` | uint16, uint32 | The route of each outbound journey, one block per candidate |
 | `home_routes.u16`, `home_routes_idx.u32` | uint16, uint32 | The route of each home journey, one block per candidate |
+| `kana.json` | JSON | Kana readings for station search, by station id, from Wikidata. Optional: without it, search still works by name |
+| `addresses.json` | JSON | Towns and 丁目 with a point each, grouped by city, coordinates in 1e-5 degrees. The app loads it on the first Japanese typed into a station field |
 
 Sentinels: `65535` means unreachable or no value. In `last_dep.u16`, `65534` means that the candidate is the home station. In the `.u8` files, `255` means unreachable.
 

@@ -39,6 +39,7 @@ bash pipeline/fetch_mt3d.sh            # ~110 MB, data/ folder only, into .cache
 cd pipeline && uv run kaname-pipeline build && uv run kaname-pipeline check   # ~30 s
 uv run pytest --cov                    # pipeline tests
 uv run kaname-pipeline validate        # router vs reference journey times
+uv run kaname-pipeline fetch-lookup && uv run kaname-pipeline lookup   # kana.json and addresses.json
 cd .. && npm --prefix web install && npm --prefix web test   # engine and acceptance tests
 npm --prefix web run cli -- --person "Aki:町田" --person "Ben:大宮>船橋" --end 23:30
 ```
