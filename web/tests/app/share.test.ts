@@ -13,31 +13,24 @@ const PLAN: Plan = {
     { start: "kanazawa-hakkei", home: "yokohama" },
   ],
   alpha: 0.25,
-  meetingEnd: 23 * 60 + 30,
   at: "tokyo",
 };
 
 describe("encodePlan", () => {
   it("writes station ids and settings, readable and with nothing escaped", () => {
     expect(encodePlan(PLAN, new URLSearchParams())).toBe(
-      "?p=seiseki-sakuragaoka&p=shibamata&p=kanazawa-hakkei.yokohama&fair=75&end=2330&at=tokyo");
+      "?p=seiseki-sakuragaoka&p=shibamata&p=kanazawa-hakkei.yokohama&fair=75&at=tokyo");
   });
 
   it("leaves out defaults and keeps parameters that are not part of the plan", () => {
-    const plain: Plan = { people: PLAN.people.slice(0, 2), alpha: 0.5, meetingEnd: null, at: null };
+    const plain: Plan = { people: PLAN.people.slice(0, 2), alpha: 0.5, at: null };
     expect(encodePlan(plain, new URLSearchParams("basemap=none&at=old"))).toBe("?basemap=none&p=seiseki-sakuragaoka&p=shibamata");
-  });
-
-  it("writes an after-midnight end as it reads on a clock", () => {
-    expect(encodePlan({ ...PLAN, meetingEnd: 24 * 60 + 15 }, new URLSearchParams())).toContain("end=0015");
   });
 });
 
 describe("decodePlan", () => {
   it("reads back what encodePlan wrote", () => {
     expect(decodePlan(encodePlan(PLAN, new URLSearchParams()), isStation)).toEqual({ plan: PLAN, unknown: 0 });
-    const late = { ...PLAN, meetingEnd: 24 * 60 + 15 };
-    expect(decodePlan(encodePlan(late, new URLSearchParams()), isStation).plan).toEqual(late);
   });
 
   it("is null without people, so the app opens on its example", () => {
@@ -53,10 +46,13 @@ describe("decodePlan", () => {
   });
 
   it("ignores settings out of range and keeps the defaults", () => {
-    const d = decodePlan("?p=tokyo&p=ueno&fair=150&end=2575", isStation).plan!;
-    expect(d.alpha).toBe(0.5);
-    expect(d.meetingEnd).toBeNull();
-    expect(decodePlan("?p=tokyo&p=ueno&fair=abc&end=9:30", isStation).plan!.alpha).toBe(0.5);
+    expect(decodePlan("?p=tokyo&p=ueno&fair=150", isStation).plan!.alpha).toBe(0.5);
+    expect(decodePlan("?p=tokyo&p=ueno&fair=abc", isStation).plan!.alpha).toBe(0.5);
+  });
+
+  it("ignores a meeting end from an older link: the app proposes the end itself", () => {
+    expect(decodePlan("?p=tokyo&p=ueno&end=2330", isStation).plan).toEqual({
+      people: [{ start: "tokyo", home: null }, { start: "ueno", home: null }], alpha: 0.5, at: null });
   });
 
   it("reads at most as many people as the engine takes", () => {
@@ -74,7 +70,7 @@ describe("planOf and peopleOf", () => {
   ];
 
   it("keeps stations only: no names, and a location becomes the station it snapped to", () => {
-    const plan = planOf(people, (i) => (i === 1 ? "tokyo" : null), 0.5, null, null);
+    const plan = planOf(people, (i) => (i === 1 ? "tokyo" : null), 0.5, null);
     expect(plan.people).toEqual([
       { start: "shinjuku", home: null },
       { start: "tokyo", home: null },
@@ -84,7 +80,7 @@ describe("planOf and peopleOf", () => {
   });
 
   it("skips a location that has not snapped yet", () => {
-    expect(planOf(people, () => null, 0.5, null, null).people).toHaveLength(2);
+    expect(planOf(people, () => null, 0.5, null).people).toHaveLength(2);
   });
 
   it("turns a plan back into unnamed people", () => {

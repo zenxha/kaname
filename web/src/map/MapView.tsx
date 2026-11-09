@@ -4,9 +4,9 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import type { LngLat } from "../model/geometry";
 import { addRouteLayers, BASEMAPS, blankStyle, setFocus } from "./layers";
-import { goneMarker, personMarker, sealMarker, stationMarker } from "./markers";
+import { personMarker, sealMarker, stationMarker } from "./markers";
 import "./maplibreWorker";
-import type { MapGone, MapPerson, MapStation, Padding, Theme } from "./types";
+import type { MapPerson, MapStation, Padding, Theme } from "./types";
 import { useDrawIn } from "./useDrawIn";
 
 /** Words the map needs, in the current language. */
@@ -16,7 +16,6 @@ export interface MapText {
   readonly whyHere: (station: string) => string;
   readonly showTrip: (who: string) => string;
   readonly showStation: (station: string, rank: number) => string;
-  readonly gone: (station: string) => string;
 }
 
 interface Props {
@@ -27,7 +26,6 @@ interface Props {
   readonly people: readonly MapPerson[];
   readonly meet: MapStation | null;
   readonly others: readonly MapStation[];
-  readonly gone: MapGone | null;
   readonly focus: string | null;
   /** Names the answer on show; a new one draws the lines in again. */
   readonly drawKey: string;
@@ -88,7 +86,7 @@ function fitPoints(people: readonly MapPerson[], meet: MapStation | null, focus:
 }
 
 export function MapView(props: Props) {
-  const { theme, basemap, text, people, meet, others, gone, focus, drawKey, fitKey, onPerson, onStation, onMeet } = props;
+  const { theme, basemap, text, people, meet, others, focus, drawKey, fitKey, onPerson, onStation, onMeet } = props;
   const box = useRef<HTMLDivElement>(null);
   const map = useMap(box, theme, basemap);
   const drawn = useRef("");
@@ -105,8 +103,7 @@ export function MapView(props: Props) {
     const persons = people.map((p) => personMarker(p, text.minutes(p.minutes), text.showTrip(p.label), () => onPerson(p.id)));
     const stations = others.map((s) => stationMarker(s, text.showStation(s.name, s.rank), () => onStation(s.id)));
     const sealed = meet ? sealMarker(meet, text.whyHere(meet.name), drawn.current !== drawKey, onMeet) : null;
-    const markers: Marker[] = [...stations.map((s) => s.marker), ...(gone ? [goneMarker(gone, text.gone(gone.name))] : []),
-      ...persons.map((p) => p.marker), ...(sealed ? [sealed.marker] : [])];
+    const markers: Marker[] = [...stations.map((s) => s.marker), ...persons.map((p) => p.marker), ...(sealed ? [sealed.marker] : [])];
     markers.forEach((mk) => mk.addTo(map));
     personEls.current = new Map(persons.map((p, i) => [people[i]!.id, p.el]));
     stationEls.current = stations.map((s) => s.el);
@@ -128,7 +125,7 @@ export function MapView(props: Props) {
       markers.forEach((mk) => mk.remove());
       seal.current = null;
     };
-  }, [map, people, meet, others, gone, text, drawKey, onPerson, onStation, onMeet]);
+  }, [map, people, meet, others, text, drawKey, onPerson, onStation, onMeet]);
 
   useDrawIn(map, people, drawKey, drawn, seal, reducedMotion());
 
@@ -137,7 +134,7 @@ export function MapView(props: Props) {
     setFocus(map, focus);
     personEls.current.forEach((el, id) => el.classList.toggle("dimmed", focus !== null && id !== focus));
     stationEls.current.forEach((el) => el.classList.toggle("hidden", focus !== null));
-  }, [map, focus, people, others, meet, gone, text, drawKey]);
+  }, [map, focus, people, others, meet, text, drawKey]);
 
   useEffect(() => {
     if (map === null) return;

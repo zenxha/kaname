@@ -6,7 +6,6 @@ import type { PersonResult } from "../../core/types";
 import { t, type Lang } from "../model/i18n";
 import { rideSteps } from "../model/itinerary";
 import { stationName } from "../model/names";
-import { spareMinutes, TIGHT_MIN } from "../model/summary";
 import { TripPills, TripRail } from "./Trip";
 
 interface Props {
@@ -18,25 +17,20 @@ interface Props {
   readonly result: PersonResult | undefined;
   readonly hops: readonly RouteHop[];
   readonly meet: number;
-  readonly meetingEnd: number | null;
+  /** This person's last train home is the group's first: they decide when everyone leaves. */
+  readonly first: boolean;
   readonly open: boolean;
   readonly onOpen: () => void;
   readonly onEdit: () => void;
 }
 
-function LastTrain({ data, lang, result, meet, meetingEnd }: Pick<Props, "data" | "lang" | "meet" | "meetingEnd"> & { readonly result: PersonResult }) {
+function LastTrain({ data, lang, result, meet, first }: Pick<Props, "data" | "lang" | "meet" | "first"> & { readonly result: PersonResult }) {
   if (result.lastDeparture === null || result.homeMinutes === 0) return null;
   const station = stationName(data.stations[meet], lang);
-  const spare = spareMinutes(result.lastDeparture, meetingEnd);
-  const text = t(lang, "lastTrainHome", { station, time: formatClock(result.lastDeparture) });
-  return (
-    <p className={spare !== null && spare < TIGHT_MIN ? "last tight" : "last"}>
-      {spare === null ? text : `${text} · ${t(lang, "spareAfterEnd", { n: spare })}`}
-    </p>
-  );
+  return <p className={first ? "last first" : "last"}>{t(lang, "lastTrainHome", { station, time: formatClock(result.lastDeparture) })}</p>;
 }
 
-export function PersonRow({ id, data, lang, number, label, result, hops, meet, meetingEnd, open, onOpen, onEdit }: Props) {
+export function PersonRow({ id, data, lang, number, label, result, hops, meet, first, open, onOpen, onEdit }: Props) {
   if (result === undefined) {
     return (
       <li className="prow">
@@ -65,7 +59,7 @@ export function PersonRow({ id, data, lang, number, label, result, hops, meet, m
           {steps.length === 0
             ? <p className="last">{t(lang, "alreadyThere", { station: stationName(data.stations[meet], lang) })}</p>
             : <TripRail data={data} lang={lang} steps={steps} />}
-          <LastTrain data={data} lang={lang} result={result} meet={meet} meetingEnd={meetingEnd} />
+          <LastTrain data={data} lang={lang} result={result} meet={meet} first={first} />
           <button type="button" className="btn" onClick={onEdit}>{t(lang, "editPerson", { who: label })}</button>
         </div>
       )}

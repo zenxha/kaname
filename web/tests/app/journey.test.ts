@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { rank } from "../../core/rank";
 import { routeFor } from "../../core/routes";
 import { findStation } from "../../core/stations";
-import { compareToFirst, droppedWinner } from "../../src/model/compare";
+import { compareToFirst, earliestLastTrain } from "../../src/model/compare";
 import { drawDuration, partialLegs } from "../../src/model/drawIn";
 import { routeFeatures } from "../../src/map/layers";
 import { routeLegs } from "../../src/model/geometry";
@@ -103,23 +103,17 @@ describe("compareToFirst", () => {
   });
 });
 
-describe("droppedWinner", () => {
-  const END = 23 * 60 + 30;
-  const open = rank([SHIZUKU, TORA, HITORI], {}, real);
-  const closed = rank([SHIZUKU, TORA, HITORI], { meetingEnd: END }, real);
-
-  it("names the station a meeting end rules out, and whose last train does it", () => {
-    expect(open.candidates[0]!.station.id).toBe("shinagawa");
-    expect(closed.candidates[0]!.station.id).toBe("tokyo");
-    expect(droppedWinner(open, closed, END)).toEqual({
-      station: open.candidates[0]!.station,
-      people: [{ label: "Tora", lastDeparture: 23 * 60 + 18 }],
-    });
+describe("earliestLastTrain", () => {
+  it("names who has to leave first, and when: the end the app proposes", () => {
+    const best = rank([SHIZUKU, TORA], {}, real).candidates[0]!;
+    expect(best.station.id).toBe("jimbocho");
+    expect(earliestLastTrain(best)).toEqual({ time: 23 * 60 + 30, labels: ["Tora"] });
   });
 
-  it("is null when the first station still works", () => {
-    const two = rank([SHIZUKU, TORA], {}, real);
-    expect(droppedWinner(two, rank([SHIZUKU, TORA], { meetingEnd: END }, real), END)).toBeNull();
+  it("lists everyone who shares the earliest train, and is null when nobody needs one", () => {
+    const people = (last: (number | null)[]) => ({ people: last.map((l, i) => ({ label: `P${i}`, lastDeparture: l })) });
+    expect(earliestLastTrain(people([1400, 1390, 1390]))).toEqual({ time: 1390, labels: ["P1", "P2"] });
+    expect(earliestLastTrain(people([null, null]))).toBeNull();
   });
 });
 

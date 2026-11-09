@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { addPerson, DEFAULT_PEOPLE, isExample, removePerson, toParticipants, updatePerson, type Person } from "../../src/model/scenario";
 import { alphaNote, STRINGS, t } from "../../src/model/i18n";
-import { personSummary, spareMinutes, TIGHT_MIN } from "../../src/model/summary";
 import { rank } from "../../core/rank";
 import { real } from "../realData";
 
@@ -65,19 +64,5 @@ describe("strings", () => {
     expect(alphaNote(1)).toBe("noteEfficient");
     expect(alphaNote(0.5)).toBe("noteBalanced");
     expect(alphaNote(0)).toBe("noteFair");
-  });
-});
-
-describe("person summary", () => {
-  const r = rank(toParticipants(DEFAULT_PEOPLE), { meetingEnd: 23 * 60 }, real);
-  const best = r.candidates[0]!;
-
-  it("computes spare minutes before the last train and flags tight ones", () => {
-    expect(spareMinutes(1400, 23 * 60)).toBe(20);
-    expect(spareMinutes(null, 23 * 60)).toBeNull();
-    expect(spareMinutes(1400, null)).toBeNull();
-    const s = personSummary(best.people[0]!, 23 * 60);
-    expect(s.total).toBe(best.people[0]!.outMinutes + best.people[0]!.homeMinutes);
-    expect(s.tight).toBe(s.spare !== null && s.spare < TIGHT_MIN);
   });
 });

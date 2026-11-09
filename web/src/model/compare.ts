@@ -1,5 +1,5 @@
-/** Sentences the ticket needs: how a picked station compares, and which station a meeting end ruled out. */
-import type { CandidateResult, RankResult, StationInfo } from "../../core/types";
+/** Sentences the ticket needs: how a picked station compares, and when the group has to leave. */
+import type { CandidateResult, StationInfo } from "../../core/types";
 
 export interface Comparison {
   /** The first-ranked station it is compared with. */
@@ -22,17 +22,20 @@ export function compareToFirst(shown: CandidateResult, first: CandidateResult): 
   };
 }
 
-export interface Dropped {
-  readonly station: StationInfo;
-  /** The people whose last train home leaves before the meeting ends. */
-  readonly people: readonly { readonly label: string; readonly lastDeparture: number }[];
+export interface LastTrain {
+  /** Minutes after midnight of the service day. */
+  readonly time: number;
+  /** Everyone whose last train home leaves then. */
+  readonly labels: readonly string[];
 }
 
-/** The station that ranks first without a meeting end, when the end rules it out; else null. */
-export function droppedWinner(open: RankResult, current: RankResult, meetingEnd: number): Dropped | null {
-  const winner = open.candidates[0];
-  if (winner === undefined || current.candidates.some((c) => c.station.id === winner.station.id)) return null;
-  const people = winner.people.flatMap((p) =>
-    p.lastDeparture !== null && p.lastDeparture < meetingEnd ? [{ label: p.label, lastDeparture: p.lastDeparture }] : []);
-  return { station: winner.station, people };
+/**
+ * The end the app proposes for a station: the first last train home among the group. The last train
+ * never moves the meeting (people check it once they are there), so it is only reported.
+ */
+export function earliestLastTrain(c: { readonly people: readonly { readonly label: string; readonly lastDeparture: number | null }[] }): LastTrain | null {
+  const times = c.people.flatMap((p) => (p.lastDeparture === null ? [] : [p.lastDeparture]));
+  if (times.length === 0) return null;
+  const time = Math.min(...times);
+  return { time, labels: c.people.filter((p) => p.lastDeparture === time).map((p) => p.label) };
 }

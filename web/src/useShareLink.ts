@@ -8,7 +8,6 @@ import { decodePlan, encodePlan, peopleOf, type Plan } from "./model/share";
 export interface Opening {
   readonly people: readonly Person[];
   readonly alpha: number;
-  readonly meetingEnd: number | null;
   readonly selected: string | null;
   /** The people came from a shared link. */
   readonly shared: boolean;
@@ -21,11 +20,11 @@ const DEFAULT_ALPHA = 0.5;
 /** What the app opens on: the plan in the link, or the example group. */
 export function readOpening(data: MatrixData, search: string): Opening {
   const { plan, unknown } = decodePlan(search, (id) => data.byId.has(id));
-  if (plan === null) return { people: DEFAULT_PEOPLE, alpha: DEFAULT_ALPHA, meetingEnd: null, selected: null, shared: false, unknown };
-  return { people: peopleOf(plan), alpha: plan.alpha, meetingEnd: plan.meetingEnd, selected: plan.at, shared: true, unknown };
+  if (plan === null) return { people: DEFAULT_PEOPLE, alpha: DEFAULT_ALPHA, selected: null, shared: false, unknown };
+  return { people: peopleOf(plan), alpha: plan.alpha, selected: plan.at, shared: true, unknown };
 }
 
-const EMPTY: Plan = { people: [], alpha: DEFAULT_ALPHA, meetingEnd: null, at: null };
+const EMPTY: Plan = { people: [], alpha: DEFAULT_ALPHA, at: null };
 
 /** Keeps the address bar on the current plan, without adding history entries. The untouched example has a clean address. */
 export function useLinkSync(plan: Plan, untouched: boolean): void {

@@ -3,14 +3,13 @@ import { useState } from "react";
 import { DEFAULT_LAMBDA } from "../../core/rank";
 import { formatClock } from "../../core/time";
 import type { CandidateResult, StationInfo } from "../../core/types";
-import { compareToFirst, type Comparison, type Dropped } from "../model/compare";
+import { compareToFirst, earliestLastTrain, type Comparison, type LastTrain } from "../model/compare";
 import { t, type Lang } from "../model/i18n";
 
 interface Props {
   readonly lang: Lang;
   readonly shown: CandidateResult;
   readonly first: CandidateResult;
-  readonly dropped: Dropped | null;
   readonly onOpen: () => void;
   readonly onShare: () => void;
 }
@@ -27,15 +26,15 @@ function comparisonText(c: Comparison, lang: Lang): string {
   return `${avg} ${trips.join(lang === "ja" ? "、" : ", ")}${lang === "ja" ? "。" : "."}`;
 }
 
-function droppedText(d: Dropped, lang: Lang): string {
-  const station = name(d.station, lang);
-  const why = d.people.map((p) => t(lang, "missesLastTrain", { who: p.label, station, time: formatClock(p.lastDeparture) }));
-  return [t(lang, "droppedWinner", { station }), ...why].join(" ");
+function stayText(last: LastTrain, lang: Lang): string {
+  const who = last.labels.join(lang === "ja" ? "と" : " and ");
+  return t(lang, "stayUntil", { time: formatClock(last.time), who });
 }
 
-export function Ticket({ lang, shown, first, dropped, onOpen, onShare }: Props) {
+export function Ticket({ lang, shown, first, onOpen, onShare }: Props) {
   const [why, setWhy] = useState(false);
   const comparison = compareToFirst(shown, first);
+  const last = earliestLastTrain(shown);
   return (
     <section className="ticket">
       <p className="sr-only" aria-live="polite">{`${shown.station.ja} ${shown.station.en}, ${Math.round(shown.average)} ${t(lang, "avgUnit")}`}</p>
@@ -51,8 +50,8 @@ export function Ticket({ lang, shown, first, dropped, onOpen, onShare }: Props) 
           <span><b>{shown.worst.cost}</b>{t(lang, "longestWho", { who: shown.worst.label })}</span>
         </span>
       </button>
+      {last && <p className="t-stay">{stayText(last, lang)}</p>}
       {comparison && <p className="t-note">{comparisonText(comparison, lang)}</p>}
-      {dropped && <p className="t-note">{droppedText(dropped, lang)}</p>}
       <button type="button" className="t-why" aria-expanded={why} onClick={() => setWhy((w) => !w)}>{t(lang, "whatNumbers")}</button>
       {why && <p className="t-note muted">{t(lang, "numbersExplain", { n: DEFAULT_LAMBDA })}</p>}
     </section>

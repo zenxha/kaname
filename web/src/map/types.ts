@@ -23,12 +23,6 @@ export interface MapStation {
   readonly name: string;
 }
 
-/** A station a meeting end ruled out, shown crossed out. */
-export interface MapGone {
-  readonly at: LngLat;
-  readonly name: string;
-}
-
 export interface Padding {
   readonly top: number;
   readonly bottom: number;

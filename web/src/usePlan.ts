@@ -7,7 +7,6 @@ import { routeInBlock, type RouteHop } from "../core/routes";
 import type { CandidateResult, RankResult } from "../core/types";
 import type { Blocks } from "./data/useAppData";
 import type { MapPerson, MapStation } from "./map/types";
-import { droppedWinner, type Dropped } from "./model/compare";
 import { routeLegs, routePath, stationPoint, type LngLat, type MapLeg } from "./model/geometry";
 import { toParticipants, type Person } from "./model/scenario";
 
@@ -19,8 +18,6 @@ export type Outcome =
     readonly result: RankResult;
     /** The station on show: the picked one, else the first. */
     readonly best: CandidateResult | null;
-    /** The station a meeting end ruled out, when it would otherwise be first. */
-    readonly dropped: Dropped | null;
   };
 
 /** Station index of an id the engine returned; a miss means the data and the engine disagree. */
@@ -30,28 +27,21 @@ export function stationIndex(data: MatrixData, id: string): number {
   return i;
 }
 
-function dropped(data: MatrixData, people: readonly Person[], unnamed: (n: number) => string, alpha: number,
-  meetingEnd: number | null, result: RankResult): Dropped | null {
-  if (meetingEnd === null) return null;
-  return droppedWinner(rank(toParticipants(people, unnamed), { alpha }, data), result, meetingEnd);
-}
-
 /** `unnamed` names a person who has no name, by their number in the list. */
-export function useOutcome(data: MatrixData, people: readonly Person[], alpha: number, meetingEnd: number | null,
-  selected: string | null, unnamed: (n: number) => string): Outcome {
+export function useOutcome(data: MatrixData, people: readonly Person[], alpha: number, selected: string | null,
+  unnamed: (n: number) => string): Outcome {
   return useMemo((): Outcome => {
     const participants = toParticipants(people, unnamed);
     if (participants.length < 2) return { kind: "needTwo" };
     try {
-      const options = meetingEnd === null ? { alpha } : { alpha, meetingEnd };
-      const result = rank(participants, options, data);
+      const result = rank(participants, { alpha }, data);
       const best = result.candidates.find((c) => c.station.id === selected) ?? result.candidates[0] ?? null;
-      return { kind: "ok", result, best, dropped: dropped(data, people, unnamed, alpha, meetingEnd, result) };
+      return { kind: "ok", result, best };
     } catch (e) {
       if (e instanceof RankError) return { kind: "error", message: e.message };
       throw e;
     }
-  }, [data, people, alpha, meetingEnd, selected, unnamed]);
+  }, [data, people, alpha, selected, unnamed]);
 }
 
 export interface PersonRoute {

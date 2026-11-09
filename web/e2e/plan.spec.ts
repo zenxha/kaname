@@ -46,6 +46,8 @@ test("the example group opens on 神保町: lines draw in, the seal stamps, five
   await expect(page.locator(".mk-meet .seal")).not.toHaveClass(/wait/);
   await expect(page.locator(".others li")).toHaveCount(5);
   await expect(page.locator("[data-person]")).toHaveCount(2);
+  await expect(page.locator(".t-stay")).toHaveText("Everyone can stay until 23:30, Tora's last train home.");
+  await expect(page.getByLabel("Meeting ends")).toHaveCount(0); // the app proposes the end; nobody types it
 });
 
 test("tapping a person opens their trip and fades everyone else", async ({ page }) => {
@@ -57,6 +59,7 @@ test("tapping a person opens their trip and fades everyone else", async ({ page 
   await expect(page.locator(".prow.open .rail li").first()).toContainText("Kanamachi");
   await expect(page.locator(".prow.open .rail .tag")).toHaveText(["walk", "through train", "walk"]);
   await expect(page.locator(".prow.open .rail li.arrive")).toContainText("Jimbocho");
+  await expect(page.locator(".prow.open .last.first")).toHaveText("Last train home leaves Jimbocho at 23:30");
   await expect(page.locator(".mk-person.dimmed")).toHaveCount(1);
   await page.getByRole("button", { name: "日本語" }).click();
   await expect(page.locator(".prow.open .rail li").first()).toContainText("柴又");
@@ -69,7 +72,7 @@ test("tapping a person opens their trip and fades everyone else", async ({ page 
   await expect(page.locator(".mk-person.dimmed")).toHaveCount(0);
 });
 
-test("another station, the slider, a third person and a meeting end each say what changed", async ({ page }) => {
+test("another station, the slider and a third person each say what changed, and the end follows the place", async ({ page }) => {
   await page.goto(APP);
   await expect(page.locator(".t-name b")).toHaveText("神保町");
   await openSheet(page);
@@ -89,15 +92,11 @@ test("another station, the slider, a third person and a meeting end each say wha
   await expect(page.locator(".t-name b")).toHaveText("品川");
   await expect(page.locator(".example-tag")).toHaveCount(0);
   await expect(page.locator(".mk-person")).toHaveCount(3);
-
-  await page.getByLabel("Meeting ends").fill("23:30");
-  await expect(page.locator(".t-name b")).toHaveText("東京");
-  await expect(page.locator(".ticket")).toContainText("Shinagawa would be first, but someone cannot get home from it.");
-  await expect(page.locator(".ticket")).toContainText("Tora's last train home leaves Shinagawa at 23:18.");
-  await expect(page.locator(".mk-gone")).toHaveCount(1);
+  await expect(page.locator(".t-stay")).toHaveText("Everyone can stay until 23:18, Tora's last train home.");
 
   await page.getByRole("button", { name: "日本語" }).click();
   await expect(page.locator(".t-lab")).toHaveText("待ち合わせ");
+  await expect(page.locator(".t-stay")).toHaveText("23:18まで大丈夫（Toraの終電）");
   await expect(page.locator("html")).toHaveAttribute("lang", "ja");
 });
 
@@ -127,9 +126,9 @@ test("a plan travels in the link: stations and settings, never names", async ({ 
   await expect(page).toHaveURL(/\/\?basemap=none$/); // the untouched example keeps a clean address
   await openSheet(page);
   await addPerson(page, "Hitori", "kanazawa-hakkei", /Kanazawa-hakkei/);
-  await page.getByLabel("Meeting ends").fill("23:30");
+  await page.locator(".others li").nth(1).getByRole("button").click();
   await expect(page.locator(".t-name b")).toHaveText("東京");
-  await expect(page).toHaveURL(/\?basemap=none&p=seiseki-sakuragaoka&p=shibamata&p=kanazawa-hakkei&end=2330$/);
+  await expect(page).toHaveURL(/\?basemap=none&p=seiseki-sakuragaoka&p=shibamata&p=kanazawa-hakkei&at=tokyo$/);
 
   await page.getByRole("button", { name: "Share plan" }).click();
   await expect(page.locator(".toast")).toHaveText("Link copied");

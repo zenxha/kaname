@@ -1,6 +1,6 @@
-/** Map markers as DOM buttons: people (numbered), the 要 seal, other stations, and a ruled-out station. */
+/** Map markers as DOM buttons: people (numbered), the 要 seal, and the other stations. */
 import { Marker } from "maplibre-gl";
-import type { MapGone, MapPerson, MapStation } from "./types";
+import type { MapPerson, MapStation } from "./types";
 
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text = ""): HTMLElementTagNameMap[K] {
   const el = document.createElement(tag);
@@ -43,10 +43,4 @@ export function stationMarker(s: MapStation, label: string, onTap: () => void): 
   const el = button("mk-cand", label, onTap);
   el.append(node("span", "mk-cand-box", String(s.rank)));
   return { marker: new Marker({ element: el }).setLngLat([...s.at]), el };
-}
-
-export function goneMarker(g: MapGone, text: string): Marker {
-  const el = node("div", "mk-gone");
-  el.append(node("span", "mk-gone-box"), node("span", "mk-gone-label", text));
-  return new Marker({ element: el }).setLngLat([...g.at]);
 }

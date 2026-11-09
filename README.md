@@ -72,15 +72,14 @@ npm --prefix web run build
 The link holds station ids and settings only, never names or locations:
 
 ```text
-https://kaname-1l6.pages.dev/?p=seiseki-sakuragaoka&p=kanazawa-hakkei.yokohama&fair=75&end=2330&at=tokyo
+https://kaname-1l6.pages.dev/?p=seiseki-sakuragaoka&p=kanazawa-hakkei.yokohama&fair=75&at=tokyo
 ```
 
 - `p`: one per person. The start station, then `.` and the home station if home is somewhere else. A location goes as the station it snapped to.
 - `fair`: the slider, from 0 (efficient) to 100 (fair). The default 50 is left out.
-- `end`: the meeting end as `HHMM`. `0015` is 15 minutes after midnight.
 - `at`: a station picked from the ranking.
 
-If a link names a station that the data does not have, the app leaves it out and says so.
+If a link names a station that the data does not have, the app leaves it out and says so. The app does not take a meeting end. It proposes one: the first last train home in the group.
 
 ## Link preview and icons
 
@@ -159,7 +158,7 @@ npm --prefix web run typecheck
 For each candidate X and person i, `c_i(X) = t(s_i→X) + t(X→h_i) + λ·transfers + walking`. The group objective is `J(X) = α·average + (1−α)·worst`. The engine reads each value straight from the typed arrays, so 20 people and 207 candidates take well under 1 ms.
 
 - A coordinate snaps to its 3 nearest stations (80 m/min, 1.3 detour factor, at most 2 km away). Each leg uses the cheapest of the 3.
-- If you set a meeting end, each home option must have a last train at or after that end. A candidate that strands anyone moves to `excluded`, with a reason that names the person and the last train.
+- If you set a meeting end (CLI `--end`), each home option must have a last train at or after that end. The web app does not set one: it reports the first last train home instead. A candidate that strands anyone moves to `excluded`, with a reason that names the person and the last train.
 - Ties go to the station with more lines, then to the lower spread, then to the station id.
 - The result also holds the Pareto set of (average, worst case), so a UI can show the tradeoff.
 
