@@ -17,6 +17,7 @@ All binary files are little-endian and row-major. `meta.json` gives the shape, t
 | `home_routes.u16`, `home_routes_idx.u32` | uint16, uint32 | The route of each home journey, one block per candidate |
 | `kana.json` | JSON | Kana readings for station search, by station id. Optional: without it, search still works by name |
 | `addresses.json` | JSON | Towns and 丁目 with one point each, grouped by city, coordinates in 1e-5 degrees |
+| `shapes.json` | JSON | The track between each pair of neighboring stations, for the map. Optional: without it, the map draws straight lines |
 
 ## Sentinels
 
@@ -32,6 +33,18 @@ A route is `[hop count, then per hop: railway | flags, boarding station (only wi
 - Flag `0x4000` means a walk to another station before the hop.
 
 `meta.json` describes the same encoding.
+
+## Track shapes
+
+`shapes.json` has one list for each railway in `stations.json`, in the same order. A list has one entry for each pair of neighboring stations in the railway's `stations`. A loop line has one more entry, from its last station back to its first.
+
+- An entry is an encoded polyline of the track from the first station of the pair to the second. It uses the published encoding, latitude first, with 5 decimals.
+- An empty entry means that no track path was found. The app draws a straight line for that pair.
+- A ride the other way uses the same entry in reverse.
+
+The pipeline searches only the track of the railway's own operator. A straight link between a station and the track counts 5 times its length, so each path joins the track close to its stations. The pipeline drops a path more than 1.6 times as long as the straight line plus 1.5 km. `pairs` and `on_track` count the entries and the entries with a path.
+
+`stations_sha256` is the checksum of the `stations.json` that the shapes were built from. If `meta.json` gives the same checksum for the loaded `stations.json`, the app uses the shapes. Otherwise it draws straight lines.
 
 ## What the travel times include
 

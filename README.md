@@ -11,7 +11,7 @@ Try it at https://kaname-1l6.pages.dev/. The app runs in the browser on static d
 - Ranks 207 meeting stations near central Tokyo for groups of up to 50 people.
 - Counts both trips for each person: from the start to the meeting station, and from there to home.
 - A slider moves the ranking between the lowest average time and the lowest worst-case time.
-- Draws each route on the map in the real line colors, and shows the last train home for each person.
+- Draws each route on the map along the real tracks, in the line colors, and shows the last train home for each person.
 - Finds a station by its Japanese or English name or by its kana reading. Finds an address on the device, so the typed text stays in the browser.
 - Shares a plan as a link. The link holds stations, names and settings, never a location or an address.
 - English and Japanese, light and dark mode, phone and desktop layouts.
@@ -132,6 +132,11 @@ You need `git`, `bash` and [uv](https://docs.astral.sh/uv/) for this part. uv al
    uv run kaname-pipeline fetch-lookup
    uv run kaname-pipeline lookup
    ```
+6. Fetch the railway sections (about 15 MB), then write the track shapes to `shapes.json`. The download must match a pinned checksum.
+   ```bash
+   uv run kaname-pipeline fetch-shapes
+   uv run kaname-pipeline shapes
+   ```
 
 ## Plan links
 
@@ -162,4 +167,4 @@ Link previews need the full URL of the preview image. Set `KANAME_SITE_URL` to y
 
 ## Data sources
 
-The timetables come from [Mini Tokyo 3D](https://github.com/nagix/mini-tokyo-3d) (MIT). The kana readings come from Wikidata (CC0). The platform positions and the address points come from MLIT 国土数値情報 and 位置参照情報. The repo holds only derived data, never raw timetables. `data/LICENSES.md` gives the terms and credits for each source.
+The timetables come from [Mini Tokyo 3D](https://github.com/nagix/mini-tokyo-3d) (MIT). The kana readings come from Wikidata (CC0). The track shapes, the platform positions and the address points come from MLIT 国土数値情報 and 位置参照情報. The repo holds only derived data, never raw timetables. `data/LICENSES.md` gives the terms and credits for each source.

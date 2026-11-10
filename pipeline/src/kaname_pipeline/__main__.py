@@ -1,4 +1,4 @@
-"""Command line: `uv run kaname-pipeline build|check|validate|fetch-lookup|lookup`."""
+"""Command line: `uv run kaname-pipeline build|check|validate|fetch-lookup|lookup|fetch-shapes|shapes`."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from .validate import ValidationError
 from .config import CONFIG_DIR, DEFAULT_MT3D_DIR, DEFAULT_OUT_DIR, ConfigError, load_config
 from .lookup import LookupDataError
 from .network import NetworkError
+from .shapes import ShapeDataError
 
 log = logging.getLogger("kaname_pipeline")
 
@@ -85,6 +86,22 @@ def cmd_lookup(args) -> int:
     return 0
 
 
+def cmd_fetch_shapes(args) -> int:
+    from .shapes import fetch
+
+    log.info("fetched %s", fetch())
+    return 0
+
+
+def cmd_shapes(args) -> int:
+    from .shapes import build
+
+    cfg = load_config(Path(args.config))
+    doc = build(Path(args.out), cfg.center, cfg.input_radius_km)
+    log.info("track shapes for %d of %d station pairs; the rest are drawn straight", doc["on_track"], doc["pairs"])
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="kaname-pipeline", description=__doc__)
     parser.add_argument("--mt3d", default=str(DEFAULT_MT3D_DIR), help="Mini Tokyo 3D checkout (default: .cache/mt3d)")
@@ -97,13 +114,17 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("validate", help="compare the router with reference journey times and recompute stored cells")
     sub.add_parser("fetch-lookup", help="download Wikidata kana readings and MLIT address points into .cache/lookup")
     sub.add_parser("lookup", help="write kana.json and addresses.json for station and address search")
+    sub.add_parser("fetch-shapes", help="download the MLIT N02 railway data (pinned) into .cache/n02")
+    sub.add_parser("shapes", help="write shapes.json: the track between each pair of neighboring stations")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     handlers = {"build": cmd_build, "check": cmd_check, "validate": cmd_validate,
-                "fetch-lookup": cmd_fetch_lookup, "lookup": cmd_lookup}
+                "fetch-lookup": cmd_fetch_lookup, "lookup": cmd_lookup, "fetch-shapes": cmd_fetch_shapes,
+                "shapes": cmd_shapes}
     try:
         return handlers[args.cmd](args)
-    except (ConfigError, mt3d.SourceDataError, NetworkError, ArtifactError, ValidationError, LookupDataError) as exc:
+    except (ConfigError, mt3d.SourceDataError, NetworkError, ArtifactError, ValidationError, LookupDataError,
+            ShapeDataError) as exc:
         log.error("error: %s", exc)
         return 2
 

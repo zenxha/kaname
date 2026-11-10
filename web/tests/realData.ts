@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { defaultDataDir, loadMatrixData, loadRouteData } from "../../cli/loadData";
 import { parseAddresses, type AddressIndex } from "../src/model/address";
 import { parseKana, type KanaIndex } from "../src/model/search";
+import { parseShapes, stationsChecksum, type TrackShapes } from "../src/model/shapes";
 
 export const DATA_DIR = defaultDataDir();
 export const REPO_DIR = join(DATA_DIR, "..");
@@ -12,3 +13,5 @@ export const realRoutes = () => loadRouteData(DATA_DIR);
 const json = (name: string): unknown => JSON.parse(readFileSync(join(DATA_DIR, name), "utf8"));
 export const realKana: KanaIndex = parseKana(json("kana.json"), real);
 export const realAddresses = (): AddressIndex => parseAddresses(json("addresses.json"));
+export const realStationsSha = stationsChecksum(json("meta.json"));
+export const realShapes = (): TrackShapes | null => parseShapes(json("shapes.json"), real, realStationsSha);

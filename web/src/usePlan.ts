@@ -9,6 +9,7 @@ import type { Blocks } from "./data/useAppData";
 import type { MapPerson, MapStation } from "./map/types";
 import { routeLegs, routePath, stationPoint, type LngLat, type MapLeg } from "./model/geometry";
 import { toParticipants, type Person } from "./model/scenario";
+import type { TrackShapes } from "./model/shapes";
 
 export type Outcome =
   | { readonly kind: "needTwo" }
@@ -70,15 +71,17 @@ export function centre(data: MatrixData, id: string): LngLat {
 /** Drawn when a route block fails to load. */
 const STRAIGHT_COLOR = "#8a8f96";
 
-function outLegs(data: MatrixData, hops: readonly RouteHop[], from: string, to: string, straight: boolean): MapLeg[] {
-  if (hops.length > 0) return routeLegs(data, hops);
+function outLegs(data: MatrixData, shapes: TrackShapes | null, hops: readonly RouteHop[], from: string, to: string,
+  straight: boolean): MapLeg[] {
+  if (hops.length > 0) return routeLegs(data, hops, shapes);
   if (!straight || from === to) return [];
   return [{ path: [centre(data, from), centre(data, to)], walk: false, color: STRAIGHT_COLOR }];
 }
 
-function homePath(data: MatrixData, hops: readonly RouteHop[], p: CandidateResult["people"][number], meet: string, straight: boolean): LngLat[] {
+function homePath(data: MatrixData, shapes: TrackShapes | null, hops: readonly RouteHop[], p: CandidateResult["people"][number],
+  meet: string, straight: boolean): LngLat[] {
   if (p.homeStation === p.startStation || p.homeStation === meet) return [];
-  if (hops.length > 0) return routePath(data, hops);
+  if (hops.length > 0) return routePath(data, hops, shapes);
   return straight ? [centre(data, meet), centre(data, p.homeStation)] : [];
 }
 
@@ -95,9 +98,10 @@ export function scoredIndexes(people: readonly Person[]): number[] {
 /**
  * What the map draws per person. The number follows the person's place in the list.
  * `straight`: the route block failed, so draw straight lines instead of nothing.
+ * `shapes`: the track between stations; without it, each ride goes station to station.
  */
 export function buildMapPeople(data: MatrixData, best: CandidateResult | null, routes: readonly PersonRoute[],
-  people: readonly Person[], straight: boolean): MapPerson[] {
+  people: readonly Person[], straight: boolean, shapes: TrackShapes | null = null): MapPerson[] {
   if (best === null) return [];
   const slots = scoredIndexes(people);
   return best.people.map((p, j) => {
@@ -109,8 +113,8 @@ export function buildMapPeople(data: MatrixData, best: CandidateResult | null, r
       label: p.label,
       minutes: p.outMinutes,
       start: hopStart(data, r.out, p.startStation),
-      legs: outLegs(data, r.out, p.startStation, best.station.id, straight),
-      home: homePath(data, r.home, p, best.station.id, straight),
+      legs: outLegs(data, shapes, r.out, p.startStation, best.station.id, straight),
+      home: homePath(data, shapes, r.home, p, best.station.id, straight),
     };
   });
 }

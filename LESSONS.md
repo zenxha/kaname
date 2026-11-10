@@ -165,22 +165,29 @@ The owner set the goals, the gates and the product calls. Claude Code wrote most
 - Lesson: a visual bug can hide a bigger one, so look closely at the picture first. For a map, test where things are, not only that they are there.
 - Where to look: `web/src/map/labels.ts`, the two map tests at the end of `web/e2e/plan.spec.ts`.
 
+### 22. A test that checks what the code adds itself proves nothing
+
+- What happened: routes were to follow the real tracks. A test said that a drawn ride "starts and ends at the platforms", and it passed. A separate reviewer measured the gap between each track shape and its station: the median was 276 m. The search let a line join the track anywhere within 300 m of a station, with a straight link. On each curve, the straight link was cheaper. The test passed only because the drawing code adds the two platform points itself.
+- What we did: a straight link now counts 5 times its length, so the line joins the track close to each station. The median gap is now 39 m. New tests check the gap on the real data and a curve on test data, which failed first.
+- Lesson: break the feature on purpose and run each test. Measure the output itself, not a value that the code puts in on its own.
+- Where to look: `pipeline/src/kaname_pipeline/shapes.py` (`_search`), `web/tests/app/shapes.test.ts`.
+
 ## Working with an AI agent
 
-### 22. A separate reviewer finds what the author cannot
+### 23. A separate reviewer finds what the author cannot
 
 - What happened: each milestone ended with a code review by a separate agent that saw the code but not the author's reasoning.
 - What we did: every review found real defects, for example a check that never failed, a map race, an address ranking error and a retry loop with no limit. Each fix came with a regression test.
 - Lesson: keep the author and the reviewer apart. Give the reviewer the code, not the conclusion.
 - Where to look: the commits named "fix: address the ... review".
 
-### 23. Decisions written down make the story possible
+### 24. Decisions written down make the story possible
 
 - What happened: two days produced about 70 logged decisions, each with a reason.
 - What we did: every non-obvious decision got one line in DECISIONS.md, and every commit says what changed and why. This file was written from that record.
 - Lesson: the decision log is the cheapest documentation there is. Write the reason while you still know it.
 
-### 24. The agent makes mistakes too, so check its work
+### 25. The agent makes mistakes too, so check its work
 
 - What happened: some bugs came from the agent itself. A `pkill -f` pattern killed its own shell, so a commit did not happen. A page script named a variable `top`, which clashes with the browser's `window.top`. A Python class shadowed the built-in `LookupError`.
 - What we did: each one surfaced because a command, a test or a reviewer checked the result instead of trusting the claim.

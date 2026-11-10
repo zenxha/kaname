@@ -15,7 +15,7 @@ The files in this folder are derived data. The pipeline in `pipeline/` builds th
 
 - Source: [国土数値情報ダウンロードサイト](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N02-2025.html), file `N02-25_GML.zip`.
 - License: CC BY 4.0.
-- Used for: 18 platform positions at 東京 and 武蔵小杉 in `pipeline/config/stop_positions.csv`. These positions set transfer walking times. They do not ship as separate data.
+- Used for: platform positions at 東京, 武蔵小杉, 新橋, 新日本橋 and 馬喰町 in `pipeline/config/stop_positions.csv`, which set transfer walking times. Also the track shapes in `shapes.json`: the railway sections (`N02-25_RailroadSection`), simplified, between neighboring stations.
 - Attribution: 出典：国土交通省国土数値情報ダウンロードサイト（https://nlftp.mlit.go.jp/ksj/）「国土数値情報（鉄道データ）」を加工して作成
 
 ## Wikidata kana readings (station search)

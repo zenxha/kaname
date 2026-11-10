@@ -2,6 +2,7 @@
 import { MATRIX_FILES, parseData, type MatrixData } from "../../core/data";
 import { RankError } from "../../core/errors";
 import { parseKana, type KanaIndex } from "../model/search";
+import { parseShapes, stationsChecksum, type TrackShapes } from "../model/shapes";
 
 export interface RouteIndex {
   readonly out: Uint32Array;
@@ -14,6 +15,8 @@ export interface AppData {
   readonly base: string;
   /** Kana readings for station search; empty when kana.json is missing. */
   readonly kana: KanaIndex;
+  /** The track between neighboring stations; null when shapes.json is missing (the map draws straight lines). */
+  readonly shapes: TrackShapes | null;
 }
 
 async function get(url: string, init?: RequestInit): Promise<Response> {
@@ -59,10 +62,17 @@ export function readU16(raw: Uint8Array): Uint16Array {
   return Uint16Array.from({ length: raw.byteLength / 2 }, (_, i) => view.getUint16(i * 2, true));
 }
 
+/** A file the app can work without: a missing or unreadable one is null. */
+function optionalJson(url: string): Promise<unknown> {
+  return fetch(url).then((r) => (r.ok ? (r.json() as Promise<unknown>) : null)).catch(() => null);
+}
+
 export async function loadAppData(base: string): Promise<AppData> {
-  const [kanaDoc, meta, stations, ...rest] = await Promise.all([
+  const [kanaDoc, shapesDoc, meta, stations, ...rest] = await Promise.all([
     // Optional: without it, station search still works by name.
-    fetch(`${base}kana.json`).then((r) => (r.ok ? (r.json() as Promise<unknown>) : null)).catch(() => null),
+    optionalJson(`${base}kana.json`),
+    // Optional: without it, the map draws each ride station to station.
+    optionalJson(`${base}shapes.json`),
     get(`${base}meta.json`).then((r) => r.json() as Promise<unknown>),
     get(`${base}stations.json`).then((r) => r.json() as Promise<unknown>),
     ...MATRIX_FILES.map((f) => bytes(`${base}${f}`)),
@@ -76,7 +86,7 @@ export async function loadAppData(base: string): Promise<AppData> {
   if (routeIndex.out.length !== matrix.nCandidates + 1 || routeIndex.home.length !== matrix.nCandidates + 1) {
     throw new RankError("BAD_DATA", "route index does not match the station data");
   }
-  return { matrix, routeIndex, base, kana: parseKana(kanaDoc, matrix) };
+  return { matrix, routeIndex, base, kana: parseKana(kanaDoc, matrix), shapes: parseShapes(shapesDoc, matrix, stationsChecksum(meta)) };
 }
 
 function cutBlock(file: Uint8Array, start: number, end: number, candidate: number): Uint16Array {

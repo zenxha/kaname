@@ -77,7 +77,7 @@ const en = {
   problemStart: "No train between {from} and {to} goes from {who}'s start to any meeting station. Pick another start for {who}.",
   problemHome: "No meeting station has a train to {who}'s home between {from} and {to}. Pick another home for {who}.",
   problemOther: "Kaname cannot plan this group. Try other stations.",
-  attribution: "Train times: Mini Tokyo 3D (MIT) · platform positions: MLIT 国土数値情報 (CC BY 4.0) · addresses: 大字・町丁目レベル位置参照情報 国土交通省 · kana: Wikidata (CC0)",
+  attribution: "Train times: Mini Tokyo 3D (MIT) · tracks and platforms: MLIT 国土数値情報 (CC BY 4.0) · addresses: 大字・町丁目レベル位置参照情報 国土交通省 · kana: Wikidata (CC0)",
 };
 
 export type StringKey = keyof typeof en;
@@ -158,7 +158,7 @@ const ja: Record<StringKey, string> = {
   problemStart: "{from}から{to}に、{who}の出発駅から行ける集合駅がありません。別の出発駅を選んでください。",
   problemHome: "{from}から{to}に、{who}の帰りの駅まで行ける電車がどの集合駅からもありません。別の帰りの駅を選んでください。",
   problemOther: "このグループは計画できません。別の駅を試してください。",
-  attribution: "時刻: Mini Tokyo 3D (MIT) · ホーム位置: 国土数値情報 (CC BY 4.0) · 住所: 大字・町丁目レベル位置参照情報 国土交通省 · 読み: Wikidata (CC0)",
+  attribution: "時刻: Mini Tokyo 3D (MIT) · 線路とホーム位置: 国土数値情報 (CC BY 4.0) · 住所: 大字・町丁目レベル位置参照情報 国土交通省 · 読み: Wikidata (CC0)",
 };
 
 export const STRINGS: Record<Lang, Record<StringKey, string>> = { en, ja };

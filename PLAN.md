@@ -83,3 +83,4 @@ Spike code lives in `spike/m0/`. It is throwaway, but versioned so the numbers c
 - Gate met: the README has a limits section and a demo scenario.
 - Done after M4: longer transfers at deep JR platforms, checked on 24 fresh pairs (24 within ±5 min, up from 22). See DECISIONS.md, "Done in M4".
 - Done after M4: map markers sit on their stations, and names no longer cover each other.
+- Done after M4: routes follow the real tracks (MLIT N02, `data/shapes.json`).

@@ -3,13 +3,14 @@
  * Run with `npm --prefix web run og` after a design change; the build copies static/ into the site.
  */
 import { chromium } from "@playwright/test";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { defaultDataDir, loadMatrixData, loadRouteData } from "../../cli/loadData";
 import { rank } from "../core/rank";
 import { routeFor } from "../core/routes";
 import { routeLegs, type LngLat } from "../src/model/geometry";
 import { plainSummary } from "../src/model/compare";
+import { parseShapes, stationsChecksum } from "../src/model/shapes";
 import { DEFAULT_PEOPLE, toParticipants } from "../src/model/scenario";
 
 const OUT = join(import.meta.dirname, "..", "static");
@@ -26,12 +27,15 @@ const FONT = "https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;70
 
 const data = loadMatrixData(defaultDataDir());
 const routes = loadRouteData(defaultDataDir());
+const readJson = (name: string): unknown => JSON.parse(readFileSync(join(defaultDataDir(), name), "utf8"));
+const shapes = parseShapes(readJson("shapes.json"), data, stationsChecksum(readJson("meta.json")));
+if (shapes === null) throw new Error("data/shapes.json does not fit the station data: run `kaname-pipeline shapes`");
 const best = rank(toParticipants(DEFAULT_PEOPLE), {}, data).candidates[0]!;
 const k = data.byId.get(best.station.id)!;
 const meet: LngLat = [data.stations[k]!.lng, data.stations[k]!.lat];
 const people = best.people.map((p, i) => ({
   n: i + 1, label: p.label, minutes: p.outMinutes,
-  legs: routeLegs(data, routeFor(routes, "out", k, data.byId.get(p.startStation)!)),
+  legs: routeLegs(data, routeFor(routes, "out", k, data.byId.get(p.startStation)!), shapes),
 }));
 
 const K = Math.cos((35.7 * Math.PI) / 180);

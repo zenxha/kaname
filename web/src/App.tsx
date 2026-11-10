@@ -72,7 +72,8 @@ function Planner({ data, lang, setLang }: PlannerProps) {
   const first = result?.candidates[0] ?? null;
   const blocks = useRouteBlocks(data, best ? stationIndex(m, best.station.id) : null);
   const routes = useMemo(() => personRoutes(m, best, blocks.blocks), [m, best, blocks.blocks]);
-  const mapPeople = useMemo(() => buildMapPeople(m, best, routes, people, blocks.error), [m, best, routes, people, blocks.error]);
+  const mapPeople = useMemo(() => buildMapPeople(m, best, routes, people, blocks.error, data.shapes),
+    [m, best, routes, people, blocks.error, data.shapes]);
   const name = useCallback((s: { readonly ja: string; readonly en: string }) => (lang === "ja" ? s.ja : s.en), [lang]);
   const meet = useMemo<MapStation | null>(() => (best ? toMapStation(m, best, best.station.ja) : null), [best, m]);
   const others = useMemo<MapStation[]>(() => (result ? result.candidates.slice(0, SHOWN)
