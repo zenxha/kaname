@@ -267,7 +267,7 @@ test("a visitor can clear the example and start their own plan", async ({ page }
   await page.goto(APP);
   await openSheet(page);
   await expect(page.locator(".example-tag")).toHaveText("Example group");
-  await page.getByRole("button", { name: "Start your own plan" }).click();
+  await page.locator(".people-head").getByRole("button", { name: "Start your own plan" }).click();
   await expect(page.locator(".example-tag")).toHaveCount(0);
   await expect(page.locator("section.editor").getByLabel("Name")).toBeFocused();
   await expect(page.locator(".prow")).toHaveCount(1);
@@ -278,6 +278,28 @@ test("a visitor can clear the example and start their own plan", async ({ page }
   await addPerson(page, "Ren", "machida", /Machida/);
   await expect(page.locator(".t-name b")).not.toHaveText("");
   await expect(page.getByRole("button", { name: "Start your own plan" })).toHaveCount(0); // only on the example
+});
+
+test("the first screen offers the visitor's own plan in place of sharing the example", async ({ page }) => {
+  await page.goto(APP);
+  const ticket = page.locator(".ticket");
+  const own = ticket.getByRole("button", { name: "Start your own plan" });
+  await expect(own).toBeInViewport(); // the sheet is still low
+  await expect(ticket.getByRole("button", { name: "Share plan" })).toHaveCount(0);
+  await own.click();
+  const name = page.locator("section.editor").getByLabel("Name");
+  await expect(name).toBeFocused();
+  await expect(name).toBeInViewport();
+  await expect(page.locator(".prow")).toHaveCount(1);
+
+  // The second person completes the group and an answer appears; the open editor stays on screen.
+  await name.fill("Mio");
+  await pickStation(page, "From", "ueno", /Ueno/);
+  await page.locator("section.editor").getByRole("button", { name: "Done" }).click();
+  await page.getByRole("button", { name: "+ Add person" }).click();
+  await pickStation(page, "From", "machida", /Machida/);
+  await expect(page.locator(".ticket")).toBeVisible();
+  await expect(page.locator("section.editor").getByRole("button", { name: "Done" })).toBeInViewport();
 });
 
 test("a slow connection shows a loading screen, not a blank page, until the answer is ready", async ({ page }) => {

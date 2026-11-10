@@ -11,7 +11,7 @@ import { MapView, type MapText } from "./map/MapView";
 import type { MapStation, Padding } from "./map/types";
 import { STRINGS, t, type Lang } from "./model/i18n";
 import { problemText } from "./model/problem";
-import { isExample, type Person } from "./model/scenario";
+import { addPerson, isExample, type Person } from "./model/scenario";
 import { planOf } from "./model/share";
 import { visibleHeight, type Snap } from "./model/sheet";
 import { buildMapPeople, fitKey, personRoutes, scoredIndexes, stationIndex, toMapStation, useOutcome } from "./usePlan";
@@ -73,6 +73,8 @@ function Planner({ data, lang, setLang }: PlannerProps) {
   const [selected, setSelected] = useState<string | null>(opening.selected);
   const [focus, setFocus] = useState<string | null>(null);
   const [snap, setSnap] = useState<Snap>("peek");
+  /** The person whose editor is open, by id. */
+  const [editing, setEditing] = useState<string | null>(null);
 
   const unnamed = useCallback((n: number) => t(lang, "personN", { n }), [lang]);
   const outcome = useOutcome(m, people, alpha, selected, unnamed);
@@ -122,6 +124,16 @@ function Planner({ data, lang, setLang }: PlannerProps) {
       setFocus(null);
     }
   }, []);
+  /**
+   * Replaces the example with one empty person, whose editor opens. The sheet opens fully: with a low
+   * sheet, the answer that appears with the second person would push the open editor off the screen.
+   */
+  const startOwn = useCallback(() => {
+    const fresh = addPerson([], "");
+    edit(() => fresh, true);
+    setEditing(fresh[0]!.id);
+    setSnap("full");
+  }, [edit]);
   const reset = () => {
     setSelected(null);
     setFocus(null);
@@ -152,10 +164,11 @@ function Planner({ data, lang, setLang }: PlannerProps) {
           {outcome.kind === "ok" && best === null && <p className="notice" role="alert">{t(lang, "noFeasible")}</p>}
           {blocks.error && <p className="notice" role="alert">{t(lang, "routesError")}</p>}
           {fromLink && opening.unknown > 0 && <p className="notice" role="alert">{t(lang, "unknownStations", { n: opening.unknown })}</p>}
-          {best && first && <Ticket lang={lang} shown={best} first={first} onOpen={raise} onShare={share} />}
+          {best && first && <Ticket lang={lang} shown={best} first={first} onOpen={raise} onShare={share}
+            onStartOwn={isExample(people) ? startOwn : undefined} />}
         </>}>
         <PeopleList data={m} lang={lang} people={people} outcome={outcome} routes={routes}
-          open={focus} onOpen={openPerson} edit={edit} />
+          open={focus} onOpen={openPerson} edit={edit} editing={editing} onEditing={setEditing} onStartOwn={startOwn} />
         {result && result.candidates.length > 1 && (
           <Alternatives lang={lang} candidates={result.candidates} selected={best?.station.id ?? ""} onSelect={pick} />
         )}

@@ -12,6 +12,8 @@ interface Props {
   readonly first: CandidateResult;
   readonly onOpen: () => void;
   readonly onShare: () => void;
+  /** Set for the example group: the ticket offers a plan of your own instead of sharing the example. */
+  readonly onStartOwn?: (() => void) | undefined;
 }
 
 function stayText(last: LastTrain, lang: Lang): string {
@@ -19,7 +21,7 @@ function stayText(last: LastTrain, lang: Lang): string {
   return t(lang, "stayUntil", { time: formatClock(last.time), who });
 }
 
-export function Ticket({ lang, shown, first, onOpen, onShare }: Props) {
+export function Ticket({ lang, shown, first, onOpen, onShare, onStartOwn }: Props) {
   const [why, setWhy] = useState(false);
   const comparison = compareToFirst(shown, first);
   const last = earliestLastTrain(shown);
@@ -27,10 +29,17 @@ export function Ticket({ lang, shown, first, onOpen, onShare }: Props) {
   return (
     <section className="ticket">
       <p className="sr-only" aria-live="polite">{`${shown.station.ja} ${shown.station.en}, ${Math.round(plain.average)} ${t(lang, "avgUnit")}`}</p>
-      <button type="button" className="t-share" onClick={onShare}>
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2M5 5l3-3 3 3M3 8v5.5h10V8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        {t(lang, "share")}
-      </button>
+      {onStartOwn ? (
+        <button type="button" className="t-share t-own" onClick={onStartOwn}>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+          {t(lang, "startOwn")}
+        </button>
+      ) : (
+        <button type="button" className="t-share" onClick={onShare}>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10V2M5 5l3-3 3 3M3 8v5.5h10V8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          {t(lang, "share")}
+        </button>
+      )}
       <button type="button" className="ticket-head" onClick={onOpen}>
         <span className="t-lab">{shown.station.id === first.station.id ? t(lang, "meetAt") : t(lang, "rankedAt", { n: shown.rank })}</span>
         <span className="t-name"><b>{shown.station.ja}</b><span>{shown.station.en}</span></span>

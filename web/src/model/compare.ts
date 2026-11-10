@@ -54,6 +54,18 @@ export function changesText(lang: Lang, n: number): string {
   return t(lang, n === 1 ? "changeOne" : "changesN", { n });
 }
 
+/**
+ * A person's row: the ride there, the ride back and the walk from a typed place. The three add up to
+ * the trip that the ticket counts.
+ */
+export function rowMinutes(lang: Lang, p: PersonResult): string {
+  return [
+    t(lang, "therePart", { n: p.outMinutes }),
+    ...(p.homeMinutes > 0 ? [t(lang, "backPart", { n: p.homeMinutes })] : []),
+    ...(p.walkMinutes > 0 ? [t(lang, "walkPart", { n: p.walkMinutes })] : []),
+  ].join(" · ");
+}
+
 /** The group's changes of train, said so that they do not read as one person's. */
 export function changesAllText(lang: Lang, n: number): string {
   return t(lang, n === 1 ? "changeOneAll" : "changesAll", { n });

@@ -3,7 +3,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { MatrixData } from "../../core/data";
 import { MAX_PARTICIPANTS } from "../../core/participants";
 import { earliestLastTrain } from "../model/compare";
-import { t, type Lang } from "../model/i18n";
+import { peopleCount, t, type Lang } from "../model/i18n";
 import { addPerson, canAddPerson, isExample, removePerson, updatePerson, visibleName, type Person } from "../model/scenario";
 import { scoredIndexes, stationIndex, type Outcome, type PersonRoute } from "../usePlan";
 import { PersonEditor } from "./PersonEditor";
@@ -19,10 +19,14 @@ interface Props {
   readonly open: string | null;
   readonly onOpen: (id: string) => void;
   readonly edit: (update: (prev: readonly Person[]) => readonly Person[], movesSomeone: boolean) => void;
+  /** The person whose editor is open, by id. The ticket can open one too. */
+  readonly editing: string | null;
+  readonly onEditing: (id: string | null) => void;
+  /** Replaces the example with one empty person and opens their editor. */
+  readonly onStartOwn: () => void;
 }
 
-export function PeopleList({ data, lang, people, outcome, routes, open, onOpen, edit }: Props) {
-  const [editing, setEditing] = useState<string | null>(null);
+export function PeopleList({ data, lang, people, outcome, routes, open, onOpen, edit, editing, onEditing: setEditing, onStartOwn }: Props) {
   const [focus, setFocus] = useState<string | null>(null);
   const addRef = useRef<HTMLButtonElement>(null);
   const headingId = useId();
@@ -42,18 +46,12 @@ export function PeopleList({ data, lang, people, outcome, routes, open, onOpen, 
     edit((prev) => addPerson(prev, ""), true);
     setEditing(id);
   };
-  /** Replaces the example with one empty person, whose editor opens. */
-  const startOwn = () => {
-    const fresh = addPerson([], "");
-    edit(() => fresh, true);
-    setEditing(fresh[0]!.id);
-  };
 
   return (
     <section className="people" aria-labelledby={headingId}>
       <div className="people-head">
-        <h2 className="sub" id={headingId}>{t(lang, "people", { n: people.length })}</h2>
-        {isExample(people) && <button type="button" className="t-why" onClick={startOwn}>{t(lang, "startOwn")}</button>}
+        <h2 className="sub" id={headingId}>{peopleCount(lang, people.length)}</h2>
+        {isExample(people) && <button type="button" className="t-why" onClick={onStartOwn}>{t(lang, "startOwn")}</button>}
       </div>
       <ol className="prows">
         {people.map((p, i) => {

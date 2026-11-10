@@ -32,6 +32,7 @@ Tokyo meetup optimizer. Read these before doing anything:
 - **2026-11-10: usability pass.** A first visit loads about 1.6 MB instead of 12.2 MB (packed files, `web/scripts/pack.ts`). A "Start your own plan" button clears the example. The ticket's comparison names differences in changes of train. A loading screen replaces the blank page on slow connections.
 - **2026-11-10: editor and type, on the owner's request.** A compact person editor with icon buttons (pencil, check, bin, location). The station-sign face only marks the answer, and the rest uses the device's UI font. A tap outside the editor, Done or Escape closes it.
 - **2026-11-10: the hardest trip replaces the longest trip** on the ticket and in the list, with its changes. With the group's average and changes, these are the four numbers the order depends on, so a lower station never looks better on all of them (`docs/tuning.md`).
+- **2026-11-10: phone walkthrough fixes** (`web/e2e/walk.mjs`). Address matches near central Tokyo list first, each row shows the walk, "1 person", a shorter From hint, "Start your own plan" on the example's ticket, and base map names under our markers fade. Open: a shared link drops the walk from a typed place, so a friend can see another station. The owner is deciding whether the walk to the nearest station counts at all.
 - **Open items:** the top 10 instead of 5 and a view of the tradeoff; weekday evenings only; no per-ride minutes; deep JR changes still about 1 min short on average; one link preview for every plan; 26 stations without kana.
 
 ## Rules

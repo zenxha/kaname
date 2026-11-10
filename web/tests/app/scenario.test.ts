@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { addPerson, DEFAULT_PEOPLE, isExample, removePerson, toParticipants, updatePerson, type Person } from "../../src/model/scenario";
-import { alphaNote, STRINGS, t } from "../../src/model/i18n";
+import { alphaNote, peopleCount, STRINGS, t } from "../../src/model/i18n";
 import { rank } from "../../core/rank";
 import { real } from "../realData";
 
@@ -63,6 +63,17 @@ describe("strings", () => {
   it("hints a name with an example only, since the field's label already says Name", () => {
     expect(t("en", "namePlaceholder")).toBe("Hitori");
     expect(t("ja", "namePlaceholder")).toBe("ひとり");
+  });
+
+  it("counts one person in the singular", () => {
+    expect(peopleCount("en", 1)).toBe("1 person");
+    expect(peopleCount("en", 3)).toBe("3 people");
+    expect(peopleCount("ja", 1)).toBe("1人");
+  });
+
+  it("hints the From field without an example, which a phone cuts off", () => {
+    expect(t("en", "searchPlaceholder")).toBe("Station or address");
+    expect(t("ja", "searchPlaceholder")).toBe("駅名・住所");
   });
 
   it("explains the slider position in words", () => {

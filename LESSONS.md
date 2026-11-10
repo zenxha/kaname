@@ -193,22 +193,29 @@ The owner set the goals, the gates and the product calls. Claude Code wrote most
 - Lesson: if the screen explains a ranking, show the inputs of the ranking. Then count how often the screen contradicts the order.
 - Where to look: `plainSummary` in `web/src/model/compare.ts`, `web/tests/app/minutes.test.ts`, `docs/tuning.md`.
 
+### 26. Walk through the app as a new user
+
+- What happened: all 230 unit tests and 39 end-to-end runs passed. Then a script used the live site on a phone profile like a new user, with a screenshot of each step. It found three bugs. An address search listed 西新宿二丁目 in 埼玉県蓮田市 before the one in 新宿区, so the test person met the group at 大宮. A person's row left out the walk that the ticket counted: 15 and 14 minutes in the row, 91 on the ticket. A friend who opened the shared link saw 赤羽, because the link carries the station but not the walk. A second run found one more: a new button opened the editor on a low sheet, and the first answer pushed the editor off the screen.
+- What we did: each fix got a test that failed first. The walk in the link became a product question for the owner. The script is now in the repo, so the walk can run again before a launch.
+- Lesson: a test checks what someone thought of. A walk from the first screen to the friend's view, with real input, finds the rest.
+- Where to look: `web/e2e/walk.mjs`, `web/src/model/address.ts` (`kmFromCenter`), `rowMinutes` in `web/src/model/compare.ts`.
+
 ## Working with an AI agent
 
-### 26. A separate reviewer finds what the author cannot
+### 27. A separate reviewer finds what the author cannot
 
 - What happened: each milestone ended with a code review by a separate agent that saw the code but not the author's reasoning.
 - What we did: every review found real defects, for example a check that never failed, a map race, an address ranking error and a retry loop with no limit. Each fix came with a regression test.
 - Lesson: keep the author and the reviewer apart. Give the reviewer the code, not the conclusion.
 - Where to look: the commits named "fix: address the ... review".
 
-### 27. Decisions written down make the story possible
+### 28. Decisions written down make the story possible
 
 - What happened: two days produced about 70 logged decisions, each with a reason.
 - What we did: every non-obvious decision got one line in DECISIONS.md, and every commit says what changed and why. This file was written from that record.
 - Lesson: the decision log is the cheapest documentation there is. Write the reason while you still know it.
 
-### 28. The agent makes mistakes too, so check its work
+### 29. The agent makes mistakes too, so check its work
 
 - What happened: some bugs came from the agent itself. A `pkill -f` pattern killed its own shell, so a commit did not happen. A page script named a variable `top`, which clashes with the browser's `window.top`. A Python class shadowed the built-in `LookupError`.
 - What we did: each one surfaced because a command, a test or a reviewer checked the result instead of trusting the claim.
@@ -225,4 +232,4 @@ Numbers worth remembering:
 - 10,000 trips home wrongly marked unreachable, then fixed.
 - 9.6 MB downloaded per station tap before the Range fix, and 12.2 MB for a first visit until the packed files cut it to about 1.6 MB.
 - 1,393 of 1,419 stations with a kana reading. 20,899 address points.
-- Over 60 commits, about 220 web unit tests, about 130 pipeline tests, and 39 end-to-end runs across phone and desktop.
+- Over 70 commits, about 230 web unit tests, about 130 pipeline tests, and 41 end-to-end runs across phone and desktop.

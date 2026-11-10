@@ -106,6 +106,8 @@ button { cursor: pointer; }
 .t-share { position: absolute; top: 8px; right: 10px; z-index: 1; display: inline-flex; align-items: center; gap: 5px; min-height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--sheet); font: 700 12px var(--sans); }
 .t-share svg { width: 13px; height: 13px; }
 .t-share::after { content: ""; position: absolute; inset: -8px -6px; }
+/* On the example group the first action is a plan of your own, so it takes the dark fill of a main button. */
+.t-own { border-color: var(--fg); background: var(--fg); color: var(--sheet); }
 .toast { position: absolute; z-index: 6; left: 50%; top: calc(max(10px, env(safe-area-inset-top, 0px)) + 52px); transform: translateX(-50%); max-width: calc(100% - 32px); padding: 8px 14px; border-radius: 8px; background: var(--fg); color: var(--sheet); font-size: 13px; overflow-wrap: anywhere; box-shadow: 0 4px 14px -6px var(--shadow); }
 .toast:empty { display: none; }
 .t-why { justify-self: start; min-height: 32px; padding: 0; border: 0; background: none; font-size: 12px; color: var(--seal); text-decoration: underline; text-underline-offset: 3px; }
@@ -201,7 +203,9 @@ button { cursor: pointer; }
 .mk-person::before { content: ""; position: absolute; inset: -9px; }
 .mk-badge { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--fg); color: var(--sheet); font: 700 13px var(--sans); box-shadow: 0 0 0 3px var(--bg); }
 .mk-label, .mk-name { position: absolute; top: 50%; transform: translateY(-50%); white-space: nowrap; color: var(--fg);
-  text-shadow: 0 0 2px var(--bg), 0 0 3px var(--bg), 0 0 5px var(--bg), 0 0 8px var(--bg); }
+  /* A solid 2 px outline in the paper color, then a soft glow: a thick route line under a name does not show through. */
+  text-shadow: 2px 0 var(--bg), -2px 0 var(--bg), 0 2px var(--bg), 0 -2px var(--bg), 1.4px 1.4px var(--bg), -1.4px -1.4px var(--bg),
+    1.4px -1.4px var(--bg), -1.4px 1.4px var(--bg), 0 0 6px var(--bg); }
 .mk-label { left: 32px; font: 700 13px var(--sans); }
 .mk-person.flip .mk-label { left: auto; right: 32px; }
 .mk-person.up .mk-label { transform: translateY(calc(-150% - 4px)); } /* one line up: labels.ts */

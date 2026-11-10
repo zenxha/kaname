@@ -1,7 +1,7 @@
 /** The app shows plain trip minutes. The transfer penalty only orders the stations. */
 import { describe, expect, it } from "vitest";
 import { DEFAULT_LAMBDA, rank } from "../../core/rank";
-import { changesAllText, changesText, compareToFirst, comparisonText, hardestText, plainSummary, tripMinutes } from "../../src/model/compare";
+import { changesAllText, changesText, compareToFirst, comparisonText, hardestText, plainSummary, rowMinutes, tripMinutes } from "../../src/model/compare";
 import type { CandidateResult } from "../../core/types";
 import { real } from "../realData";
 
@@ -71,6 +71,18 @@ describe("plain trip minutes", () => {
     const best = rank([SHIZUKU, TORA], {}, real).candidates[0]!;
     expect(plainSummary(best).changes).toBe(best.people.reduce((n, p) => n + p.outTransfers + p.homeTransfers, 0));
     expect(plainSummary(best).changes).toBe(6); // 神田: Shizuku 1 + 1, Tora 2 + 2
+  });
+
+  it("show a person's ride there, ride back and walk, which add up to their trip", () => {
+    const best = rank([SHIZUKU, AKI], {}, real).candidates[0]!;
+    const aki = best.people.find((p) => p.label === "Aki")!;
+    expect(aki.walkMinutes).toBeGreaterThan(0); // Aki starts from a place, not a station
+    expect(rowMinutes("en", aki)).toBe(`${aki.outMinutes} min there · ${aki.homeMinutes} back · ${aki.walkMinutes} min walk`);
+    expect(rowMinutes("ja", aki)).toBe(`行き${aki.outMinutes}分 · 帰り${aki.homeMinutes}分 · 徒歩${aki.walkMinutes}分`);
+    const shizuku = best.people.find((p) => p.label === "Shizuku")!;
+    expect(rowMinutes("en", shizuku)).toBe(`${shizuku.outMinutes} min there · ${shizuku.homeMinutes} back`);
+    const only = { ...shizuku, homeMinutes: 0, walkMinutes: 4 };
+    expect(rowMinutes("en", only)).toBe(`${only.outMinutes} min there · 4 min walk`);
   });
 
   it("say changes in both languages, with the right form for one", () => {

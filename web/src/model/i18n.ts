@@ -22,9 +22,11 @@ const en = {
   andJoin: "and",
   butJoin: "but",
   people: "{n} people",
+  personOne: "1 person",
   personN: "Person {n}",
-  thereBack: "{out} min there · {back} back",
-  thereOnly: "{out} min there",
+  therePart: "{n} min there",
+  backPart: "{n} back",
+  walkPart: "{n} min walk",
   homeTo: "home to {station}",
   tagWalk: "walk",
   tagThrough: "through train",
@@ -61,7 +63,7 @@ const en = {
   loadError: "Could not load the train data: {msg}",
   needTwo: "Add at least two people with a start station.",
   noFeasible: "No station can be reached by everyone in this group.",
-  searchPlaceholder: "Station or address, like 金沢八景",
+  searchPlaceholder: "Station or address",
   addresses: "Addresses",
   stations: "Stations",
   addressesFailed: "Address search could not load. Station names still work.",
@@ -113,9 +115,11 @@ const ja: Record<StringKey, string> = {
   andJoin: "",
   butJoin: "",
   people: "{n}人",
+  personOne: "1人",
   personN: "{n}人目",
-  thereBack: "行き{out}分 · 帰り{back}分",
-  thereOnly: "行き{out}分",
+  therePart: "行き{n}分",
+  backPart: "帰り{n}分",
+  walkPart: "徒歩{n}分",
   homeTo: "帰りは{station}へ",
   tagWalk: "徒歩",
   tagThrough: "直通",
@@ -152,7 +156,7 @@ const ja: Record<StringKey, string> = {
   loadError: "時刻データを読み込めませんでした: {msg}",
   needTwo: "出発駅のある参加者を2人以上追加してください。",
   noFeasible: "全員が行ける駅がありません。",
-  searchPlaceholder: "駅名・住所（例: 金沢八景）",
+  searchPlaceholder: "駅名・住所",
   addresses: "住所",
   stations: "駅",
   addressesFailed: "住所検索を読み込めませんでした。駅名では検索できます。",
@@ -185,6 +189,11 @@ export const STRINGS: Record<Lang, Record<StringKey, string>> = { en, ja };
 
 export function t(lang: Lang, key: StringKey, vars: Readonly<Record<string, string | number>> = {}): string {
   return STRINGS[lang][key].replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? `{${k}}`));
+}
+
+/** The heading over the people: "1 person", "3 people". */
+export function peopleCount(lang: Lang, n: number): string {
+  return t(lang, n === 1 ? "personOne" : "people", { n });
 }
 
 /** The slider note for a weight: efficient near 1, fair near 0. */

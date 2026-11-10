@@ -3,6 +3,7 @@ import type { MatrixData } from "../../core/data";
 import type { RouteHop } from "../../core/routes";
 import { formatClock } from "../../core/time";
 import type { PersonResult } from "../../core/types";
+import { rowMinutes } from "../model/compare";
 import { t, type Lang } from "../model/i18n";
 import { rideSteps } from "../model/itinerary";
 import { stationName } from "../model/names";
@@ -41,9 +42,7 @@ export function PersonRow({ id, data, lang, number, label, result, hops, meet, f
       </li>
     );
   }
-  const minutes = result.homeMinutes > 0
-    ? t(lang, "thereBack", { out: result.outMinutes, back: result.homeMinutes })
-    : t(lang, "thereOnly", { out: result.outMinutes });
+  const minutes = rowMinutes(lang, result);
   const elsewhere = result.homeStation !== result.startStation;
   const steps = rideSteps(data, hops);
   return (
