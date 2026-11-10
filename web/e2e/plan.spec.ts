@@ -329,3 +329,38 @@ test("the editor closes with a labeled Done button or Escape, and its two button
   await page.keyboard.press("Escape"); // then the editor
   await expect(editor).toHaveCount(0);
 });
+
+test("a tap outside the editor closes it, and the tap still does what it hit", async ({ page }) => {
+  await page.goto(APP);
+  await openSheet(page);
+  const editor = page.locator("section.editor");
+  const heading = page.locator(".people-head .sub");
+  await page.getByRole("button", { name: "Edit Tora" }).click();
+  await heading.click();
+  await expect(editor).toHaveCount(0);
+
+  // A pick removes the station list before the press ends. A low option hangs over the rows below the
+  // editor, so the press ends outside it, but it started inside and does not close the editor.
+  await page.getByRole("button", { name: "Edit Shizuku" }).click();
+  await editor.getByLabel("From", { exact: true }).fill("shi");
+  const low = editor.getByRole("option").nth(4);
+  const editorBottom = await editor.evaluate((el) => el.getBoundingClientRect().bottom);
+  expect((await low.boundingBox())!.y).toBeGreaterThan(editorBottom);
+  await low.click();
+  await expect(editor.getByRole("option")).toHaveCount(0);
+  await expect(editor).toHaveCount(1);
+
+  // A drag that starts outside is not a tap.
+  const box = (await heading.boundingBox())!;
+  await page.mouse.move(box.x + 4, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 60, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.up();
+  await expect(editor).toHaveCount(1);
+
+  // A tap on the add button below closes this editor and opens one for the new person.
+  await page.getByRole("button", { name: "+ Add person" }).click();
+  await expect(editor).toHaveCount(1);
+  await expect(editor.getByLabel("Name")).toHaveValue("");
+  await expect(editor.getByLabel("Name")).toBeFocused();
+});

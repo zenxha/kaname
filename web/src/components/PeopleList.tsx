@@ -66,7 +66,8 @@ export function PeopleList({ data, lang, people, outcome, routes, open, onOpen, 
                 <PersonEditor data={data} lang={lang} person={p} index={i} startSnap={snap}
                   onChange={(c) => edit((prev) => updatePerson(prev, p.id, c), "start" in c || "home" in c)}
                   onRemove={() => { edit((prev) => removePerson(prev, p.id), true); setEditing(null); setFocus("add"); }}
-                  onDone={() => { setEditing(null); setFocus(p.id); }} />
+                  onDone={() => { setEditing(null); setFocus(p.id); }}
+                  onDismiss={() => setEditing(null)} />
               </li>
             );
           }

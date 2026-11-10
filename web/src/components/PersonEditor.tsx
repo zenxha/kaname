@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import type { MatrixData } from "../../core/data";
 import type { Snap } from "../../core/types";
 import { t, type Lang } from "../model/i18n";
@@ -7,6 +7,7 @@ import { MAX_NAME } from "../model/share";
 import type { Person } from "../model/scenario";
 import { CheckIcon, LocateIcon, TrashIcon } from "./Icons";
 import { StationField } from "./StationField";
+import { useOutsideTap } from "../useOutsideTap";
 
 interface Props {
   readonly data: MatrixData;
@@ -16,11 +17,16 @@ interface Props {
   readonly startSnap: Snap | undefined;
   readonly onChange: (change: Partial<Omit<Person, "id">>) => void;
   readonly onRemove: () => void;
+  /** Done or Escape: the editor closes and the person's row takes the focus. */
   readonly onDone: () => void;
+  /** A tap outside: the editor closes and the focus stays where the tap went. */
+  readonly onDismiss: () => void;
 }
 
-export function PersonEditor({ data, lang, person, index, startSnap, onChange, onRemove, onDone }: Props) {
+export function PersonEditor({ data, lang, person, index, startSnap, onChange, onRemove, onDone, onDismiss }: Props) {
   const nameId = useId();
+  const self = useRef<HTMLElement>(null);
+  useOutsideTap(self, onDismiss);
   const [locError, setLocError] = useState(false);
   const here = startSnap ? `${t(lang, "useLocation")} · ${lang === "ja" ? startSnap.station.ja : startSnap.station.en}` : t(lang, "useLocation");
   const locate = () => {
@@ -32,8 +38,8 @@ export function PersonEditor({ data, lang, person, index, startSnap, onChange, o
     );
   };
   return (
-    // Escape leaves the editor. A station list that is open takes the first Escape and marks it handled.
-    <section className="editor" aria-label={t(lang, "editPerson", { who: person.label || `#${index + 1}` })}
+    // A tap outside, Done or Escape leaves the editor. A station list that is open takes the first Escape.
+    <section ref={self} className="editor" aria-label={t(lang, "editPerson", { who: person.label || `#${index + 1}` })}
       onKeyDown={(e) => { if (e.key === "Escape" && !e.defaultPrevented) { e.preventDefault(); onDone(); } }}>
       <span className="badge" aria-hidden="true">{index + 1}</span>
       <div className="editor-body">
