@@ -25,6 +25,7 @@
   },
   "include": [
     "core",
+    "preview",
     "src",
     "tests",
     "e2e",

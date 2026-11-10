@@ -71,6 +71,19 @@ If the machine has no browser for the login, set these environment variables ins
 - `CLOUDFLARE_API_TOKEN`: an API token with the "Cloudflare Pages: Edit" permission.
 - `CLOUDFLARE_ACCOUNT_ID`: the account ID from the Cloudflare dashboard.
 
+### Workers Paid, for plan previews
+
+On 2026-11-10 you approved Workers Paid ($5 a month) for the plan previews. The two functions in `web/functions/` rank the stations and draw a picture. The first request to a new worker loads the data and takes more than the 10 ms that Workers Free allows. On Workers Free, that request fails with error 1102, and a friend cannot open a shared link. So deploy the functions only after the account is on Workers Paid. To upgrade, open the Cloudflare dashboard, then Workers & Pages, then Plans.
+
+After a deploy, check the two functions:
+
+```bash
+curl -s "https://kaname-1l6.pages.dev/?p=shibamata_Tora&p=kunitachi_Kai" | grep og:title
+curl -s -o card.png -w "%{http_code} %{content_type}\n" "https://kaname-1l6.pages.dev/og/plan?p=shibamata_Tora&p=kunitachi_Kai"
+```
+
+The first prints the plan's title. The second prints `200 image/png`. A `302` means the function failed and sent the general picture.
+
 ## Git
 
 - Use the personal account `zenxha` (komays5042@gmail.com) in this repo. Set it with `git config --local`, never globally.

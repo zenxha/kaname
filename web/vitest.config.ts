@@ -6,7 +6,7 @@ export default defineConfig({
     testTimeout: 30_000,
     coverage: {
       provider: "v8",
-      include: ["core/**/*.ts", "../cli/**/*.ts"],
+      include: ["core/**/*.ts", "preview/**/*.ts", "../cli/**/*.ts"],
       thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 },
     },
   },

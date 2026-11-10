@@ -200,22 +200,29 @@ The owner set the goals, the gates and the product calls. Claude Code wrote most
 - Lesson: a test checks what someone thought of. A walk from the first screen to the friend's view, with real input, finds the rest.
 - Where to look: `web/e2e/walk.mjs`, `web/src/model/address.ts` (`kmFromCenter`), `rowMinutes` in `web/src/model/compare.ts`.
 
+### 27. Test a library's escaping with a hostile name
+
+- What happened: the plan previews put names from a link into the page. Anyone can type any text into a link. The function sets each preview tag with Cloudflare's HTMLRewriter, and its documentation does not say what it escapes. A test with the name `x"><script>alert(1)</script>` showed that it escapes a quote, so a name cannot leave the tag. A second test showed that it does not escape an ampersand, so an HTML entity code in a name turned into its character.
+- What we did: the function now escapes the ampersand itself, and leaves the quote to HTMLRewriter. The picture escapes all five XML characters, and a unit test checks it.
+- Lesson: when text from a user goes into HTML, test the escaping with a hostile input. Do not assume what the library does.
+- Where to look: `content()` in `web/functions/index.ts`, `escapeXml` in `web/preview/card.ts`.
+
 ## Working with an AI agent
 
-### 27. A separate reviewer finds what the author cannot
+### 28. A separate reviewer finds what the author cannot
 
 - What happened: each milestone ended with a code review by a separate agent that saw the code but not the author's reasoning.
 - What we did: every review found real defects, for example a check that never failed, a map race, an address ranking error and a retry loop with no limit. Each fix came with a regression test.
 - Lesson: keep the author and the reviewer apart. Give the reviewer the code, not the conclusion.
 - Where to look: the commits named "fix: address the ... review".
 
-### 28. Decisions written down make the story possible
+### 29. Decisions written down make the story possible
 
 - What happened: two days produced about 70 logged decisions, each with a reason.
 - What we did: every non-obvious decision got one line in DECISIONS.md, and every commit says what changed and why. This file was written from that record.
 - Lesson: the decision log is the cheapest documentation there is. Write the reason while you still know it.
 
-### 29. The agent makes mistakes too, so check its work
+### 30. The agent makes mistakes too, so check its work
 
 - What happened: some bugs came from the agent itself. A `pkill -f` pattern killed its own shell, so a commit did not happen. A page script named a variable `top`, which clashes with the browser's `window.top`. A Python class shadowed the built-in `LookupError`.
 - What we did: each one surfaced because a command, a test or a reviewer checked the result instead of trusting the claim.
@@ -232,4 +239,4 @@ Numbers worth remembering:
 - 10,000 trips home wrongly marked unreachable, then fixed.
 - 9.6 MB downloaded per station tap before the Range fix, and 12.2 MB for a first visit until the packed files cut it to about 1.6 MB.
 - 1,393 of 1,419 stations with a kana reading. 20,899 address points.
-- Over 70 commits, about 230 web unit tests, about 130 pipeline tests, and 41 end-to-end runs across phone and desktop.
+- Over 70 commits, about 250 web unit tests, about 130 pipeline tests, and 41 end-to-end runs across phone and desktop.

@@ -2,9 +2,9 @@
 
 Kaname finds the best train station for a group to meet in Tokyo. Each person enters where they start and where they go home. Kaname ranks the meeting stations by the whole evening of train travel for everyone.
 
-![Two routes on a map of Tokyo meet at 神保町](web/static/og.png)
+![Two routes on a map of Tokyo meet at 神田](web/static/og.png)
 
-Try it at https://kaname-1l6.pages.dev/. The app runs in the browser on static data files. It has no backend and needs no API key.
+Try it at https://kaname-1l6.pages.dev/. The app runs in the browser on static data files. It needs no API key. Two small Cloudflare Pages Functions draw the link preview of a shared plan.
 
 ## Features
 
@@ -14,6 +14,7 @@ Try it at https://kaname-1l6.pages.dev/. The app runs in the browser on static d
 - Draws each route on the map along the real tracks, in the line colors, and shows the last train home for each person.
 - Finds a station by its Japanese or English name or by its kana reading. Finds an address on the device, so the typed text stays in the browser.
 - Shares a plan as a link. The link holds stations, names and settings, never a location or an address.
+- Shows the plan in the link preview: who meets where, the numbers, and each person's trains on a map. A friend sees the answer without opening the app.
 - English and Japanese, light and dark mode, phone and desktop layouts.
 
 ## Demo
@@ -76,6 +77,8 @@ Here $`s_i`$ is the start of person $`i`$ and $`h_i`$ is their home. $`n`$ is th
 | --- | --- |
 | `web/src/` | The web app |
 | `web/core/` | The scoring engine |
+| `web/preview/` | The link preview of a shared plan: its text and its picture |
+| `web/functions/` | The Cloudflare Pages Functions that serve the preview |
 | `web/tests/` | Unit tests for the engine and the app (Vitest) |
 | `web/e2e/` | End-to-end tests on a phone and a desktop viewport (Playwright) |
 | `cli/` | The command line front end for the engine |
@@ -158,6 +161,23 @@ Link previews need the full URL of the preview image. Set `KANAME_SITE_URL` to y
 
 `npm --prefix web run og` renders the preview image and the icons in `web/static/` from the real data. Run it again after a design change.
 
+### Plan previews
+
+A link with a plan gets its own link preview from two Cloudflare Pages Functions in `web/functions/`. Preview bots read the page without running the app, so the functions rank the stations on the server with the same engine and data.
+
+- `/` with a `p` parameter: the function rewrites the preview tags of the page, for example "Shizuku and Tora meet at 神田 (Kanda)".
+- `/og/plan`: the function draws the plan's picture, 1200 by 630, with resvg and the BIZ UDPGothic fonts in `web/static/`. Cloudflare's cache keeps each picture for a day.
+
+Drawing a picture takes more processing time than the Workers Free plan gives (10 ms for each request), so the account needs Workers Paid. If a function fails, the page and the general picture are served instead. A host without functions serves the site with the general preview for every link.
+
+To see a plan's picture without a deploy, draw it from the local data:
+
+```bash
+npm --prefix web run plan-card -- "?p=shibamata_Tora&p=kunitachi_Kai" card.png
+```
+
+To run the site with its functions, build it, then run `npx wrangler@4.153.0 pages dev dist` in `web/`.
+
 ## Limits
 
 - The times are estimates from one weekday timetable and a simple transfer model. They do not include delays or timetable changes. Before you rely on a last train, look it up in an official source.
@@ -167,4 +187,4 @@ Link previews need the full URL of the preview image. Set `KANAME_SITE_URL` to y
 
 ## Data sources
 
-The timetables come from [Mini Tokyo 3D](https://github.com/nagix/mini-tokyo-3d) (MIT). The kana readings come from Wikidata (CC0). The track shapes, the platform positions and the address points come from MLIT 国土数値情報 and 位置参照情報. The repo holds only derived data, never raw timetables. `data/LICENSES.md` gives the terms and credits for each source.
+The timetables come from [Mini Tokyo 3D](https://github.com/nagix/mini-tokyo-3d) (MIT). The kana readings come from Wikidata (CC0). The track shapes, the platform positions and the address points come from MLIT 国土数値情報 and 位置参照情報. The repo holds only derived data, never raw timetables. `data/LICENSES.md` gives the terms and credits for each source. The preview pictures use the BIZ UDPGothic fonts (SIL Open Font License 1.1, `web/static/BIZUDPGothic-OFL.txt`).
