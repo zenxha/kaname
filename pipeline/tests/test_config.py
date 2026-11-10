@@ -20,7 +20,21 @@ def test_repo_config_loads():
     assert "JR-East.LimitedExpress" in cfg.paid_train_types
     assert len(cfg.mt3d_commit) == 40
     assert any(o.station_ja == "御茶ノ水" for o in cfg.transfer_overrides)
-    assert any(p.stop_id == "JR-East.Keiyo.Tokyo" and p.extra_min == 2 for p in cfg.stop_positions)
+    assert any(p.stop_id == "JR-East.Keiyo.Tokyo" for p in cfg.stop_positions)
+
+
+# The underground JR platforms 25 to 32 m below the street, in the Sobu, Yokosuka and Keiyo tunnels.
+DEEP_JR_STOPS = (
+    "JR-East.Keiyo.Tokyo", "JR-East.KeiyoFutamataBranch.Tokyo", "JR-East.SobuRapid.Tokyo",
+    "JR-East.Yokosuka.Tokyo", "JR-East.Yokosuka.Shimbashi", "JR-East.SobuRapid.ShinNihombashi",
+    "JR-East.SobuRapid.Bakurocho",
+)
+
+
+def test_deep_jr_platforms_add_three_minutes_each():
+    extra = {p.stop_id: p.extra_min for p in load_config().stop_positions}
+    assert {s: extra.get(s) for s in DEEP_JR_STOPS} == {s: 3 for s in DEEP_JR_STOPS}
+    assert extra["JR-East.Yamanote.Tokyo"] == 0
 
 
 def _edit(path: Path, old: str, new: str) -> None:

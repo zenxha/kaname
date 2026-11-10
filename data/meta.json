@@ -6,7 +6,7 @@
     "commit": "fa7833f18a288aeca171b68892bb7f67e229e4ca",
     "calendar": "Weekday"
   },
-  "config_sha256": "5a4c3def71ac806b7d4889e8227f5b7497175fea21783cd5cfe6e92675c1cfc8",
+  "config_sha256": "582c0632d2056e29367ba05da6bebddbe6f20dfbdd112dba41587d67fb1a6b16",
   "windows": {
     "outbound": [
       "17:30",
@@ -40,7 +40,7 @@
         207
       ],
       "description": "Outbound median minutes, origin station -> candidate",
-      "sha256": "7a40c810b3434eaafd33652786ef81595f5fe6080417357b0a64e9595ef5a7ed"
+      "sha256": "bea38071a21c65aad7df649d436276e255535acb4c2371af82ace121ed80480e"
     },
     "out_xfer.u8": {
       "dtype": "uint8",
@@ -49,15 +49,15 @@
         207
       ],
       "description": "Outbound transfers of the representative journey",
-      "sha256": "e8d1090b47c41bb0d21bfd11bcc894895e291b0ee34ae4e56eda0b7414904824"
+      "sha256": "9a57d8fd219ce3378c47594bda1d11ae4fd2fb613668ee3b1e62406c414f9617"
     },
     "out_routes.u16": {
       "dtype": "uint16",
       "shape": [
-        2449680
+        2449524
       ],
       "description": "Outbound routes, one block per candidate (see out_routes_idx.u32), one route per origin station in index order: [hop count, then per hop: railway | flags, boarding station only if flags has 0x4000 (walk from the previous hop's end), station where the hop ends]. 0x8000 = seated through-running, no change of train",
-      "sha256": "49c0e77fca049efd5fa688311f788935735ce4ebb58ee725ebd93ba31fbd8bde"
+      "sha256": "78eea7cd1d1dd69111103d7150696537b1a47469833ed11858272b6cbf903965"
     },
     "out_routes_idx.u32": {
       "dtype": "uint32",
@@ -65,7 +65,7 @@
         208
       ],
       "description": "Start of each candidate's block in out_routes.u16",
-      "sha256": "19ea132750ad308cf2ee39554638a919ae666d31bae306d2144074d4f117bda6"
+      "sha256": "215c438f8b794cc81c0fa95b903e5bc188a554043d2c9634d33435242eeb543c"
     },
     "home_min.u16": {
       "dtype": "uint16",
@@ -74,7 +74,7 @@
         1419
       ],
       "description": "Home median minutes, candidate -> home station",
-      "sha256": "bcbe0929de2f53259d4bf6340c6b5ec85e93bda365116d5abafbe4571324c370"
+      "sha256": "2703d334bbc090a5f9e160cd3de32855be003e7b7a59a64ee6128895f4a98150"
     },
     "home_xfer.u8": {
       "dtype": "uint8",
@@ -83,15 +83,15 @@
         1419
       ],
       "description": "Home transfers of the representative journey",
-      "sha256": "59a21671e57cd20351bed90a0cdadcb8dfe1b528a5193a35a389877de107449d"
+      "sha256": "42e6b338ca594472a84412c1148411e57ed49fdde01260a8d1ece864bf6d3062"
     },
     "home_routes.u16": {
       "dtype": "uint16",
       "shape": [
-        2345131
+        2342754
       ],
       "description": "Home routes, one block per candidate (see home_routes_idx.u32), one route per home station in index order, same encoding as out_routes.u16",
-      "sha256": "54f6353e4f32f5c91da438655ebb548c1d34b80169183a2b3a5950d0532e2ea6"
+      "sha256": "0ac6512c4719cc0de84bf3a57ea0000f5d12a151f4b548e6b0a2221ecd1e717d"
     },
     "home_routes_idx.u32": {
       "dtype": "uint32",
@@ -99,7 +99,7 @@
         208
       ],
       "description": "Start of each candidate's block in home_routes.u16",
-      "sha256": "67be18070de57dcb81fd3e5387f57b58f3c5b4f89e015e0304055c35b21b2102"
+      "sha256": "e3cbe37ec636a1a649652b4f8580002b6acb90ba16a3939dde60ebea68c8a648"
     },
     "last_dep.u16": {
       "dtype": "uint16",
@@ -108,10 +108,10 @@
         1419
       ],
       "description": "Latest departure from the candidate that still reaches the home station, minutes after 00:00 of the service day (may exceed 1440)",
-      "sha256": "4ff36d2f312f86bd22f5f3746c882319234c9cdc0c5ff0268f9630502f0e36f9"
+      "sha256": "b566c6e55c610a2dad59e9fbd0c10d96c3aff8574362df72a5f8916eb412067e"
     },
     "stations.json": {
-      "sha256": "85ef2b9330fb4e2e3693dbcb10f519c0dc90e488b9bab896746793aa5654e308"
+      "sha256": "81d93449b48ebc830aa7234acf3c9f83cebe938fee7e188c2381eaadc7b33eec"
     },
     "candidates.csv": {
       "sha256": "e9f8d69c33af62407ea2dd4303ff6d07a894bdba5c001123219e728d8a386ff6"

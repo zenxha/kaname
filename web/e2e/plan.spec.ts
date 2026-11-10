@@ -91,14 +91,14 @@ test("another station, the slider and a third person each say what changed, and 
   await expect(page.locator(".t-name b")).toHaveText("神田");
 
   await addPerson(page, "Hitori", "kanazawa-hakkei", /Kanazawa-hakkei/);
-  await expect(page.locator(".t-name b")).toHaveText("品川");
+  await expect(page.locator(".t-name b")).toHaveText("東京");
   await expect(page.locator(".example-tag")).toHaveCount(0);
   await expect(page.locator(".mk-person")).toHaveCount(3);
-  await expect(page.locator(".t-stay")).toHaveText("Everyone can stay until 23:18, Tora's last train home.");
+  await expect(page.locator(".t-stay")).toHaveText("Everyone can stay until 23:30, Tora's last train home.");
 
   await page.getByRole("button", { name: "日本語" }).click();
   await expect(page.locator(".t-lab")).toHaveText("待ち合わせ");
-  await expect(page.locator(".t-stay")).toHaveText("23:18まで大丈夫（Toraの終電）");
+  await expect(page.locator(".t-stay")).toHaveText("23:30まで大丈夫（Toraの終電）");
   await expect(page.locator("html")).toHaveAttribute("lang", "ja");
 });
 
@@ -129,8 +129,8 @@ test("a plan travels in the link: stations, names and settings", async ({ page, 
   await openSheet(page);
   await addPerson(page, "Hitori", "kanazawa-hakkei", /Kanazawa-hakkei/);
   await page.locator(".others li").nth(1).getByRole("button").click();
-  await expect(page.locator(".t-name b")).toHaveText("東京");
-  await expect(page).toHaveURL(/\?basemap=none&p=seiseki-sakuragaoka_Shizuku&p=shibamata_Tora&p=kanazawa-hakkei_Hitori&at=tokyo$/);
+  await expect(page.locator(".t-name b")).toHaveText("大門");
+  await expect(page).toHaveURL(/\?basemap=none&p=seiseki-sakuragaoka_Shizuku&p=shibamata_Tora&p=kanazawa-hakkei_Hitori&at=daimon$/);
 
   await page.getByRole("button", { name: "Share plan" }).click();
   await expect(page.locator(".toast")).toHaveText("Link copied");
@@ -139,7 +139,7 @@ test("a plan travels in the link: stations, names and settings", async ({ page, 
 
   const friend = await context.newPage();
   await friend.goto(url);
-  await expect(friend.locator(".t-name b")).toHaveText("東京");
+  await expect(friend.locator(".t-name b")).toHaveText("大門");
   await expect(friend.locator(".example-tag")).toHaveText("Shared plan");
   await expect(friend.locator(".mk-person")).toHaveCount(3);
   await expect(friend.locator(".prow .pname")).toHaveText(["Shizuku", "Tora", "Hitori"]);
@@ -155,7 +155,7 @@ test("a person can be added by typing kana or a street address", async ({ page }
   await editor.getByLabel("From", { exact: true }).fill("かなざわはっ");
   await editor.getByRole("option", { name: /Kanazawa-hakkei/ }).first().click();
   await editor.getByRole("button", { name: "Done" }).click();
-  await expect(page.locator(".t-name b")).toHaveText("品川");
+  await expect(page.locator(".t-name b")).toHaveText("東京");
 
   await page.getByRole("button", { name: "+ Add person" }).click();
   await editor.getByLabel("Name").fill("Eri");
