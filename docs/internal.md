@@ -55,7 +55,7 @@ To run the M0 spike again, use `bash spike/m0/fetch_mt3d.sh && python3 -I spike/
 
 ## Cloudflare Pages
 
-The site is https://kaname-1l6.pages.dev/, on your own Cloudflare account. It sends `X-Robots-Tag: noindex, nofollow` from `web/static/_headers`, so search engines do not list it.
+The site is https://kaname-1l6.pages.dev/, on your own Cloudflare account. It sends `X-Robots-Tag: noindex, nofollow` from `web/static/_headers`, so search engines do not list it. The plan preview functions send the same header (`ROBOTS` in `web/preview/server.ts`). To let search engines list the site, remove both.
 
 The project is on classic Pages. Wrangler 4.153 sends new projects to Workers and adds files to the repo. The `--force` flag prevents that. You did these steps one time only:
 

@@ -10,7 +10,7 @@ import type { CandidateResult } from "../core/types";
 import { changesText, earliestLastTrain, plainSummary } from "../src/model/compare";
 import { t } from "../src/model/i18n";
 import { toParticipants } from "../src/model/scenario";
-import { decodePlan, peopleOf } from "../src/model/share";
+import { decodePlan, encodePlan, peopleOf } from "../src/model/share";
 
 /** Names listed in full; the rest are counted. */
 const NAMED = 3;
@@ -33,17 +33,13 @@ export function answerFor(data: MatrixData, search: string): CandidateResult | n
   }
 }
 
-/** The link's plan only (people, then the slider, then a hand-picked station), so one plan has one address. */
-export function planQuery(search: string): string {
-  const from = new URLSearchParams(search);
-  const to = new URLSearchParams();
-  for (const p of from.getAll("p")) to.append("p", p);
-  for (const key of ["fair", "at"]) {
-    const value = from.get(key);
-    if (value !== null) to.set(key, value);
-  }
-  const text = to.toString();
-  return text === "" ? "" : `?${text}`;
+/**
+ * The plan as the app reads it, written back as a link: unknown stations, people past the limit and
+ * other parameters drop out, and the slider is in its plain form. So one plan has one picture address.
+ */
+export function planQuery(data: MatrixData, search: string): string {
+  const { plan } = decodePlan(search, (id) => data.byId.has(id));
+  return plan === null ? "" : encodePlan(plan, new URLSearchParams());
 }
 
 /** "Shizuku and Tora", "Shizuku, Tora and Kai", "A, B, C and 2 more". */

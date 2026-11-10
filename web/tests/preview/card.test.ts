@@ -1,6 +1,6 @@
 /** The link preview picture of a plan, as SVG: who meets where, and each person's trains on the map. */
 import { describe, expect, it } from "vitest";
-import { cardPeople, planCardSvg, stationFontSize, textWidth } from "../../preview/card";
+import { cardPeople, escapeXml, planCardSvg, stationFontSize, textWidth } from "../../preview/card";
 import { answerFor } from "../../preview/plan";
 import { real, realRoutes, realShapes } from "../realData";
 import { routeFor } from "../../core/routes";
@@ -28,6 +28,20 @@ describe("planCardSvg", () => {
     const svg = card("?p=seiseki-sakuragaoka_%3Cscript%3E%26&p=shibamata_Tora");
     expect(svg).toContain("&lt;script&gt;&amp;");
     expect(svg).not.toContain("<script>");
+  });
+
+  it("leaves out characters that SVG cannot hold, so such a name still gets its picture", () => {
+    expect(escapeXml("a\uFFFEb\u0001c\uD800d\uFFFFe")).toBe("abcde");
+    expect(escapeXml("神田 😀 &")).toBe("神田 😀 &amp;");
+  });
+
+  it("shortens a long name on the ticket, so it stays inside", () => {
+    const long = "長".repeat(40);
+    const svg = card(`?p=kunitachi_${long}&p=hamamatsucho_B`);
+    expect(svg).toContain(`Hardest trip: ${"長".repeat(13)}…`);
+    expect(svg).not.toContain(long);
+    const [, size, line] = /font-size="(\d+)" fill="#5c6168">(Hardest trip: [^<]*)</.exec(svg)!;
+    expect(Number(size) * textWidth(line!)).toBeLessThanOrEqual(560 - 48);
   });
 
   it("shrinks a long station name to fit the left half", () => {

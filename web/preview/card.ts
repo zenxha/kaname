@@ -54,9 +54,12 @@ export interface PlanCardInput {
   readonly people: readonly CardPerson[];
 }
 
+/** Characters that XML 1.0 cannot hold, such as U+0001, U+FFFE and a lone surrogate: resvg rejects them. */
+const NOT_XML = /[^\t\n\r\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/gu;
+
 /** Text that is safe inside SVG text and attributes. */
 export function escapeXml(text: string): string {
-  return text.replace(/[&<>"']/g, (c) => `&${{ "&": "amp", "<": "lt", ">": "gt", '"': "quot", "'": "apos" }[c]!};`);
+  return text.replace(NOT_XML, "").replace(/[&<>"']/g, (c) => `&${{ "&": "amp", "<": "lt", ">": "gt", '"': "quot", "'": "apos" }[c]!};`);
 }
 
 /** The width of a text in ems, close enough to fit it: Japanese characters are 1, Latin letters about half. */
@@ -175,14 +178,16 @@ function fadeRect(): string {
 /** The ticket at the bottom left: the hardest trip, then the average, as on the app's ticket. */
 function ticket(best: CandidateResult): string {
   const { average, hardest } = plainSummary(best);
-  const small = `Hardest trip: ${hardest.label}, ${hardest.minutes} min, ${changesText("en", hardest.changes)}`;
+  const small = `Hardest trip: ${shorten(hardest.label)}, ${hardest.minutes} min, ${changesText("en", hardest.changes)}`;
   const big = `${Math.round(average)} min on average`;
-  const width = Math.min(TEXT_WIDTH, Math.max(textWidth(small) * 20, textWidth(big) * 34) + 48);
+  // The ticket is at most as wide as the text column; a long name makes the small line smaller.
+  const smallSize = Math.min(20, Math.floor((TEXT_WIDTH - 48) / textWidth(small)));
+  const width = Math.min(TEXT_WIDTH, Math.max(textWidth(small) * smallSize, textWidth(big) * 34) + 48);
   const { paper, ink, muted, ticket: fill } = COLORS;
   const [top, height] = [470, 100];
   return `<rect x="${LEFT}" y="${top}" width="${width.toFixed(0)}" height="${height}" rx="8" fill="${fill}"/>`
     + `<circle cx="${LEFT}" cy="${top + height / 2}" r="10" fill="${paper}"/><circle cx="${(LEFT + width).toFixed(0)}" cy="${top + height / 2}" r="10" fill="${paper}"/>`
-    + `<text ${FONT} x="${LEFT + 24}" y="${top + 36}" font-size="20" fill="${muted}">${escapeXml(small)}</text>`
+    + `<text ${FONT} x="${LEFT + 24}" y="${top + 36}" font-size="${smallSize}" fill="${muted}">${escapeXml(small)}</text>`
     + `<text ${FONT} x="${LEFT + 24}" y="${top + 78}" font-size="34" font-weight="700" fill="${ink}">${escapeXml(big)}</text>`;
 }
 
@@ -190,7 +195,7 @@ export function planCardSvg({ data, best, people }: PlanCardInput): string {
   const k = data.byId.get(best.station.id)!;
   const meet: LngLat = [data.stations[k]!.lng, data.stations[k]!.lat];
   const { paper, ink, muted, seal } = COLORS;
-  const lead = `${namesText(best.people.map((p) => p.label))} meet at`;
+  const lead = `${namesText(best.people.map((p) => shorten(p.label)))} meet at`;
   const leadSize = fitSize(lead, LEAD_MAX);
   const size = stationFontSize(best.station.ja);
   const stationY = 214 + size * 0.9;
