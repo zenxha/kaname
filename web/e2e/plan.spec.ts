@@ -306,3 +306,26 @@ test("a pencil on each row opens that person's editor, which fits a narrow phone
   await editor.getByRole("button", { name: "Done" }).click();
   await expect(page.locator('[data-person="p2"]')).toBeFocused();
 });
+
+test("the editor closes with a labeled Done button or Escape, and its two buttons match", async ({ page }) => {
+  await page.goto(APP);
+  await openSheet(page);
+  const editor = page.locator("section.editor");
+  await page.getByRole("button", { name: "Edit Tora" }).click();
+  const done = editor.getByRole("button", { name: "Done" });
+  await expect(done).toHaveText("Done"); // a word, not only an icon
+  const [d, r] = [await done.boundingBox(), await editor.getByRole("button", { name: "Remove" }).boundingBox()];
+  expect(Math.abs(d!.height - r!.height)).toBeLessThanOrEqual(1);
+  await page.keyboard.press("Escape");
+  await expect(editor).toHaveCount(0);
+  await expect(page.locator('[data-person="p2"]')).toBeFocused();
+
+  await page.getByRole("button", { name: "Edit Tora" }).click();
+  await editor.getByLabel("From", { exact: true }).fill("shib");
+  await expect(editor.getByRole("option").first()).toBeVisible();
+  await page.keyboard.press("Escape"); // first closes the station list
+  await expect(editor.getByRole("option")).toHaveCount(0);
+  await expect(editor).toHaveCount(1);
+  await page.keyboard.press("Escape"); // then the editor
+  await expect(editor).toHaveCount(0);
+});

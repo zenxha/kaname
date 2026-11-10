@@ -77,9 +77,11 @@ button { cursor: pointer; }
 .btn { min-height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--sheet); font: 600 14px var(--sans); }
 .icon-btn { flex: none; width: 44px; height: 44px; display: inline-grid; place-items: center; padding: 0; border: 0; border-radius: 10px; background: none; color: var(--muted); }
 .icon-btn:hover { color: var(--fg); background: var(--ticket); }
-.icon-btn.primary { border-radius: 50%; background: var(--fg); color: var(--sheet); }
-.icon-btn.primary:hover { background: var(--fg); opacity: 0.85; }
-.icon-btn.danger:hover { color: var(--seal); }
+.icon-btn.remove { border: 1px solid var(--line); }
+.icon-btn.remove:hover { color: var(--seal); }
+/* The editor's way out: the same height and corners as the bin beside it, with a word as well as the check. */
+.done { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px 0 12px; border: 1px solid var(--fg); border-radius: 10px; background: var(--fg); color: var(--sheet); font: 600 15px var(--sans); }
+.done:hover { opacity: 0.85; }
 .icon { display: block; }
 .btn.primary { background: var(--fg); color: var(--sheet); border-color: var(--fg); }
 .btn.quiet { color: var(--seal); }
@@ -161,7 +163,7 @@ button { cursor: pointer; }
 /* width 0 and flex 1: the input fills the field, and its built-in width never widens it. */
 .bare { flex: 1; width: 0; min-width: 0; height: 46px; padding: 0 8px; border: 0; background: none; font: 400 16px var(--sans); }
 .bare:focus-visible { outline: none; }
-.editor-foot { display: flex; align-items: center; gap: 4px; }
+.editor-foot { display: flex; align-items: center; gap: 8px; }
 .editor-foot .check { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); }
 .combo { position: relative; }
 .options { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px; list-style: none; background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; max-height: 260px; overflow-y: auto; box-shadow: 0 8px 20px -10px var(--shadow); }

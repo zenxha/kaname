@@ -32,7 +32,9 @@ export function PersonEditor({ data, lang, person, index, startSnap, onChange, o
     );
   };
   return (
-    <section className="editor" aria-label={t(lang, "editPerson", { who: person.label || `#${index + 1}` })}>
+    // Escape leaves the editor. A station list that is open takes the first Escape and marks it handled.
+    <section className="editor" aria-label={t(lang, "editPerson", { who: person.label || `#${index + 1}` })}
+      onKeyDown={(e) => { if (e.key === "Escape" && !e.defaultPrevented) { e.preventDefault(); onDone(); } }}>
       <span className="badge" aria-hidden="true">{index + 1}</span>
       <div className="editor-body">
         <div className="inline-input">
@@ -72,11 +74,11 @@ export function PersonEditor({ data, lang, person, index, startSnap, onChange, o
             <input type="checkbox" checked={person.home === null} onChange={(e) => onChange({ home: e.target.checked ? null : person.start })} />
             {t(lang, "homeSame")}
           </label>
-          <button type="button" className="icon-btn danger" onClick={onRemove} aria-label={t(lang, "remove")} title={t(lang, "remove")}>
+          <button type="button" className="icon-btn remove" onClick={onRemove} aria-label={t(lang, "remove")} title={t(lang, "remove")}>
             <TrashIcon />
           </button>
-          <button type="button" className="icon-btn primary" onClick={onDone} aria-label={t(lang, "done")} title={t(lang, "done")}>
-            <CheckIcon />
+          <button type="button" className="done" onClick={onDone}>
+            <CheckIcon />{t(lang, "done")}
           </button>
         </div>
       </div>

@@ -77,7 +77,8 @@ export function StationField({ data, lang, label, value, placeholder, onPick, tr
     } else if (e.key === "Enter" && open) {
       e.preventDefault();
       pick(active);
-    } else if (e.key === "Escape") {
+    } else if (e.key === "Escape" && open) {
+      e.preventDefault(); // the list closes; the editor around the field stays open
       setQuery(null);
     }
   };
