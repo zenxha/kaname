@@ -36,9 +36,19 @@ describe("previewText", () => {
   it("says who meets where, the numbers on the ticket, and when everyone has to leave", () => {
     const text = previewText(answerFor(real, EXAMPLE)!);
     expect(text.title).toBe("Shizuku and Tora meet at 神田 (Kanda)");
-    expect(text.description).toBe("93 min on average. Tora's trip is the hardest: 85 min with 4 changes. "
-      + "Everyone can stay until 23:32, Tora's last train home.");
+    // One ticket-like line, as on the app's ticket; a preview cuts text after about two lines.
+    expect(text.description).toBe("93 min on average · longest trip 100 min (Shizuku) · last train 23:32 (Tora)");
     expect(text.alt).toContain("神田");
+  });
+});
+
+describe("previewText for a group that shares a last train", () => {
+  it("names everyone whose train is first, and leaves out the last train when nobody needs one", () => {
+    const best = answerFor(real, EXAMPLE)!;
+    const shared = { ...best, people: best.people.map((p) => ({ ...p, lastDeparture: 23 * 60 })) };
+    expect(previewText(shared).description).toMatch(/· last train 23:00 \(Shizuku and Tora\)$/);
+    const none = { ...best, people: best.people.map((p) => ({ ...p, lastDeparture: null })) };
+    expect(previewText(none).description).toBe("93 min on average · longest trip 100 min (Shizuku)");
   });
 });
 

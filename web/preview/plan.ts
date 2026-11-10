@@ -7,7 +7,7 @@ import { RankError } from "../core/errors";
 import { formatClock } from "../core/time";
 import { rank } from "../core/rank";
 import type { CandidateResult } from "../core/types";
-import { changesText, earliestLastTrain, plainSummary } from "../src/model/compare";
+import { earliestLastTrain, plainSummary, tripMinutes } from "../src/model/compare";
 import { t } from "../src/model/i18n";
 import { toParticipants } from "../src/model/scenario";
 import { decodePlan, encodePlan, peopleOf } from "../src/model/share";
@@ -57,19 +57,28 @@ export interface PreviewText {
   readonly alt: string;
 }
 
-/** The ticket's numbers in a sentence each: the average, the hardest trip, and when everyone has to leave. */
+/** The trip with the most plain minutes, there and back; the first person wins a tie. */
+function longestTrip(best: CandidateResult): { readonly label: string; readonly minutes: number } {
+  return best.people.reduce((a, p) => (tripMinutes(p) > a.minutes ? { label: p.label, minutes: tripMinutes(p) } : a),
+    { label: best.people[0]?.label ?? "", minutes: tripMinutes(best.people[0]!) });
+}
+
+/**
+ * One line like the app's ticket, "93 min on average · longest trip 100 min (Shizuku) · last train 23:32 (Tora)":
+ * a preview cuts text after about two lines, and a line of facts still reads when cut.
+ */
 export function previewText(best: CandidateResult): PreviewText {
-  const { average, hardest } = plainSummary(best);
+  const { average } = plainSummary(best);
+  const longest = longestTrip(best);
   const station = `${best.station.ja} (${best.station.en})`;
   const last = earliestLastTrain(best);
-  const stay = last === null ? [] : [t("en", "stayUntil", { time: formatClock(last.time), who: last.labels.join(" and ") })];
   return {
     title: `${namesText(best.people.map((p) => p.label))} meet at ${station}`,
     description: [
-      `${Math.round(average)} min on average.`,
-      `${hardest.label}'s trip is the hardest: ${hardest.minutes} min with ${changesText("en", hardest.changes)}.`,
-      ...stay,
-    ].join(" "),
+      `${Math.round(average)} min on average`,
+      `longest trip ${longest.minutes} min (${longest.label})`,
+      ...(last === null ? [] : [`last train ${formatClock(last.time)} (${last.labels.join(" and ")})`]),
+    ].join(" · "),
     alt: `Each person's train route on a Tokyo rail map, to ${station} under a red 要 seal.`,
   };
 }
