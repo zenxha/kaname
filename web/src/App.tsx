@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alternatives, SHOWN } from "./components/Alternatives";
 import { Controls } from "./components/Controls";
+import { Mascot } from "./components/Mascot";
 import { PeopleList } from "./components/PeopleList";
 import { StationSearchContext } from "./components/searchContext";
 import { Sheet } from "./components/Sheet";
@@ -16,6 +17,7 @@ import { planOf } from "./model/share";
 import { visibleHeight, type Snap } from "./model/sheet";
 import { buildMapPeople, fitKey, personRoutes, scoredIndexes, stationIndex, toMapStation, useOutcome } from "./usePlan";
 import { useStacked, useTheme, useViewportHeight } from "./useScreen";
+import { useMascot } from "./useMascot";
 import { readOpening, useLinkSync, useShare } from "./useShareLink";
 
 /** The loading screen from index.html, kept on screen while the data loads, so nothing jumps. */
@@ -50,7 +52,9 @@ interface PlannerProps {
 const BASEMAP = !(new URLSearchParams(window.location.search).get("basemap") === "none" || import.meta.env.VITE_BASEMAP === "none");
 /** Map space the brand bar and the station labels need, beside the sheet or panel. */
 const PHONE_PAD = { top: 64, left: 28, right: 96 };
-const DESKTOP_PAD = { top: 60, bottom: 60, left: 440, right: 120 };
+/** Room above the sheet for Mu, so no route ends under the cat. */
+const MASCOT_ROOM_PX = 52;
+const DESKTOP_PAD = { top: 60, bottom: 100, left: 440, right: 120 };
 
 function useMapText(lang: Lang): MapText {
   return useMemo(() => ({
@@ -86,6 +90,8 @@ function Planner({ data, lang, setLang }: PlannerProps) {
   const mapPeople = useMemo(() => buildMapPeople(m, best, routes, people, blocks.error, data.shapes),
     [m, best, routes, people, blocks.error, data.shapes]);
   const name = useCallback((s: { readonly ja: string; readonly en: string }) => (lang === "ja" ? s.ja : s.en), [lang]);
+  const mu = useMascot(best, lang, name);
+  const mascot = mu.mood === null ? null : <Mascot mood={mu.mood} bubble={mu.bubble} where={stacked ? "sheet" : "desk"} />;
   const meet = useMemo<MapStation | null>(() => (best ? toMapStation(m, best, best.station.ja) : null), [best, m]);
   const others = useMemo<MapStation[]>(() => (result ? result.candidates.slice(0, SHOWN)
     .filter((c) => c.station.id !== best?.station.id).map((c) => toMapStation(m, c, name(c.station))) : []), [result, best, m, name]);
@@ -104,7 +110,7 @@ function Planner({ data, lang, setLang }: PlannerProps) {
   /** With no answer to show, the sheet opens far enough to edit the people. */
   const sheetSnap: Snap = best === null && snap === "peek" ? "half" : snap;
   const padding = useMemo<Padding>(() => (stacked
-    ? { ...PHONE_PAD, bottom: visibleHeight(sheetSnap === "full" ? "half" : sheetSnap, viewport) + 16 }
+    ? { ...PHONE_PAD, bottom: visibleHeight(sheetSnap === "full" ? "half" : sheetSnap, viewport) + 16 + MASCOT_ROOM_PX }
     : DESKTOP_PAD), [stacked, sheetSnap, viewport]);
 
   const raise = useCallback(() => setSnap((s) => (s === "peek" ? "half" : s)), []);
@@ -144,7 +150,7 @@ function Planner({ data, lang, setLang }: PlannerProps) {
     <div className="app">
       <MapView theme={theme} basemap={BASEMAP} text={mapText} people={mapPeople} meet={meet} others={others}
         focus={focus} drawKey={fitKey(best)} fitKey={`${fitKey(best)}|${stacked ? sheetSnap : "panel"}`} padding={padding}
-        onPerson={openPerson} onStation={pick} onMeet={raise} />
+        onPerson={openPerson} onStation={pick} onMeet={raise} onStamp={mu.onStamp} />
       <p className="toast" role="status">{toast ?? ""}</p>
       <header className="topbar">
         <span className="brand"><i aria-hidden="true">要</i>Kaname</span>
@@ -157,7 +163,8 @@ function Planner({ data, lang, setLang }: PlannerProps) {
           </span>
         </span>
       </header>
-      <Sheet stacked={stacked} snap={sheetSnap} viewport={viewport} onSnap={setSnap} label={t(lang, "result")}
+      {!stacked && mascot}
+      <Sheet stacked={stacked} snap={sheetSnap} viewport={viewport} onSnap={setSnap} label={t(lang, "result")} mascot={stacked ? mascot : null}
         moreLabel={t(lang, "showMore")} lessLabel={t(lang, "showLess")} head={<>
           {outcome.kind === "needTwo" && <p className="notice">{t(lang, "needTwo")}</p>}
           {outcome.kind === "error" && <p className="notice" role="alert">{problemText(lang, outcome.error, m.windows)}</p>}

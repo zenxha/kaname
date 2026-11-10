@@ -81,6 +81,28 @@ test("with reduced motion the seal is simply there: no stamp, no ink, no tap", a
   await expect(seal).not.toHaveClass(/stamp/);
 });
 
+test("Mu the cat cheers when the seal stamps, then peeks, and never takes a tap", async ({ page }, info) => {
+  await page.clock.setFixedTime(new Date(2026, 10, 11, 19, 30)); // an ordinary evening
+  await page.goto(APP);
+  const mu = page.locator(".mascot");
+  await expect(mu).toHaveAttribute("data-mood", "cheer");
+  await expect(page.locator(".mascot-bubble")).toHaveText("Meet at Kanda!");
+  await expect(mu).toHaveAttribute("data-mood", "peek", { timeout: 6000 });
+  await expect(page.locator(".mascot-bubble")).toHaveCount(0);
+  await expect(mu).toHaveAttribute("aria-hidden", "true");
+  expect(await mu.evaluate((el) => getComputedStyle(el).pointerEvents)).toBe("none");
+  if (info.project.name === "phone") {
+    await openSheet(page); // a full sheet leaves no room above it
+    await expect(mu).toBeHidden();
+  }
+});
+
+test("late at night Mu is sleepy", async ({ page }) => {
+  await page.clock.setFixedTime(new Date(2026, 10, 11, 23, 40));
+  await page.goto(APP);
+  await expect(page.locator(".mascot")).toHaveAttribute("data-mood", "sleepy", { timeout: 6000 });
+});
+
 test("tapping a person opens their trip and fades everyone else", async ({ page }) => {
   await page.goto(APP);
   await openSheet(page);

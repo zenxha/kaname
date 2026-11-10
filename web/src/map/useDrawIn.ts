@@ -29,7 +29,7 @@ const FRAME_MS = 32;
  * (a new theme, an edited name) continues from the same start, and a removed map stops it at once.
  */
 export function useDrawIn(map: MapLibreMap | null, people: readonly MapPerson[], drawKey: string,
-  drawn: RefObject<string>, seal: RefObject<HTMLElement | null>, reduced: boolean): void {
+  drawn: RefObject<string>, seal: RefObject<HTMLElement | null>, reduced: boolean, onStamp: () => void): void {
   const started = useRef<{ key: string; t0: number } | null>(null);
   useEffect(() => {
     if (map === null) return;
@@ -72,6 +72,7 @@ export function useDrawIn(map: MapLibreMap | null, people: readonly MapPerson[],
         source.setData(routeFeatures(routes));
         drawn.current = drawKey;
         stamp(seal.current, true);
+        onStamp();
         return;
       }
       if (now - last >= FRAME_MS) {
@@ -85,5 +86,5 @@ export function useDrawIn(map: MapLibreMap | null, people: readonly MapPerson[],
       map.off("remove", stop);
       stop();
     };
-  }, [map, people, drawKey, drawn, seal, reduced]);
+  }, [map, people, drawKey, drawn, seal, reduced, onStamp]);
 }

@@ -14,6 +14,8 @@ interface Props {
   readonly head: ReactNode;
   /** The rest, out of reach (and out of the tab order) while the sheet peeks. */
   readonly children: ReactNode;
+  /** Rides on the sheet's top edge (Mu, the cat); a full sheet hides it. */
+  readonly mascot?: ReactNode;
 }
 
 /** A drag shorter than this is a tap on the handle. */
@@ -27,7 +29,7 @@ interface Drag {
   at: number;
 }
 
-export function Sheet({ stacked, snap, viewport, onSnap, label, moreLabel, lessLabel, head, children }: Props) {
+export function Sheet({ stacked, snap, viewport, onSnap, label, moreLabel, lessLabel, head, children, mascot }: Props) {
   const [dragged, setDragged] = useState<number | null>(null);
   const drag = useRef<Drag | null>(null);
   if (!stacked) return <aside className="panel" aria-label={label}>{head}{children}</aside>;
@@ -45,6 +47,7 @@ export function Sheet({ stacked, snap, viewport, onSnap, label, moreLabel, lessL
   return (
     <section className={dragged === null ? "sheet" : "sheet dragging"} data-snap={snap} aria-label={label}
       style={{ height, transform: `translateY(${height - visible}px)` }}>
+      {mascot}
       <button type="button" className="grab" aria-label={snap === "full" ? lessLabel : moreLabel}
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId);

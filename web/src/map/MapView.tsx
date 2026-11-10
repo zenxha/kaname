@@ -1,7 +1,7 @@
 /** Full-bleed MapLibre map: routes in line colors, numbered people, the 要 seal and the other stations. */
 import { LngLatBounds, Map as MapLibreMap, type Marker, type StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { LngLat } from "../model/geometry";
 import { fadeLabelsUnder } from "./basemapLabels";
 import { placeLabels, type Placement, type Rect } from "./labels";
@@ -37,6 +37,8 @@ interface Props {
   readonly onPerson: (id: string) => void;
   readonly onStation: (id: string) => void;
   readonly onMeet: () => void;
+  /** The seal has just stamped a new answer (with motion; never with reduced motion). */
+  readonly onStamp?: () => void;
 }
 
 const TOKYO: LngLat = [139.7671, 35.6812];
@@ -80,6 +82,9 @@ function useMap(box: RefObject<HTMLDivElement | null>, theme: Theme, basemap: bo
 
 /** Our marker parts that a base map name must not show under. A hidden name or station is not one. */
 const OURS = ".mk-badge, .mk-person:not(.nolabel) .mk-label, .mk-meet .seal, .mk-meet .mk-name, .mk-cand:not(.hidden) .mk-cand-box";
+
+/** Mu, the cat (Mascot.tsx), and what Mu says. */
+const MASCOT = ".mascot svg, .mascot-bubble";
 
 /** An element's box in map pixels. */
 function rectIn(el: Element, box: DOMRect): Rect {
@@ -149,7 +154,9 @@ export function MapView(props: Props) {
     const fade = () => {
       const container = map.getContainer();
       const box = container.getBoundingClientRect();
-      fadeLabelsUnder(map, [...container.querySelectorAll(OURS)].map((el) => rectIn(el, box)));
+      // Mu sits outside the map, over its edge, so the page is searched for it.
+      const covering = [...container.querySelectorAll(OURS), ...document.querySelectorAll(MASCOT)];
+      fadeLabelsUnder(map, covering.map((el) => rectIn(el, box)));
     };
     declutter();
     declutterNow.current = declutter;
@@ -166,7 +173,9 @@ export function MapView(props: Props) {
     };
   }, [map, people, meet, others, text, drawKey, onPerson, onStation, onMeet]);
 
-  useDrawIn(map, people, drawKey, drawn, seal, reducedMotion());
+  // Stable for the draw-in effect, which would start over with a new function.
+  const stamped = useCallback(() => latest.current.onStamp?.(), []);
+  useDrawIn(map, people, drawKey, drawn, seal, reducedMotion(), stamped);
 
   useEffect(() => {
     if (map === null) return;
