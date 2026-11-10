@@ -20,6 +20,70 @@
         .boot-seal { background: #ff6b4f; color: #0f1215; }
         .boot-name { color: #eef0ec; }
       }
+      .boot { z-index: 10; }
+
+      /*
+       The train, for slow loads only: the scene fades in after 0.6 s, so a fast load never shows it.
+       Each 7 s, four toy-proportioned cars (348 px) run in, brake until the front stops at the platform end,
+       wait with the doors open, then pull away. The cars rock on their springs, one after another.
+      */
+      .boot-rail { --k-body: #fbfbf8; --k-ink: #17191c; --k-roof: #d5d8d0; --k-band: #c8361d; --k-win: #2a3a52; --k-door: #e6e8e2;
+        --k-hub: #9ea29b; --k-deck: #c9ccc4; --k-rail: #9ea29b; --k-sign: #ffffff;
+        position: relative; width: min(390px, 100vw); height: 112px; margin-top: 28px; overflow: hidden; opacity: 0;
+        -webkit-mask-image: linear-gradient(90deg, transparent, #000 20px, #000 calc(100% - 20px), transparent);
+        mask-image: linear-gradient(90deg, transparent, #000 20px, #000 calc(100% - 20px), transparent);
+        animation: boot-in 300ms 600ms ease-out forwards; }
+      @media (prefers-color-scheme: dark) {
+        .boot-rail { --k-body: #262c31; --k-ink: #eef0ec; --k-roof: #3a4148; --k-band: #ff6b4f; --k-win: #11161a; --k-door: #2f363c;
+          --k-hub: #59616a; --k-deck: #2a3036; --k-rail: #59616a; --k-sign: #1d2227; }
+      }
+      .boot-post { position: absolute; left: 318px; top: 0; width: 4px; height: 86px; background: var(--k-rail); }
+      .boot-sign { position: absolute; left: 288px; top: 2px; width: 64px; padding: 3px 0 4px; background: var(--k-sign); border: 1.5px solid var(--k-ink);
+        border-radius: 4px; color: var(--k-ink); font-size: 8px; line-height: 1.2; letter-spacing: 0.06em; }
+      .boot-sign b { display: block; font: 700 15px "BIZ UDPGothic", "Hiragino Sans", system-ui, sans-serif; letter-spacing: 0; }
+      .boot-sign i { display: block; height: 3px; margin: 2px 0 1px; background: var(--k-band); }
+      .boot-deck { position: absolute; left: 0; width: 372px; top: 86px; height: 14px; background: var(--k-deck); border-top: 3px solid #e2b93b; }
+      .boot-track { position: absolute; left: 0; right: 0; top: 101px; height: 8px;
+        background: linear-gradient(var(--k-rail), var(--k-rail)) 0 1px / 100% 2px no-repeat, linear-gradient(var(--k-rail), var(--k-rail)) 0 6px / 100% 2px no-repeat,
+          repeating-linear-gradient(90deg, var(--k-deck) 0 4px, transparent 4px 14px); }
+      .boot-train { position: absolute; left: 0; top: 63px; display: flex; gap: 4px; animation: boot-move 7s 600ms infinite backwards; }
+      .boot-car { width: 84px; height: 40px; overflow: visible; transform-origin: 50% 88%; animation: boot-rock 7s 600ms infinite linear backwards; }
+      .boot-car:nth-child(1) { animation-delay: 810ms; }
+      .boot-car:nth-child(2) { animation-delay: 740ms; }
+      .boot-car:nth-child(3) { animation-delay: 670ms; }
+      .boot-car .b { fill: var(--k-body); stroke: var(--k-ink); stroke-width: 1.6; }
+      .boot-car .r { fill: var(--k-roof); }
+      .boot-car .s { fill: var(--k-band); }
+      .boot-car .w { fill: var(--k-win); }
+      .boot-car .d { fill: var(--k-door); stroke: var(--k-ink); stroke-width: 0.9; }
+      .boot-car .o { fill: #f2c94c; opacity: 0; animation: boot-doors 7s 600ms infinite linear backwards; }
+      .boot-car .p { fill: none; stroke: var(--k-ink); stroke-width: 1.1; }
+      .boot-car .k { fill: var(--k-ink); }
+      .boot-car .h { fill: var(--k-hub); }
+      @keyframes boot-in { to { opacity: 1; } }
+      @keyframes boot-move {
+        0%   { transform: translateX(-370px); animation-timing-function: cubic-bezier(0.18, 0.64, 0.34, 1); }
+        38%  { transform: translateX(14px); }
+        62%  { transform: translateX(14px); animation-timing-function: cubic-bezier(0.62, 0, 0.94, 0.52); }
+        100% { transform: translateX(410px); }
+      }
+      @keyframes boot-rock {
+        0%, 24% { transform: translateY(0) rotate(0deg); }
+        32%  { transform: translateY(0.4px) rotate(0.9deg); }
+        38%  { transform: translateY(1px) rotate(1.8deg); }
+        41%  { transform: translateY(-1.6px) rotate(-0.9deg); }
+        44%  { transform: translateY(0.4px) rotate(0.35deg); }
+        47%, 62% { transform: translateY(0) rotate(0deg); }
+        67%  { transform: translateY(0.6px) rotate(-1.2deg); }
+        82%  { transform: translateY(0.2px) rotate(-0.5deg); }
+        100% { transform: translateY(0) rotate(0deg); }
+      }
+      @keyframes boot-doors { 0%, 41% { opacity: 0; } 44%, 57% { opacity: 1; } 60%, 100% { opacity: 0; } }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-rail { animation: none; opacity: 1; }
+        .boot-train { animation: none; transform: translateX(14px); }
+        .boot-car, .boot-car .o { animation: none; }
+      }
     </style>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png" />
@@ -43,13 +107,20 @@
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@700&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <div id="root">
-      <main class="boot" role="status">
-        <span class="boot-seal" aria-hidden="true">要</span>
-        <p class="boot-name">Kaname</p>
-        <p class="boot-msg">Loading train times…<br /><span lang="ja">時刻データを読み込み中…</span></p>
-      </main>
-    </div>
+    <div id="root"></div>
+    <!-- Outside the app's root, so it stays while the data loads; the app removes it when the answer is ready. -->
+    <main class="boot" id="boot" role="status">
+      <span class="boot-seal" aria-hidden="true">要</span>
+      <p class="boot-name">Kaname</p>
+      <p class="boot-msg">Loading train times…<br /><span lang="ja">時刻データを読み込み中…</span></p>
+      <div class="boot-rail" aria-hidden="true">
+        <span class="boot-post"></span>
+        <span class="boot-sign">かなめ<b>要</b><i></i>KANAME</span>
+        <span class="boot-deck"></span>
+        <span class="boot-track"></span>
+        <div class="boot-train"><svg class="boot-car" viewBox="0 0 84 40"><path class="b" d="M75 6H22Q4 7 1 22v8q0 3 3 3h71q8 0 8-8V14q0-8-8-8z"/><rect class="r" x="22" y="7.6" width="54" height="2.4" rx="1.2"/><rect class="s" x="3" y="24" width="78" height="3.5"/><path class="w" d="M19 10Q8 11 5 19h14zM34 12h9v8h-9zM55 12h9v8h-9z"/><path class="d" d="M25 10h6v17h-6zM46 10h6v17h-6zM67 10h6v17h-6z"/><path class="o" d="M25.5 10.5h5v16h-5zM46.5 10.5h5v16h-5zM67.5 10.5h5v16h-5z"/><circle cx="5.5" cy="28" r="1.8" fill="#e5503a"/><path class="k" d="M12 35a4 4 0 1 0 8 0a4 4 0 1 0-8 0M22 35a4 4 0 1 0 8 0a4 4 0 1 0-8 0M54 35a4 4 0 1 0 8 0a4 4 0 1 0-8 0M64 35a4 4 0 1 0 8 0a4 4 0 1 0-8 0"/><path class="h" d="M14.7 35a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0M24.7 35a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0M56.7 35a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0M66.7 35a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0"/></svg><svg class="boot-car" viewBox="0 0 84 40"><rect class="b" x="1" y="6" width="82" height="27" rx="8"/><rect class="r" x="7" y="7.6" width="70" height="2.4" rx="1.2"/><rect class="s" x="3" y="24" width="78" height="3.5"/><path class="w" d="M16 12h9v8h-9zM37 12h10v8h-10zM59 12h9v8h-9z"/><path class="d" d="M7 10h6v17h-6zM28 10h6v17h-6zM50 10h6v17h-6zM71 10h6v17h-6z"/><path class="o" d="M7.5 10.5h5v16h-5zM28.5 10.5h5v16h-5zM50.5 10.5h5v16h-5zM71.5 10.5h5v16h-5z"/><path class="k" d="M12 35a4 4 0 1 0 8 0a4 4 0 1 0-8 0M22 35a4 4 0 1 0 8 0a4 4 0 1 0-8 0M54 35a4 4 0 1 0 8 0a4 4 0 1 0-8 0M64 35a4 4 0 1 0 8 0a4 4 0 1 0-8 0"/><path class="h" d="M14.7 35a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0M24.7 35a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0M56.7 35a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0M66.7 35a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0"/></svg><svg class="boot-car" viewBox="0 0 84 40"><path class="p" d="M30 6 L36 1 L42 6 M33 1 H45 M36 1 L42 6"/><rect class="b" x="1" y="6" width="82" height="27" rx="8"/><rect class="r" x="7" y="7.6" width="70" height="2.4" rx="1.2"/><rect class="s" x="3" y="24" width="78" height="3.5"/><path class="w" d="M16 12h9v8h-9zM37 12h10v8h-10zM59 12h9v8h-9z"/><path class="d" d="M7 10h6v17h-6zM28 10h6v17h-6zM50 10h6v17h-6zM71 10h6v17h-6z"/><path class="o" d="M7.5 10.5h5v16h-5zM28.5 10.5h5v16h-5zM50.5 10.5h5v16h-5zM71.5 10.5h5v16h-5z"/><path class="k" d="M12 35a4 4 0 1 0 8 0a4 4 0 1 0-8 0M22 35a4 4 0 1 0 8 0a4 4 0 1 0-8 0M54 35a4 4 0 1 0 8 0a4 4 0 1 0-8 0M64 35a4 4 0 1 0 8 0a4 4 0 1 0-8 0"/><path class="h" d="M14.7 35a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0M24.7 35a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0M56.7 35a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0M66.7 35a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0"/></svg><svg class="boot-car" viewBox="0 0 84 40"><path class="b" d="M9 6h53q18 1 21 16v8q0 3-3 3H9q-8 0-8-8V14q0-8 8-8z"/><rect class="r" x="8" y="7.6" width="54" height="2.4" rx="1.2"/><rect class="s" x="3" y="24" width="78" height="3.5"/><path class="w" d="M65 10q11 1 14 9H65zM20 12h9v8h-9zM41 12h9v8h-9z"/><path class="d" d="M11 10h6v17h-6zM32 10h6v17h-6zM53 10h6v17h-6z"/><path class="o" d="M11.5 10.5h5v16h-5zM32.5 10.5h5v16h-5zM53.5 10.5h5v16h-5z"/><circle cx="78.5" cy="28" r="2" fill="#f2c94c"/><path class="k" d="M12 35a4 4 0 1 0 8 0a4 4 0 1 0-8 0M22 35a4 4 0 1 0 8 0a4 4 0 1 0-8 0M54 35a4 4 0 1 0 8 0a4 4 0 1 0-8 0M64 35a4 4 0 1 0 8 0a4 4 0 1 0-8 0"/><path class="h" d="M14.7 35a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0M24.7 35a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0M56.7 35a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0M66.7 35a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0-2.6 0"/></svg></div>
+      </div>
+    </main>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

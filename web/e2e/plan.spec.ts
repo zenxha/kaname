@@ -391,8 +391,18 @@ test("a slow connection shows a loading screen, not a blank page, until the answ
   await expect(boot).toBeVisible();
   await expect(boot).toContainText("Loading train times");
   await expect(boot).toContainText("時刻データを読み込み中");
+  // A load this slow gets the train: it rolls in after 0.6 s, so a fast load never shows it.
+  await expect(boot.locator(".boot-car")).toHaveCount(4);
+  await expect.poll(() => boot.locator(".boot-rail").evaluate((el) => Number(getComputedStyle(el).opacity))).toBeGreaterThan(0.9);
+  await expect(boot.locator(".boot-rail")).toHaveAttribute("aria-hidden", "true");
   await expect(page.locator(".t-name b")).toHaveText("神田");
   await expect(boot).toHaveCount(0);
+});
+
+test("the loading screen goes away once the answer is ready", async ({ page }) => {
+  await page.goto(APP);
+  await expect(page.locator(".t-name b")).toHaveText("神田");
+  await expect(page.locator(".boot")).toHaveCount(0);
 });
 
 test("a pencil on each row opens that person's editor, which fits a narrow phone", async ({ page }) => {
