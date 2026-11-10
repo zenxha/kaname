@@ -117,6 +117,7 @@ test("sharing punches the ticket and Mu cheers quietly; a new answer gets a fres
   await ticket.getByRole("button", { name: "Share plan" }).click();
   await expect(page.locator(".toast")).toHaveText("Link copied");
   await expect(ticket.locator(".t-punch")).toHaveCount(1);
+  await expect(ticket).toHaveClass(/punched/); // the ticket dips as the punch lands
   await expect(ticket.locator(".t-punch")).toHaveAttribute("aria-hidden", "true");
   await expect(mu).toHaveAttribute("data-mood", "cheer");
   await expect(page.locator(".mascot-bubble")).toHaveCount(0); // the toast already says it

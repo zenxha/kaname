@@ -29,7 +29,7 @@ export function Ticket({ lang, shown, first, onOpen, onShare, punched, onStartOw
   const last = earliestLastTrain(shown);
   const plain = plainSummary(shown);
   return (
-    <section className="ticket">
+    <section className={punched ? "ticket punched" : "ticket"}>
       {/* Five paper bits fall from the punch; theme.css animates them once. */}
       {punched && <span className="t-punch" aria-hidden="true"><i /><i /><i /><i /><i /></span>}
       <p className="sr-only" aria-live="polite">{`${shown.station.ja} ${shown.station.en}, ${Math.round(plain.average)} ${t(lang, "avgUnit")}`}</p>
