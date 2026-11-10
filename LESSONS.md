@@ -158,22 +158,29 @@ The owner set the goals, the gates and the product calls. Claude Code wrote most
 - Lesson: when a core rejects input, decide for each rejection what the user sees. Real names repeat, so test with the inputs that real groups have.
 - Where to look: commit `fb1aee5`, `web/src/model/problem.ts`.
 
+### 21. Zoom in on the screenshot before you fix the symptom
+
+- What happened: the owner's phone screenshot showed two names on the map on top of each other. A close crop during the fix showed more: two people at the same station had badges 26 px apart. A CSS rule gave each marker `position: relative`, which replaced the map library's `position: absolute`. The markers then flowed in a row, so each badge, and the 要 seal, sat 26 px further right for each person before it. The bug was live from the first web iteration. Every test checked the text and the count of markers, and none checked a position.
+- What we did: an end-to-end test now puts two people at one station and checks that their badges and the seal share one point. It failed, and removing two declarations fixed it. Each name now picks a free spot beside its badge, or one line up or down. If no spot is free, the name hides. A unit test checks 200 random crowds for overlaps.
+- Lesson: a visual bug can hide a bigger one, so look closely at the picture first. For a map, test where things are, not only that they are there.
+- Where to look: `web/src/map/labels.ts`, the two map tests at the end of `web/e2e/plan.spec.ts`.
+
 ## Working with an AI agent
 
-### 21. A separate reviewer finds what the author cannot
+### 22. A separate reviewer finds what the author cannot
 
 - What happened: each milestone ended with a code review by a separate agent that saw the code but not the author's reasoning.
 - What we did: every review found real defects, for example a check that never failed, a map race, an address ranking error and a retry loop with no limit. Each fix came with a regression test.
 - Lesson: keep the author and the reviewer apart. Give the reviewer the code, not the conclusion.
 - Where to look: the commits named "fix: address the ... review".
 
-### 22. Decisions written down make the story possible
+### 23. Decisions written down make the story possible
 
 - What happened: two days produced about 70 logged decisions, each with a reason.
 - What we did: every non-obvious decision got one line in DECISIONS.md, and every commit says what changed and why. This file was written from that record.
 - Lesson: the decision log is the cheapest documentation there is. Write the reason while you still know it.
 
-### 23. The agent makes mistakes too, so check its work
+### 24. The agent makes mistakes too, so check its work
 
 - What happened: some bugs came from the agent itself. A `pkill -f` pattern killed its own shell, so a commit did not happen. A page script named a variable `top`, which clashes with the browser's `window.top`. A Python class shadowed the built-in `LookupError`.
 - What we did: each one surfaced because a command, a test or a reviewer checked the result instead of trusting the claim.

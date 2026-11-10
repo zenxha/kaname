@@ -7,7 +7,7 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
 await page.goto(url);
-await page.waitForSelector(".result, .notice", { timeout: 30000 });
+await page.waitForSelector(".ticket, .notice, .notice-page", { timeout: 30000 });
 await page.waitForTimeout(4000);
 await page.screenshot({ path: out, fullPage: Number(w) < 700 });
 console.log(JSON.stringify({ errors }));

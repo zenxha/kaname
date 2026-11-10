@@ -3,6 +3,7 @@ import { LngLatBounds, Map as MapLibreMap, type Marker, type StyleSpecification 
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import type { LngLat } from "../model/geometry";
+import { placeLabels, type Placement, type Rect } from "./labels";
 import { addRouteLayers, BASEMAPS, blankStyle, setFocus } from "./layers";
 import { personMarker, sealMarker, stationMarker } from "./markers";
 import "./maplibreWorker";
@@ -40,8 +41,6 @@ interface Props {
 const TOKYO: LngLat = [139.7671, 35.6812];
 /** Other stations closer than this to the seal would cover it, so they hide. */
 const CROWDED_PX = 30;
-/** A person's label hangs to the left of the badge in the right part of the map. */
-const FLIP_SHARE = 0.62;
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /**
@@ -78,6 +77,19 @@ function useMap(box: RefObject<HTMLDivElement | null>, theme: Theme, basemap: bo
   return map;
 }
 
+/** An element's box in map pixels. */
+function rectIn(el: Element, box: DOMRect): Rect {
+  const r = el.getBoundingClientRect();
+  return { left: r.left - box.left, top: r.top - box.top, right: r.right - box.left, bottom: r.bottom - box.top };
+}
+
+function showSpot(el: HTMLElement, spot: Placement): void {
+  el.classList.toggle("flip", spot.startsWith("left"));
+  el.classList.toggle("up", spot.endsWith("-up"));
+  el.classList.toggle("down", spot.endsWith("-down"));
+  el.classList.toggle("nolabel", spot === "hidden");
+}
+
 function fitPoints(people: readonly MapPerson[], meet: MapStation | null, focus: string | null): LngLat[] {
   const chosen = people.filter((p) => focus === null || p.id === focus);
   const shown = chosen.length > 0 ? chosen : people;
@@ -93,6 +105,7 @@ export function MapView(props: Props) {
   const seal = useRef<HTMLElement | null>(null);
   const personEls = useRef(new Map<string, HTMLElement>());
   const stationEls = useRef<HTMLElement[]>([]);
+  const declutterNow = useRef<(() => void) | null>(null);
   const latest = useRef(props);
   useEffect(() => {
     latest.current = props;
@@ -108,9 +121,19 @@ export function MapView(props: Props) {
     personEls.current = new Map(persons.map((p, i) => [people[i]!.id, p.el]));
     stationEls.current = stations.map((s) => s.el);
     seal.current = sealed?.seal ?? null;
+    const labels = persons.map((p) => p.el.querySelector<HTMLElement>(".mk-label")!);
+    const sealEl = sealed?.marker.getElement() ?? null;
     const declutter = () => {
-      const width = map.getContainer().clientWidth;
-      persons.forEach((p, i) => p.el.classList.toggle("flip", map.project([...people[i]!.start]).x > width * FLIP_SHARE));
+      const container = map.getContainer();
+      const box = container.getBoundingClientRect();
+      // The focused person's name goes first, then the list order.
+      const first = latest.current.focus;
+      const order = people.map((_, i) => i).sort((a, b) => Number(people[b]!.id === first) - Number(people[a]!.id === first));
+      const items = order.map((i) => ({ at: map.project([...people[i]!.start]),
+        size: { width: labels[i]!.offsetWidth, height: labels[i]!.offsetHeight } }));
+      const sealBoxes = sealEl === null ? [] : [sealEl, ...sealEl.querySelectorAll(".mk-name")].map((el) => rectIn(el, box));
+      const spots = placeLabels(items, sealBoxes, { width: container.clientWidth, height: container.clientHeight });
+      order.forEach((i, k) => showSpot(persons[i]!.el, spots[k]!));
       if (meet === null) return;
       const c = map.project([...meet.at]);
       stations.forEach((s, i) => {
@@ -119,9 +142,11 @@ export function MapView(props: Props) {
       });
     };
     declutter();
+    declutterNow.current = declutter;
     map.on("move", declutter);
     return () => {
       map.off("move", declutter);
+      declutterNow.current = null;
       markers.forEach((mk) => mk.remove());
       seal.current = null;
     };
@@ -134,6 +159,7 @@ export function MapView(props: Props) {
     setFocus(map, focus);
     personEls.current.forEach((el, id) => el.classList.toggle("dimmed", focus !== null && id !== focus));
     stationEls.current.forEach((el) => el.classList.toggle("hidden", focus !== null));
+    declutterNow.current?.();
   }, [map, focus, people, others, meet, text, drawKey]);
 
   useEffect(() => {

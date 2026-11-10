@@ -218,3 +218,35 @@ test("removing someone in the middle renumbers the rows and the map markers toge
   await expect(page.locator(".mk-person")).toHaveCount(3);
   await expect(page.locator('[data-person="p4"]')).toBeFocused();
 });
+
+test("names on the map never cover each other when two people start close together", async ({ page }) => {
+  // 神田 and 秋葉原 are 1 km apart. 町田 and 大宮 are far away, so the map zooms out.
+  await page.goto(`${APP}&p=kanda_Aki&p=akihabara_Dai&p=machida_Ben&p=omiya_Chie`);
+  await expect(page.locator(".mk-person")).toHaveCount(4);
+  await expect(page.locator(".mk-meet .seal")).not.toHaveClass(/wait/);
+  await page.waitForTimeout(600); // the camera eases to the group for 450 ms
+  type Box = { x: number; y: number; width: number; height: number };
+  const boxes: Box[] = [];
+  for (const label of await page.locator(".mk-label").all()) {
+    if (await label.isVisible()) boxes.push((await label.boundingBox())!);
+  }
+  expect(boxes.length).toBeGreaterThanOrEqual(3);
+  const hit = (a: Box, b: Box) =>
+    a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  for (const [i, a] of boxes.entries()) for (const b of boxes.slice(i + 1)) expect(hit(a, b)).toBe(false);
+});
+
+test("each badge and the seal sit on their own station", async ({ page }) => {
+  // Aki and Eri start at the same station, and the efficient end meets where two of them start.
+  await page.goto(`${APP}&p=shinjuku_Aki&p=shinjuku_Eri&p=shibuya_Dai&fair=0`);
+  await expect(page.locator(".t-name b")).toHaveText("新宿");
+  await expect(page.locator(".mk-meet .seal")).not.toHaveClass(/wait/);
+  await page.waitForTimeout(600); // the camera eases to the group for 450 ms
+  const center = async (selector: string) => {
+    const b = (await page.locator(selector).boundingBox())!;
+    return { x: Math.round(b.x + b.width / 2), y: Math.round(b.y + b.height / 2) };
+  };
+  const aki = await center('[data-marker="p1"] .mk-badge');
+  expect(await center('[data-marker="p2"] .mk-badge')).toEqual(aki);
+  expect(await center(".mk-meet .seal")).toEqual(aki);
+});
