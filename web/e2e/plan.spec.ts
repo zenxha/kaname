@@ -94,6 +94,12 @@ test("Mu the cat cheers when the seal stamps, then peeks, and never takes a tap"
   if (info.project.name === "phone") {
     await openSheet(page); // a full sheet leaves no room above it
     await expect(mu).toBeHidden();
+  } else {
+    // On a desktop Mu sits on the panel's top edge, near its right end, as on the phone's sheet.
+    const [m, panel] = [(await mu.boundingBox())!, (await page.locator(".panel").boundingBox())!];
+    expect(Math.abs(m.y + m.height - (panel.y + 4))).toBeLessThanOrEqual(1);
+    expect(m.x).toBeGreaterThan(panel.x + panel.width / 2);
+    expect(m.x + m.width).toBeLessThanOrEqual(panel.x + panel.width);
   }
 });
 

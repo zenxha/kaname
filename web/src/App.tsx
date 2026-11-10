@@ -54,7 +54,7 @@ const BASEMAP = !(new URLSearchParams(window.location.search).get("basemap") ===
 const PHONE_PAD = { top: 64, left: 28, right: 96 };
 /** Room above the sheet for Mu, so no route ends under the cat. */
 const MASCOT_ROOM_PX = 52;
-const DESKTOP_PAD = { top: 60, bottom: 100, left: 440, right: 120 };
+const DESKTOP_PAD = { top: 60, bottom: 60, left: 440, right: 120 };
 
 function useMapText(lang: Lang): MapText {
   return useMemo(() => ({
