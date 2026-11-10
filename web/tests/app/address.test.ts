@@ -24,6 +24,11 @@ describe("addressKey", () => {
 });
 
 describe("searchAddresses", () => {
+  it("lists the match nearest central Tokyo first when two towns share a name", () => {
+    // 西新宿二丁目 is in 新宿区 and in 蓮田市 (埼玉県); the names alone sort 埼玉 first.
+    expect(top("西新宿2", 2)).toEqual(["東京都新宿区西新宿二丁目", "埼玉県蓮田市西新宿二丁目"]);
+  });
+
   it("finds a 丁目 from the way people write a street address", () => {
     expect(top("渋谷区神南1-2-3")[0]).toBe("東京都渋谷区神南一丁目");
     expect(top("神南1丁目5番")[0]).toBe("東京都渋谷区神南一丁目");

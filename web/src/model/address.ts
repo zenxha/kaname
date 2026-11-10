@@ -80,14 +80,24 @@ function rank(town: Town, q: string): number {
   return at < town.townAt && at + q.length > town.townAt ? 2 : 3;
 }
 
+/** 東京駅. Two towns with the same name, such as 西新宿二丁目 in 新宿区 and in 蓮田市, list the nearer one first. */
+const CENTER: LngLat = [139.7671, 35.6812];
+const KM_PER_DEGREE = 111.32;
+
+/** Whole kilometers from central Tokyo, so towns of one area keep their other order. */
+function kmFromCenter([lng, lat]: LngLat): number {
+  const dx = (lng - CENTER[0]) * Math.cos((CENTER[1] * Math.PI) / 180);
+  return Math.round(Math.hypot(dx, lat - CENTER[1]) * KM_PER_DEGREE);
+}
+
 function search(index: AddressIndex, q: string, limit: number): Town[] {
-  const hits: { readonly town: Town; readonly rank: number }[] = [];
+  const hits: { readonly town: Town; readonly rank: number; readonly km: number }[] = [];
   for (const town of index.towns) {
     const r = rank(town, q);
-    if (r >= 0) hits.push({ town, rank: r });
+    if (r >= 0) hits.push({ town, rank: r, km: kmFromCenter(town.at) });
   }
   return hits
-    .sort((a, b) => a.rank - b.rank || a.town.key.length - b.town.key.length || (a.town.key < b.town.key ? -1 : 1))
+    .sort((a, b) => a.rank - b.rank || a.km - b.km || a.town.key.length - b.town.key.length || (a.town.key < b.town.key ? -1 : 1))
     .slice(0, limit)
     .map((h) => h.town);
 }
