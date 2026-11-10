@@ -85,7 +85,7 @@ describe("plain trip minutes", () => {
     expect(changesAllText("ja", 6)).toBe("乗換 計6回");
     const hardest = { label: "Tora", minutes: 85, changes: 4 };
     expect(hardestText("en", hardest)).toBe("hardest trip, Tora, 4 changes");
-    expect(hardestText("ja", hardest)).toBe("いちばん大変 Tora（乗換4回）");
+    expect(hardestText("ja", hardest)).toBe("負担最大 Tora（乗換4回）");
   });
 
   it("drive the comparison with the first station", () => {
