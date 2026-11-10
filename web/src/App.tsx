@@ -17,6 +17,7 @@ import { planOf } from "./model/share";
 import { visibleHeight, type Snap } from "./model/sheet";
 import { buildMapPeople, fitKey, personRoutes, scoredIndexes, stationIndex, toMapStation, useOutcome } from "./usePlan";
 import { useStacked, useTheme, useViewportHeight } from "./useScreen";
+import { tap } from "./haptics";
 import { useMascot } from "./useMascot";
 import { readOpening, useLinkSync, useShare } from "./useShareLink";
 
@@ -105,6 +106,14 @@ function Planner({ data, lang, setLang }: PlannerProps) {
   const untouched = isExample(people) && alpha === 0.5 && selected === null;
   useLinkSync(plan, untouched);
   const { share, toast } = useShare(lang, best ? name(best.station) : null);
+  /** The answer whose ticket was shared, so its ticket shows a punch until the answer changes. */
+  const [punchedKey, setPunchedKey] = useState<string | null>(null);
+  const shareAndPunch = useCallback(() => {
+    share();
+    setPunchedKey(fitKey(best));
+    tap();
+    mu.onShare();
+  }, [share, best, mu]);
   const fromLink = opening.shared && people === opening.people;
   const search = useMemo(() => ({ kana: data.kana, base: data.base }), [data.kana, data.base]);
   /** With no answer to show, the sheet opens far enough to edit the people. */
@@ -171,7 +180,7 @@ function Planner({ data, lang, setLang }: PlannerProps) {
           {outcome.kind === "ok" && best === null && <p className="notice" role="alert">{t(lang, "noFeasible")}</p>}
           {blocks.error && <p className="notice" role="alert">{t(lang, "routesError")}</p>}
           {fromLink && opening.unknown > 0 && <p className="notice" role="alert">{t(lang, "unknownStations", { n: opening.unknown })}</p>}
-          {best && first && <Ticket lang={lang} shown={best} first={first} onOpen={raise} onShare={share}
+          {best && first && <Ticket lang={lang} shown={best} first={first} onOpen={raise} onShare={shareAndPunch} punched={punchedKey === fitKey(best)}
             onStartOwn={isExample(people) ? startOwn : undefined} />}
         </>}>
         <PeopleList data={m} lang={lang} people={people} outcome={outcome} routes={routes}

@@ -103,6 +103,28 @@ test("Mu the cat cheers when the seal stamps, then peeks, and never takes a tap"
   }
 });
 
+test("sharing punches the ticket and Mu cheers quietly; a new answer gets a fresh ticket", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.addInitScript(() => Object.defineProperty(navigator, "share", { value: undefined }));
+  await page.clock.setFixedTime(new Date(2026, 10, 11, 19, 30));
+  await page.goto(`${APP}&p=seiseki-sakuragaoka_Shizuku&p=shibamata_Tora&p=kanazawa-hakkei_Hitori`);
+  const mu = page.locator(".mascot");
+  await expect(page.locator(".mk-meet .seal")).toHaveClass(/stamp/);
+  await expect(page.locator(".mascot-bubble")).toHaveCount(1); // the stamp's cheer, with words
+  await expect(mu).toHaveAttribute("data-mood", "peek", { timeout: 6000 }); // and over
+  const ticket = page.locator(".ticket");
+  await expect(ticket.locator(".t-punch")).toHaveCount(0);
+  await ticket.getByRole("button", { name: "Share plan" }).click();
+  await expect(page.locator(".toast")).toHaveText("Link copied");
+  await expect(ticket.locator(".t-punch")).toHaveCount(1);
+  await expect(ticket.locator(".t-punch")).toHaveAttribute("aria-hidden", "true");
+  await expect(mu).toHaveAttribute("data-mood", "cheer");
+  await expect(page.locator(".mascot-bubble")).toHaveCount(0); // the toast already says it
+  await openSheet(page);
+  await page.locator(".others li").nth(1).getByRole("button").click();
+  await expect(ticket.locator(".t-punch")).toHaveCount(0);
+});
+
 test("late at night Mu is sleepy", async ({ page }) => {
   await page.clock.setFixedTime(new Date(2026, 10, 11, 23, 40));
   await page.goto(APP);

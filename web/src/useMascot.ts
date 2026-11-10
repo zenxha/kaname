@@ -10,21 +10,27 @@ export interface MascotState {
   /** Null while there is no answer: Mu shows only with one. */
   readonly mood: Mood | null;
   readonly bubble: string | null;
-  /** For the map: the seal has just stamped. */
+  /** For the map: the seal has just stamped. Mu cheers and says where to meet. */
   readonly onStamp: () => void;
+  /** A plan was shared: Mu cheers without a word, because the toast says it. */
+  readonly onShare: () => void;
 }
 
 export function useMascot(best: CandidateResult | null, lang: Lang, name: (s: CandidateResult["station"]) => string): MascotState {
-  const [cheering, setCheering] = useState(false);
+  /** Null when Mu is not cheering; else whether Mu says where to meet. */
+  const [cheer, setCheer] = useState<{ readonly say: boolean } | null>(null);
   const timer = useRef<number | undefined>(undefined);
   const hour = useHour();
-  const onStamp = useCallback(() => {
-    setCheering(true);
+  const start = useCallback((say: boolean) => {
+    setCheer({ say });
     window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => setCheering(false), CHEER_MS);
+    timer.current = window.setTimeout(() => setCheer(null), CHEER_MS);
   }, []);
+  const onStamp = useCallback(() => start(true), [start]);
+  const onShare = useCallback(() => start(false), [start]);
   useEffect(() => () => window.clearTimeout(timer.current), []);
-  if (best === null) return { mood: null, bubble: null, onStamp };
-  const mood = mascotMood({ cheering, hardestMinutes: plainSummary(best).hardest.minutes, hour });
-  return { mood, bubble: mood === "cheer" ? t(lang, "mascotMeet", { station: name(best.station) }) : null, onStamp };
+  if (best === null) return { mood: null, bubble: null, onStamp, onShare };
+  const mood = mascotMood({ cheering: cheer !== null, hardestMinutes: plainSummary(best).hardest.minutes, hour });
+  const bubble = mood === "cheer" && cheer?.say === true ? t(lang, "mascotMeet", { station: name(best.station) }) : null;
+  return { mood, bubble, onStamp, onShare };
 }

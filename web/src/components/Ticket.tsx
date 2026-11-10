@@ -12,6 +12,8 @@ interface Props {
   readonly first: CandidateResult;
   readonly onOpen: () => void;
   readonly onShare: () => void;
+  /** The plan on this ticket was shared: a 改札鋏 punch in its top edge, as on a used paper ticket. */
+  readonly punched: boolean;
   /** Set for the example group: the ticket offers a plan of your own instead of sharing the example. */
   readonly onStartOwn?: (() => void) | undefined;
 }
@@ -21,13 +23,15 @@ function stayText(last: LastTrain, lang: Lang): string {
   return t(lang, "stayUntil", { time: formatClock(last.time), who });
 }
 
-export function Ticket({ lang, shown, first, onOpen, onShare, onStartOwn }: Props) {
+export function Ticket({ lang, shown, first, onOpen, onShare, punched, onStartOwn }: Props) {
   const [why, setWhy] = useState(false);
   const comparison = compareToFirst(shown, first);
   const last = earliestLastTrain(shown);
   const plain = plainSummary(shown);
   return (
     <section className="ticket">
+      {/* Three paper bits fall from the punch; theme.css animates them once. */}
+      {punched && <span className="t-punch" aria-hidden="true"><i /><i /><i /></span>}
       <p className="sr-only" aria-live="polite">{`${shown.station.ja} ${shown.station.en}, ${Math.round(plain.average)} ${t(lang, "avgUnit")}`}</p>
       {onStartOwn ? (
         <button type="button" className="t-share t-own" onClick={onStartOwn}>
