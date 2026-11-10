@@ -78,8 +78,8 @@ On 2026-11-10 you approved Workers Paid ($5 a month) for the plan previews. The 
 After a deploy, check the two functions:
 
 ```bash
-curl -s "https://kaname-1l6.pages.dev/?p=shibamata_Tora&p=kunitachi_Kai" | grep og:title
-curl -s -o card.png -w "%{http_code} %{content_type}\n" "https://kaname-1l6.pages.dev/og/plan?p=shibamata_Tora&p=kunitachi_Kai"
+curl -s "https://kaname-1l6.pages.dev/?p=shibamata_Tora~kunitachi_Kai" | grep og:title
+curl -s -o card.png -w "%{http_code} %{content_type}\n" "https://kaname-1l6.pages.dev/og/plan?p=shibamata_Tora~kunitachi_Kai"
 ```
 
 The first prints the plan's title. The second prints `200 image/png`. A `302` means the function failed and sent the general picture.

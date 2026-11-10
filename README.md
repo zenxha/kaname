@@ -23,9 +23,9 @@ Three friends meet after work on a weekday. Aki works in 大宮 and lives in 柏
 
 | Slider | Station | Average trip | Longest trip | Changes |
 | --- | --- | --- | --- | --- |
-| [Efficient](https://kaname-1l6.pages.dev/?p=omiya.kashiwa_Aki&p=shinjuku.kawasaki_Ben&p=shinjuku.shibuya_Chie&fair=0) | 新宿 | 40 min | 84 min (Aki) | 2 |
-| [Middle, the default](https://kaname-1l6.pages.dev/?p=omiya.kashiwa_Aki&p=shinjuku.kawasaki_Ben&p=shinjuku.shibuya_Chie) | 東京 | 45 min | 70 min (Aki) | 1 |
-| [Fair](https://kaname-1l6.pages.dev/?p=omiya.kashiwa_Aki&p=shinjuku.kawasaki_Ben&p=shinjuku.shibuya_Chie&fair=100) | 日暮里 | 55 min | 59 min (Aki) | 2 |
+| [Efficient](https://kaname-1l6.pages.dev/?p=omiya.kashiwa_Aki~shinjuku.kawasaki_Ben~shinjuku.shibuya_Chie~fair.0) | 新宿 | 40 min | 84 min (Aki) | 2 |
+| [Middle, the default](https://kaname-1l6.pages.dev/?p=omiya.kashiwa_Aki~shinjuku.kawasaki_Ben~shinjuku.shibuya_Chie) | 東京 | 45 min | 70 min (Aki) | 1 |
+| [Fair](https://kaname-1l6.pages.dev/?p=omiya.kashiwa_Aki~shinjuku.kawasaki_Ben~shinjuku.shibuya_Chie~fair.100) | 日暮里 | 55 min | 59 min (Aki) | 2 |
 
 The efficient end picks the station where Ben and Chie already are, so Aki rides 84 minutes. The default picks 東京, which cuts Aki's trip to 70 minutes and keeps the others near half an hour. The fair end gives everyone 50 to 59 minutes.
 
@@ -146,12 +146,16 @@ You need `git`, `bash` and [uv](https://docs.astral.sh/uv/) for this part. uv al
 The address bar always holds a link to the current plan, and "Share plan" shares it.
 
 ```text
-https://kaname-1l6.pages.dev/?p=seiseki-sakuragaoka_Shizuku&p=shibamata_Tora&fair=75&at=jimbocho
+https://kaname-1l6.pages.dev/?p=seiseki-sakuragaoka_Shizuku~shibamata_Tora~fair.75~at.jimbocho
 ```
 
-- `p`: one for each person. It holds the start station id, then `.` and the home station id, then `_` and the name. The home part is only there for a person whose home is not the start. A location or an address goes as the station that it snapped to.
-- `fair`: the slider, from 0 (lowest average) to 100 (lowest worst case). The link leaves out the default, 50.
-- `at`: the station picked from the ranking.
+The whole plan is in one parameter, `p`, because some chat apps keep only the first parameter of a link. Instagram direct messages do this. A `~` separates the items:
+
+- A person: the start station id, then `.` and the home station id, then `_` and the name. The home part is only there for a person whose home is not the start. A location or an address goes as the station that it snapped to.
+- `fair.N`: the slider, from 0 (lowest average) to 100 (lowest worst case). The link leaves out the default, 50.
+- `at.ID`: the station picked from the ranking.
+
+A name keeps ASCII letters, digits, `_` and `-` as they are. The link percent-encodes everything else, so a `~` or `&` in a name cannot split the plan. Older links with one `p` for each person and separate `fair` and `at` parameters still open.
 
 ## Deploy
 
@@ -173,7 +177,7 @@ Drawing a picture takes more processing time than the Workers Free plan gives (1
 To see a plan's picture without a deploy, draw it from the local data:
 
 ```bash
-npm --prefix web run plan-card -- "?p=shibamata_Tora&p=kunitachi_Kai" card.png
+npm --prefix web run plan-card -- "?p=shibamata_Tora~kunitachi_Kai" card.png
 ```
 
 To run the site with its functions, build it, then run `npx wrangler@4.153.0 pages dev dist` in `web/`.

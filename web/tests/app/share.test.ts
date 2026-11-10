@@ -1,4 +1,4 @@
-/** The shareable link: the plan as stations, names and settings in the query string; never a location. */
+/** The shareable link: the plan as stations, names and settings in one query parameter; never a location. */
 import { describe, expect, it } from "vitest";
 import { MAX_PARTICIPANTS } from "../../core/participants";
 import { decodePlan, encodePlan, peopleOf, planOf, type Plan } from "../../src/model/share";
@@ -17,21 +17,37 @@ const PLAN: Plan = {
 };
 
 describe("encodePlan", () => {
-  it("writes each person as station, then _ and their name if they have one", () => {
+  it("writes the whole plan in one parameter: each person as station, then _ and a name, then the settings", () => {
     expect(encodePlan(PLAN, new URLSearchParams())).toBe(
-      "?p=seiseki-sakuragaoka_Shizuku&p=shibamata&p=kanazawa-hakkei.yokohama_%E3%81%B2%E3%81%A8%E3%82%8A_2&fair=75&at=tokyo");
+      "?p=seiseki-sakuragaoka_Shizuku~shibamata~kanazawa-hakkei.yokohama_%E3%81%B2%E3%81%A8%E3%82%8A_2~fair.75~at.tokyo");
   });
 
-  it("encodes a name that looks like a setting, so it stays a name", () => {
-    const plan = { people: [{ start: "kanda", home: null, name: "&fair=0" }, { start: "ueno", home: null, name: "a&at=tokyo" }], alpha: 0.5, at: null };
+  it("encodes a name that looks like a setting or a separator, so it stays a name", () => {
+    const names = ["&fair=0", "a&at=tokyo", "x~at.ueno", "~fair.0", "Kai, Jr.", "(o_o)!", "100%", "a+b c"];
+    const plan: Plan = { people: names.map((name, i) => ({ start: i % 2 === 0 ? "kanda" : "ueno", home: null, name })), alpha: 0.5, at: null };
     const link = encodePlan(plan, new URLSearchParams());
-    expect(link).toBe("?p=kanda_%26fair%3D0&p=ueno_a%26at%3Dtokyo");
+    expect(link).toMatch(/^\?p=[A-Za-z0-9_%+.~-]+$/); // one parameter, nothing that ends or splits a link
+    expect(link).toContain("_%26fair%3D0~");
+    expect(link).toContain("_x%7Eat%2Eueno~");
+    expect(link).toContain("_Kai%2C+Jr%2E~");
     expect(decodePlan(link, isStation)).toEqual({ plan, unknown: 0 });
   });
 
-  it("leaves out defaults and keeps parameters that are not part of the plan", () => {
+  it("never ends a link in punctuation, which chat apps leave out of a link", () => {
+    for (const name of ["Kai.", "Kai!", "(Kai)", "Kai'", "Kai*", "Kai~"]) {
+      const link = encodePlan({ people: [{ start: "kanda", home: null, name }], alpha: 0.5, at: null }, new URLSearchParams());
+      expect(link).toMatch(/[A-Za-z0-9]$/);
+    }
+  });
+
+  it("leaves out defaults, and keeps other parameters after the plan", () => {
     const plain: Plan = { people: PLAN.people.slice(0, 2), alpha: 0.5, at: null };
-    expect(encodePlan(plain, new URLSearchParams("basemap=none&at=old"))).toBe("?basemap=none&p=seiseki-sakuragaoka_Shizuku&p=shibamata");
+    expect(encodePlan(plain, new URLSearchParams("basemap=none&at=old&fair=3"))).toBe("?p=seiseki-sakuragaoka_Shizuku~shibamata&basemap=none");
+  });
+
+  it("writes no plan without people", () => {
+    expect(encodePlan({ people: [], alpha: 0.1, at: "tokyo" }, new URLSearchParams("basemap=none"))).toBe("?basemap=none");
+    expect(encodePlan({ people: [], alpha: 0.5, at: null }, new URLSearchParams())).toBe("");
   });
 });
 
@@ -40,25 +56,47 @@ describe("decodePlan", () => {
     expect(decodePlan(encodePlan(PLAN, new URLSearchParams()), isStation)).toEqual({ plan: PLAN, unknown: 0 });
   });
 
+  it("keeps the whole plan when a chat app keeps only the first parameter, as Instagram does", () => {
+    const link = encodePlan(PLAN, new URLSearchParams("basemap=none"));
+    expect(decodePlan(link.split("&")[0]!, isStation)).toEqual({ plan: PLAN, unknown: 0 });
+  });
+
+  it("still opens an older link, with one p for each person and separate settings", () => {
+    const older = "?p=seiseki-sakuragaoka_Shizuku&p=shibamata&p=kanazawa-hakkei.yokohama_%E3%81%B2%E3%81%A8%E3%82%8A_2&fair=75&at=tokyo";
+    expect(decodePlan(older, isStation)).toEqual({ plan: PLAN, unknown: 0 });
+    expect(decodePlan("?p=tokyo_Kai%7E2&p=ueno_A%2C+B", isStation).plan!.people.map((p) => p.name)).toEqual(["Kai~2", "A, B"]);
+  });
+
+  it("lets a setting in the plan win over an older separate one", () => {
+    expect(decodePlan("?p=tokyo~ueno~fair.0&fair=100", isStation).plan!.alpha).toBe(1);
+  });
+
   it("is null without people, so the app opens on its example", () => {
     expect(decodePlan("", isStation)).toEqual({ plan: null, unknown: 0 });
     expect(decodePlan("?basemap=none&fair=10", isStation)).toEqual({ plan: null, unknown: 0 });
   });
 
   it("drops stations it does not know and counts them; a bad home falls back to the start", () => {
-    const d = decodePlan("?p=atlantis&p=shibamata&p=tokyo.nowhere&at=atlantis", isStation);
+    const d = decodePlan("?p=atlantis~shibamata~tokyo.nowhere~at.atlantis", isStation);
     expect(d.unknown).toBe(3);
     expect(d.plan!.people).toEqual([{ start: "shibamata", home: null, name: "" }, { start: "tokyo", home: null, name: "" }]);
     expect(d.plan!.at).toBeNull();
   });
 
   it("reads a name after the first _, trimmed, without control characters, and capped", () => {
-    const people = decodePlan(`?p=tokyo_%20Aki%0A%20&p=ueno_${"x".repeat(60)}&p=shibamata_`, isStation).plan!.people;
-    expect(people.map((p) => p.name)).toEqual(["Aki", "x".repeat(40), ""]);
+    const people = decodePlan(`?p=tokyo_%20Aki%0A%20~ueno_${"x".repeat(60)}~shibamata_~kanda_%E3%81%B2%ED%A0%80`, isStation).plan!.people;
+    expect(people.map((p) => p.name)).toEqual(["Aki", "x".repeat(40), "", "%E3%81%B2%ED%A0%80"]); // a broken code stays as typed
+  });
+
+  it("drops a broken surrogate from a name, so the link can always be written", () => {
+    const plan = planOf([{ id: "p1", label: "A\uD800b", start: { station: "tokyo" }, home: null }], () => null, 0.5, null);
+    expect(plan.people[0]!.name).toBe("Ab");
+    expect(() => encodePlan(plan, new URLSearchParams())).not.toThrow();
   });
 
   it("ignores settings out of range and keeps the defaults", () => {
-    expect(decodePlan("?p=tokyo&p=ueno&fair=150", isStation).plan!.alpha).toBe(0.5);
+    expect(decodePlan("?p=tokyo~ueno~fair.150", isStation).plan!.alpha).toBe(0.5);
+    expect(decodePlan("?p=tokyo~ueno~fair.abc", isStation).plan!.alpha).toBe(0.5);
     expect(decodePlan("?p=tokyo&p=ueno&fair=abc", isStation).plan!.alpha).toBe(0.5);
   });
 
@@ -68,8 +106,8 @@ describe("decodePlan", () => {
   });
 
   it("reads at most as many people as the engine takes", () => {
-    const many = Array.from({ length: MAX_PARTICIPANTS + 5 }, () => "p=tokyo").join("&");
-    expect(decodePlan(`?${many}`, isStation).plan!.people).toHaveLength(MAX_PARTICIPANTS);
+    const many = Array.from({ length: MAX_PARTICIPANTS + 5 }, () => "tokyo").join("~");
+    expect(decodePlan(`?p=${many}`, isStation).plan!.people).toHaveLength(MAX_PARTICIPANTS);
   });
 });
 

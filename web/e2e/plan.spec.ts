@@ -210,7 +210,7 @@ test("a plan travels in the link: stations, names and settings", async ({ page, 
   await addPerson(page, "Hitori", "kanazawa-hakkei", /Kanazawa-hakkei/);
   await page.locator(".others li").nth(1).getByRole("button").click();
   await expect(page.locator(".t-name b")).toHaveText("大門");
-  await expect(page).toHaveURL(/\?basemap=none&p=seiseki-sakuragaoka_Shizuku&p=shibamata_Tora&p=kanazawa-hakkei_Hitori&at=daimon$/);
+  await expect(page).toHaveURL(/\?p=seiseki-sakuragaoka_Shizuku~shibamata_Tora~kanazawa-hakkei_Hitori~at\.daimon&basemap=none$/);
 
   await page.getByRole("button", { name: "Share plan" }).click();
   await expect(page.locator(".toast")).toHaveText("Link copied");
@@ -218,7 +218,7 @@ test("a plan travels in the link: stations, names and settings", async ({ page, 
   expect(url).toBe(page.url());
 
   const friend = await context.newPage();
-  await friend.goto(url);
+  await friend.goto(`${url.split("&")[0]!}&basemap=none`); // Instagram keeps only the first parameter
   await expect(friend.locator(".t-name b")).toHaveText("大門");
   await expect(friend.locator(".example-tag")).toHaveText("Shared plan");
   await expect(friend.locator(".mk-person")).toHaveCount(3);
@@ -246,7 +246,7 @@ test("a person can be added by typing kana or a street address", async ({ page }
   await expect(editor.locator(".snap")).toContainText(/→ Shibuya · \d+ min/);
   await editor.getByRole("button", { name: "Done" }).click();
   await expect(page.locator(".mk-person")).toHaveCount(4);
-  await expect(page).toHaveURL(/p=shibuya_Eri/); // the link carries the station, never the address
+  await expect(page).toHaveURL(/~shibuya_Eri&/); // the link carries the station, never the address
   expect(page.url()).not.toMatch(/%E7%A5%9E%E5%8D%97/);
 });
 

@@ -207,22 +207,29 @@ The owner set the goals, the gates and the product calls. Claude Code wrote most
 - Lesson: when text from a user goes into HTML, test the escaping with a hostile input. Do not assume what the library does.
 - Where to look: `content()` in `web/functions/index.ts`, `escapeXml` in `web/preview/card.ts`.
 
+### 28. A chat app can change your link on the way
+
+- What happened: the owner sent a plan link in an Instagram direct message. The link had one `p` parameter for each person, then `fair` and `at`, joined by `&`. Instagram kept only the first parameter. So the friend's link held one person, and the app needs two for a plan. The friend saw a one-person plan, and the preview had no plan in it. All tests passed, because every test used the link exactly as the app wrote it.
+- What we did: the whole plan now goes in one parameter, `?p=shibamata_Tora~kunitachi_Kai~fair.75~at.kanda`. A `~` separates the items. A name keeps only ASCII letters, digits, `_` and `-` as they are, and the link percent-encodes the rest. So a `~` or `&` in a name cannot split the plan, and a link never ends in punctuation that a chat app leaves out. Older links still open. A unit test cuts a link at its first `&` and checks that the plan is whole. In the end-to-end test, the friend opens only the first parameter.
+- Lesson: a link goes through apps that you do not control. Put everything that matters in the part that survives, and test the link the way those apps change it.
+- Where to look: `web/src/model/share.ts`, `web/tests/app/share.test.ts`, the "a plan travels in the link" test in `web/e2e/plan.spec.ts`.
+
 ## Working with an AI agent
 
-### 28. A separate reviewer finds what the author cannot
+### 29. A separate reviewer finds what the author cannot
 
 - What happened: each milestone ended with a code review by a separate agent that saw the code but not the author's reasoning.
 - What we did: every review found real defects, for example a check that never failed, a map race, an address ranking error and a retry loop with no limit. Each fix came with a regression test.
 - Lesson: keep the author and the reviewer apart. Give the reviewer the code, not the conclusion.
 - Where to look: the commits named "fix: address the ... review".
 
-### 29. Decisions written down make the story possible
+### 30. Decisions written down make the story possible
 
 - What happened: two days produced about 70 logged decisions, each with a reason.
 - What we did: every non-obvious decision got one line in DECISIONS.md, and every commit says what changed and why. This file was written from that record.
 - Lesson: the decision log is the cheapest documentation there is. Write the reason while you still know it.
 
-### 30. The agent makes mistakes too, so check its work
+### 31. The agent makes mistakes too, so check its work
 
 - What happened: some bugs came from the agent itself. A `pkill -f` pattern killed its own shell, so a commit did not happen. A page script named a variable `top`, which clashes with the browser's `window.top`. A Python class shadowed the built-in `LookupError`.
 - What we did: each one surfaced because a command, a test or a reviewer checked the result instead of trusting the claim. Once, one long shell command ran the tests, then committed and deployed. A rare random test in the ranking engine failed, and the command went on anyway. The change was only CSS. But the agent had cut the test output to a few lines, so the seed that replays the failure was lost. Now a failed check stops the command, and the full output of a failure is kept.

@@ -54,13 +54,13 @@ describe("previewText for a group that shares a last train", () => {
 
 describe("planQuery", () => {
   it("rebuilds the plan from what the app reads, so a link has one picture address however it is written", () => {
-    expect(planQuery(real, "?utm_source=x&at=nippori&p=shibamata_A&fair=030&p=kanda_B&basemap=none")).toBe("?p=shibamata_A&p=kanda_B&fair=30&at=nippori");
-    expect(planQuery(real, "?p=shibamata_A&p=nowhere_X&p=kanda_B&fair=50")).toBe("?p=shibamata_A&p=kanda_B"); // 50 is the default
+    expect(planQuery(real, "?utm_source=x&at=nippori&p=shibamata_A&fair=030&p=kanda_B&basemap=none")).toBe("?p=shibamata_A~kanda_B~fair.30~at.nippori");
+    expect(planQuery(real, "?p=shibamata_A&p=nowhere_X&p=kanda_B&fair=50")).toBe("?p=shibamata_A~kanda_B"); // 50 is the default
     expect(planQuery(real, "?p=nowhere_X")).toBe("");
   });
 
   it("keeps no more people than the app reads", () => {
     const many = Array.from({ length: 80 }, (_, i) => `p=kanda_P${i}`).join("&");
-    expect(new URLSearchParams(planQuery(real, `?${many}`)).getAll("p")).toHaveLength(50);
+    expect(new URLSearchParams(planQuery(real, `?${many}`)).get("p")!.split("~")).toHaveLength(50);
   });
 });

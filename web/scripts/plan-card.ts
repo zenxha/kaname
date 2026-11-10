@@ -1,6 +1,6 @@
 /**
  * Draws a plan's link preview picture from the local data, as the site's function draws it:
- * `npm --prefix web run plan-card -- "?p=shibamata_Tora&p=kunitachi_Kai" out.png`.
+ * `npm --prefix web run plan-card -- "?p=shibamata_Tora~kunitachi_Kai" out.png`.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
