@@ -60,6 +60,11 @@ describe("strings", () => {
     expect(shouting).toEqual([]);
   });
 
+  it("hints a name with an example only, since the field's label already says Name", () => {
+    expect(t("en", "namePlaceholder")).toBe("Hitori");
+    expect(t("ja", "namePlaceholder")).toBe("ひとり");
+  });
+
   it("explains the slider position in words", () => {
     expect(alphaNote(1)).toBe("noteEfficient");
     expect(alphaNote(0.5)).toBe("noteBalanced");
