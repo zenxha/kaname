@@ -3,6 +3,7 @@ import { MATRIX_FILES, parseData, type MatrixData } from "../../core/data";
 import { RankError } from "../../core/errors";
 import { parseKana, type KanaIndex } from "../model/search";
 import { parseShapes, stationsChecksum, type TrackShapes } from "../model/shapes";
+import { gunzip, isGzip, packedMatrixPath, packedRoutePath } from "./packed";
 
 export interface RouteIndex {
   readonly out: Uint32Array;
@@ -40,6 +41,39 @@ async function bytes(url: string): Promise<Uint8Array> {
   return new Uint8Array(await (await get(url)).arrayBuffer());
 }
 
+/** Browsers older than 2023 cannot unpack gzip, and a base64 host has no packed files. */
+const PACKED = !BASE64 && typeof DecompressionStream !== "undefined";
+
+/** Hosts with no packed files (a 404, or an HTML page in their place): the app stops asking them. */
+const missingPacked = new Set<string>();
+
+/**
+ * A packed file, unpacked, or null. Null sends the caller to the old path for this one file. Only a host
+ * that has no packed files is remembered. A server error, a dropped connection or a broken file is not,
+ * so the next file is asked for packed again.
+ */
+async function packed(base: string, path: string): Promise<Uint8Array | null> {
+  if (!PACKED || missingPacked.has(base)) return null;
+  try {
+    const res = await fetch(`${base}${path}`);
+    if (res.status === 404) missingPacked.add(base);
+    if (!res.ok) return null;
+    const body = new Uint8Array(await res.arrayBuffer());
+    if (!isGzip(body)) {
+      missingPacked.add(base);
+      return null;
+    }
+    return await gunzip(body);
+  } catch {
+    return null; // the old path loads this file
+  }
+}
+
+/** A matrix file: its packed copy when the host has one, else the file itself. */
+async function matrixBytes(base: string, file: string): Promise<Uint8Array> {
+  return (await packed(base, packedMatrixPath(file))) ?? bytes(`${base}${file}`);
+}
+
 const wholeFiles = new Map<string, Promise<Uint8Array>>();
 
 /** Whole route files, for base64 hosts and for hosts that ignore Range: fetched once, blocks cut from them. */
@@ -75,7 +109,7 @@ export async function loadAppData(base: string): Promise<AppData> {
     optionalJson(`${base}shapes.json`),
     get(`${base}meta.json`).then((r) => r.json() as Promise<unknown>),
     get(`${base}stations.json`).then((r) => r.json() as Promise<unknown>),
-    ...MATRIX_FILES.map((f) => bytes(`${base}${f}`)),
+    ...MATRIX_FILES.map((f) => matrixBytes(base, f)),
     bytes(`${base}out_routes_idx.u32`),
     bytes(`${base}home_routes_idx.u32`),
   ]);
@@ -95,15 +129,18 @@ function cutBlock(file: Uint8Array, start: number, end: number, candidate: numbe
 }
 
 /**
- * One candidate's route block, fetched with an HTTP Range request (about 20 KB instead of the
- * whole 5 MB file). A host that ignores Range (Cloudflare Pages) sends the whole file: the app
- * keeps it, and cuts this block and every later one out of it.
+ * One candidate's route block. First its packed file (about 5 KB). Without one, an HTTP Range request
+ * (about 20 KB instead of the whole 5 MB file). A host that ignores Range (Cloudflare Pages) sends the
+ * whole file: the app keeps it, and cuts this block and every later one out of it.
  */
 export async function fetchRouteBlock(data: AppData, direction: "out" | "home", candidate: number): Promise<Uint16Array> {
   const idx = direction === "out" ? data.routeIndex.out : data.routeIndex.home;
   const start = idx[candidate]! * 2;
   const end = idx[candidate + 1]! * 2;
   if (end <= start) return new Uint16Array(0);
+  // A packed block of another length belongs to other data (an old cached copy): the old path loads it.
+  const small = await packed(data.base, packedRoutePath(direction, candidate));
+  if (small !== null && small.byteLength === end - start) return readU16(small);
   const url = `${data.base}${direction}_routes.u16`;
   const kept = wholeFiles.get(url);
   if (BASE64 || kept) return cutBlock(await (kept ?? wholeFile(url)), start, end, candidate);

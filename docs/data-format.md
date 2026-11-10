@@ -55,6 +55,13 @@ The pipeline searches only the track of the railway's own operator. A straight l
 - The data uses one weekday timetable. It has no holiday timetable and no delays.
 - The home minutes describe the 21:00 to 23:00 window. After midnight, fewer and slower trains run. The last-train check uses the real last departure.
 
+## Packed files on the site
+
+The web build writes these files next to the data, in `packed/`. They hold the same bytes, compressed with gzip.
+
+- `packed/<matrix file>.gz`, for example `packed/out_min.u16.gz`: each matrix file.
+- `packed/routes/out/<k>.gz` and `packed/routes/home/<k>.gz`: the route block of candidate `k`, cut from the route files at the route index.
+
 ## Rebuilds
 
 The build is deterministic. The same source commit and the same configuration give the same files and the same checksums in `meta.json`. The pipeline needs no API keys, secrets or environment variables.

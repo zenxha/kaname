@@ -152,7 +152,7 @@ https://kaname-1l6.pages.dev/?p=seiseki-sakuragaoka_Shizuku&p=shibamata_Tora&fai
 
 ## Deploy
 
-`npm --prefix web run build` writes a static site to `web/dist/`. Any static host can serve it.
+`npm --prefix web run build` writes a static site to `web/dist/`. Any static host can serve it. The build also writes packed copies of the data in `packed/`: a gzip copy of each matrix and one small file per station's routes. The app uses them, so a first visit loads about 1.6 MB. Without them, it loads the data files as they are.
 
 Link previews need the full URL of the preview image. Set `KANAME_SITE_URL` to your site before the build, for example `KANAME_SITE_URL=https://example.org npm --prefix web run build`.
 

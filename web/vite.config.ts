@@ -2,6 +2,7 @@ import react from "@vitejs/plugin-react";
 import { readdirSync, readFileSync } from "node:fs";
 import { extname, join } from "node:path";
 import { defineConfig, type Plugin } from "vite";
+import { packCache } from "./scripts/pack";
 
 /** The public address. Link previews need absolute image URLs. Override with KANAME_SITE_URL. */
 const SITE_URL = (process.env.KANAME_SITE_URL ?? "https://kaname-1l6.pages.dev").replace(/\/+$/, "");
@@ -33,9 +34,33 @@ function siteFiles(): Plugin {
   };
 }
 
+const DATA = join(import.meta.dirname, "..", "data");
+
+/**
+ * Packed data (src/data/packed.ts): gzip copies of the matrices and one file per station's route block,
+ * built from data/ into the site, and served the same way in dev. Dev packs again when data/ changes.
+ */
+function packedData(): Plugin {
+  const all = packCache(DATA);
+  return {
+    name: "kaname-packed-data",
+    generateBundle() {
+      for (const [fileName, source] of all()) this.emitFile({ type: "asset", fileName, source });
+    },
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const file = all().get((req.url ?? "").split("?")[0]!.replace(/^\//, ""));
+        if (file === undefined) return next();
+        res.setHeader("Content-Type", "application/gzip");
+        res.end(file);
+      });
+    },
+  };
+}
+
 // The app reads the pipeline's files from the repo's data/ folder, served as static files.
 export default defineConfig({
-  plugins: [react(), siteFiles()],
+  plugins: [react(), siteFiles(), packedData()],
   base: "./",
   publicDir: "../data",
   server: { port: 5173, strictPort: true },
