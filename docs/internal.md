@@ -26,9 +26,9 @@ These notes are for the owner. They keep the project history, the approvals and 
 
 All milestones in `BRIEF.md` up to M4 are done. M5 is a stretch: time-of-day data, last-train detail and a venue search.
 
-## Open decision: the data license
+## The data license
 
-The timetables come from Mini Tokyo 3D, which is MIT licensed. Its README says that the data comes from ODPT, which has its own terms. The ODPT license for JR East and most private railways ends on 2027-03-12. You approved the public preview and the public repo with this question still open. Clear it before any wider launch. `DECISIONS.md`, "What I need from you", has the options.
+The timetables come from Mini Tokyo 3D, which is MIT licensed. Its README says that the data comes from ODPT, which has its own terms. You closed this question on 2026-11-10 and judged the license okay. The data stays pinned to one Mini Tokyo 3D commit. The ODPT license for JR East and most private railways ends on 2027-03-12. Look at the terms again before a data refresh after that date.
 
 ## Accuracy gates
 
