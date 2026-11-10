@@ -1,5 +1,6 @@
 /** Map markers as DOM buttons: people (numbered), the 要 seal, and the other stations. */
 import { Marker } from "maplibre-gl";
+import { SPLAT } from "../model/stamp";
 import type { MapPerson, MapStation } from "./types";
 
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text = ""): HTMLElementTagNameMap[K] {
@@ -30,11 +31,25 @@ export function personMarker(p: MapPerson, minutes: string, label: string, onTap
   return { marker: new Marker({ element: el }).setLngLat([...p.start]), el };
 }
 
+/** The ink that flies when the seal hits the paper; theme.css moves each dot by its --dx and --dy. */
+function splat(): HTMLElement {
+  const box = node("span", "seal-splat");
+  box.setAttribute("aria-hidden", "true");
+  for (const d of SPLAT) {
+    const dot = node("i", "");
+    dot.style.setProperty("--dx", `${d.dx}px`);
+    dot.style.setProperty("--dy", `${d.dy}px`);
+    dot.style.setProperty("--s", `${d.size}px`);
+    box.append(dot);
+  }
+  return box;
+}
+
 /** `waiting`: the seal stays hidden until the lines arrive, then stamps. */
 export function sealMarker(meet: MapStation, label: string, waiting: boolean, onTap: () => void): { marker: Marker; seal: HTMLElement } {
   const el = button("mk-meet", label, onTap);
   const seal = node("span", waiting ? "seal wait" : "seal", "要");
-  el.append(seal, node("span", "mk-name", meet.name));
+  el.append(seal, splat(), node("span", "mk-name", meet.name));
   return { marker: new Marker({ element: el }).setLngLat([...meet.at]), seal };
 }
 

@@ -214,19 +214,43 @@ button { cursor: pointer; }
 .mk-label small { font: 400 12px var(--sans); color: var(--muted); }
 .mk-person.dimmed { opacity: 0.2; }
 .mk-meet { width: 34px; height: 34px; }
-.mk-meet .seal { position: absolute; inset: 0; display: grid; place-items: center; background: var(--seal); color: var(--on-seal); font: 700 19px var(--station); border-radius: 4px; transform: rotate(-4deg); box-shadow: 0 0 0 3px var(--bg); }
+.mk-meet .seal { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; background: var(--seal); color: var(--on-seal); font: 700 19px var(--station); border-radius: 4px; transform: rotate(-4deg); box-shadow: 0 0 0 3px var(--bg); }
+/* Paper showing through the ink, as on a real hanko, and a faint ring where the ink spread. */
+.mk-meet .seal::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(circle at 26% 76%, color-mix(in srgb, var(--bg) 32%, transparent) 0 2px, transparent 3px),
+    radial-gradient(5px 2px at 74% 20%, color-mix(in srgb, var(--bg) 26%, transparent) 0 60%, transparent 100%),
+    radial-gradient(circle at 64% 86%, color-mix(in srgb, var(--bg) 20%, transparent) 0 1.5px, transparent 2.5px); }
+.mk-meet .seal::before { content: ""; position: absolute; inset: -4px; border: 1.5px solid var(--seal); border-radius: 6px; opacity: 0.22; transform: translate(1.5px, 1.5px); pointer-events: none; }
 .mk-meet .seal.wait { opacity: 0; }
-.mk-meet .seal.stamp { animation: stamp 220ms var(--ease) both; }
+/* The stamp (src/model/stamp.ts): hover big with a shadow, drop faster and faster, squash on the paper at 58%, rock, settle at -4deg. */
+.mk-meet .seal.stamp { animation: stamp var(--stamp-ms, 620ms) both; }
+.seal-splat { position: absolute; inset: 0; pointer-events: none; }
+.seal-splat i { position: absolute; left: 50%; top: 50%; width: var(--s); height: var(--s); margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2); border-radius: 50%; background: var(--seal); opacity: 0; }
+.mk-meet .seal.stamp ~ .seal-splat i { animation: splat 520ms cubic-bezier(0.2, 0.7, 0.3, 1) var(--impact-ms, 360ms) forwards; }
 .mk-name { left: 44px; font: 700 16px var(--station); }
 .mk-cand { width: 44px; height: 44px; display: grid; place-items: center; }
 .mk-cand-box { width: 18px; height: 18px; border: 1.5px solid var(--seal); border-radius: 2px; background: var(--sheet); color: var(--seal); font: 700 11px/15px var(--sans); text-align: center; }
 .mk-cand.crowded, .mk-cand.hidden { visibility: hidden; }
-@keyframes stamp { from { opacity: 0; transform: scale(1.35) rotate(-12deg); } to { opacity: 1; transform: scale(1) rotate(-4deg); } }
+@keyframes stamp {
+  0%   { opacity: 0; transform: translateY(-12px) scale(1.32) rotate(-11deg); box-shadow: 0 0 0 3px var(--bg), 0 16px 14px -8px var(--shadow); animation-timing-function: ease-out; }
+  20%  { opacity: 0.94; transform: translateY(-12px) scale(1.28) rotate(-10deg); box-shadow: 0 0 0 3px var(--bg), 0 16px 14px -8px var(--shadow); }
+  42%  { opacity: 0.94; transform: translateY(-10px) scale(1.26) rotate(-10deg); box-shadow: 0 0 0 3px var(--bg), 0 14px 14px -8px var(--shadow); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }
+  58%  { opacity: 1; transform: translateY(0) scale(0.9) rotate(-5deg); box-shadow: 0 0 0 3px var(--bg), 0 0 0 0 transparent; animation-timing-function: ease-out; }
+  72%  { opacity: 1; transform: translateY(0) scale(1.05) rotate(-3.4deg); box-shadow: 0 0 0 3px var(--bg), 0 0 0 0 transparent; }
+  86%  { opacity: 1; transform: translateY(0) scale(0.99) rotate(-4.2deg); box-shadow: 0 0 0 3px var(--bg), 0 0 0 0 transparent; }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(-4deg); box-shadow: 0 0 0 3px var(--bg), 0 0 0 0 transparent; }
+}
+/* The dots start at the seal's edge, not under it, and stay dark most of the way out. */
+@keyframes splat {
+  0%   { opacity: 1; transform: translate(calc(var(--dx) * 0.55), calc(var(--dy) * 0.55)) scale(0.6); }
+  55%  { opacity: 0.9; transform: translate(calc(var(--dx) * 0.9), calc(var(--dy) * 0.9)) scale(1); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1); }
+}
 
 @media (min-width: 901px) {
   .topbar { left: 16px; right: 16px; top: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .sheet, .mk-person { transition: none; }
-  .mk-meet .seal.stamp { animation: none; }
+  .mk-meet .seal.stamp, .mk-meet .seal.stamp ~ .seal-splat i { animation: none; }
 }

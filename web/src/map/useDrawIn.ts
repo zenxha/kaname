@@ -2,13 +2,22 @@
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import { useEffect, useRef, type RefObject } from "react";
 import { DRAW_STAGGER_MS, drawDuration, easeOut, partialLegs } from "../model/drawIn";
+import { BUZZ_MS, IMPACT_MS, shouldBuzz, STAMP_MS } from "../model/stamp";
 import { routeFeatures } from "./layers";
 import type { MapPerson } from "./types";
 
+/** Shows the waiting seal: stamped (src/model/stamp.ts), or at once when `animate` is false. */
 export function stamp(seal: HTMLElement | null, animate: boolean): void {
   if (seal === null || !seal.classList.contains("wait")) return;
   seal.classList.remove("wait");
-  if (animate) seal.classList.add("stamp");
+  if (!animate) return;
+  seal.parentElement?.style.setProperty("--stamp-ms", `${STAMP_MS}ms`);
+  seal.parentElement?.style.setProperty("--impact-ms", `${IMPACT_MS}ms`);
+  seal.classList.add("stamp");
+  const active = navigator.userActivation?.hasBeenActive ?? false;
+  if (shouldBuzz({ animate, active, canVibrate: typeof navigator.vibrate === "function" })) {
+    window.setTimeout(() => navigator.vibrate(BUZZ_MS), IMPACT_MS);
+  }
 }
 
 /** About 30 source updates a second: each one sends the routes to MapLibre's worker. */

@@ -52,6 +52,35 @@ test("the example group opens on 神田: lines draw in, the seal stamps, five st
   await expect(page.getByLabel("Meeting ends")).toHaveCount(0); // the app proposes the end; nobody types it
 });
 
+test("the seal stamps with ink, and a phone taps once only after the visitor has touched the page", async ({ page }) => {
+  await page.addInitScript(() => {
+    const calls: unknown[] = [];
+    Object.defineProperty(window, "buzzes", { value: calls });
+    Object.defineProperty(navigator, "vibrate", { configurable: true, value: (pattern: unknown) => (calls.push(pattern), true) });
+    // Playwright's navigation counts as a touch; a real phone opening a link does not. The first pointer press does.
+    let touched = false;
+    window.addEventListener("pointerdown", () => { touched = true; }, true);
+    Object.defineProperty(navigator, "userActivation", { configurable: true, value: { get hasBeenActive() { return touched; }, get isActive() { return touched; } } });
+  });
+  const buzzes = () => page.evaluate(() => (window as unknown as { buzzes: unknown[] }).buzzes);
+  await page.goto(APP);
+  await expect(page.locator(".mk-meet .seal")).toHaveClass(/stamp/);
+  await expect(page.locator(".mk-meet .seal-splat i")).toHaveCount(6);
+  await page.waitForTimeout(900);
+  expect(await buzzes()).toEqual([]); // nobody has touched the page yet
+  await openSheet(page);
+  await page.locator(".others li").nth(1).getByRole("button").click(); // another station: a new stamp
+  await expect.poll(buzzes).toEqual([12]);
+});
+
+test("with reduced motion the seal is simply there: no stamp, no ink, no tap", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto(APP);
+  const seal = page.locator(".mk-meet .seal");
+  await expect(seal).not.toHaveClass(/wait/);
+  await expect(seal).not.toHaveClass(/stamp/);
+});
+
 test("tapping a person opens their trip and fades everyone else", async ({ page }) => {
   await page.goto(APP);
   await openSheet(page);
