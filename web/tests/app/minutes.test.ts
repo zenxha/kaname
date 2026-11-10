@@ -1,7 +1,7 @@
 /** The app shows plain trip minutes. The transfer penalty only orders the stations. */
 import { describe, expect, it } from "vitest";
 import { DEFAULT_LAMBDA, rank } from "../../core/rank";
-import { compareToFirst, plainSummary, tripMinutes } from "../../src/model/compare";
+import { changesText, compareToFirst, plainSummary, tripMinutes } from "../../src/model/compare";
 import { real } from "../realData";
 
 const SHIZUKU = { label: "Shizuku", start: { station: "seiseki-sakuragaoka" } };
@@ -29,6 +29,18 @@ describe("plain trip minutes", () => {
     expect(summary.average).toBeCloseTo((trips[0]! + trips[1]!) / 2);
     expect(summary.longest.minutes).toBe(Math.max(...trips));
     expect(trips[best.people.findIndex((p) => p.label === summary.longest.label)]).toBe(summary.longest.minutes);
+  });
+
+  it("count everyone's changes of train, there and back, so the order can be explained", () => {
+    const best = rank([SHIZUKU, TORA], {}, real).candidates[0]!;
+    expect(plainSummary(best).changes).toBe(best.people.reduce((n, p) => n + p.outTransfers + p.homeTransfers, 0));
+    expect(plainSummary(best).changes).toBe(6); // 神田: Shizuku 1 + 1, Tora 2 + 2
+  });
+
+  it("say changes in both languages, with the right form for one", () => {
+    expect(changesText("en", 1)).toBe("1 change");
+    expect(changesText("en", 6)).toBe("6 changes");
+    expect(changesText("ja", 6)).toBe("乗換6回");
   });
 
   it("drive the comparison with the first station", () => {

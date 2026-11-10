@@ -45,6 +45,8 @@ test("the example group opens on 神田: lines draw in, the seal stamps, five st
   await expect(page.locator(".mk-person")).toHaveCount(2);
   await expect(page.locator(".mk-meet .seal")).not.toHaveClass(/wait/);
   await expect(page.locator(".others li")).toHaveCount(5);
+  await expect(page.locator(".t-nums")).toContainText("6 changes"); // why this station: the changes are visible
+  await expect(page.locator(".others li").first()).toContainText("6 changes");
   await expect(page.locator("[data-person]")).toHaveCount(2);
   await expect(page.locator(".t-stay")).toHaveText("Everyone can stay until 23:32, Tora's last train home.");
   await expect(page.getByLabel("Meeting ends")).toHaveCount(0); // the app proposes the end; nobody types it

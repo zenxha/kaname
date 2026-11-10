@@ -3,7 +3,7 @@ import { useState } from "react";
 import { DEFAULT_LAMBDA } from "../../core/rank";
 import { formatClock } from "../../core/time";
 import type { CandidateResult, StationInfo } from "../../core/types";
-import { compareToFirst, earliestLastTrain, plainSummary, type Comparison, type LastTrain } from "../model/compare";
+import { changesText, compareToFirst, earliestLastTrain, plainSummary, type Comparison, type LastTrain } from "../model/compare";
 import { t, type Lang } from "../model/i18n";
 
 interface Props {
@@ -49,6 +49,7 @@ export function Ticket({ lang, shown, first, onOpen, onShare }: Props) {
         <span className="t-nums">
           <span><b>{Math.round(plain.average)}</b>{t(lang, "avgUnit")}</span>
           <span><b>{plain.longest.minutes}</b>{t(lang, "longestWho", { who: plain.longest.label })}</span>
+          <span className="t-changes">{changesText(lang, plain.changes)}</span>
         </span>
       </button>
       {last && <p className="t-stay">{stayText(last, lang)}</p>}

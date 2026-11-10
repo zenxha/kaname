@@ -1,5 +1,6 @@
 /** Sentences the ticket needs: how a picked station compares, and when the group has to leave. */
 import type { CandidateResult, PersonResult, StationInfo } from "../../core/types";
+import { t, type Lang } from "./i18n";
 
 export interface Comparison {
   /** The first-ranked station it is compared with. */
@@ -21,6 +22,11 @@ export function tripMinutes(p: PersonResult): number {
 export interface PlainSummary {
   readonly average: number;
   readonly longest: { readonly label: string; readonly minutes: number };
+  /**
+   * Everyone's changes of train, there and back. The ranking counts each one as extra minutes, so a
+   * station can rank first with longer plain trips but fewer changes; this number shows why.
+   */
+  readonly changes: number;
 }
 
 /** The group's average trip and its longest trip, in plain minutes. The first person wins a tie. */
@@ -28,7 +34,12 @@ export function plainSummary(c: CandidateResult): PlainSummary {
   const trips = c.people.map((p) => ({ label: p.label, minutes: tripMinutes(p) }));
   const longest = trips.reduce((a, b) => (b.minutes > a.minutes ? b : a), trips[0] ?? { label: "", minutes: 0 });
   const average = trips.length === 0 ? 0 : trips.reduce((s, x) => s + x.minutes, 0) / trips.length;
-  return { average, longest };
+  const changes = c.people.reduce((n, p) => n + p.outTransfers + p.homeTransfers, 0);
+  return { average, longest, changes };
+}
+
+export function changesText(lang: Lang, n: number): string {
+  return t(lang, n === 1 ? "changeOne" : "changesN", { n });
 }
 
 /** null when `shown` is the first station. Both results list the same people in the same order. */

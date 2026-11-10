@@ -2,7 +2,7 @@
 import { useLayoutEffect, useRef } from "react";
 import type { CandidateResult } from "../../core/types";
 import { t, type Lang } from "../model/i18n";
-import { plainSummary } from "../model/compare";
+import { changesText, plainSummary } from "../model/compare";
 
 interface Props {
   readonly lang: Lang;
@@ -34,6 +34,11 @@ function useReorder() {
   return list;
 }
 
+function numbers(lang: Lang, c: CandidateResult): string {
+  const p = plainSummary(c);
+  return t(lang, "avgLongest", { avg: Math.round(p.average), worst: p.longest.minutes, changes: changesText(lang, p.changes) });
+}
+
 export function Alternatives({ lang, candidates, selected, onSelect }: Props) {
   const list = useReorder();
   return (
@@ -45,7 +50,7 @@ export function Alternatives({ lang, candidates, selected, onSelect }: Props) {
             <button type="button" aria-current={c.station.id === selected} onClick={() => onSelect(c.station.id)}>
               <span className="rank">{c.rank}</span>
               <span className="name">{c.station.ja}<small>{c.station.en}</small></span>
-              <span className="nums">{t(lang, "avgLongest", { avg: Math.round(plainSummary(c).average), worst: plainSummary(c).longest.minutes })}</span>
+              <span className="nums">{numbers(lang, c)}</span>
             </button>
           </li>
         ))}
