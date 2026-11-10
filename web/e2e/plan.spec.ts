@@ -292,3 +292,17 @@ test("a slow connection shows a loading screen, not a blank page, until the answ
   await expect(page.locator(".t-name b")).toHaveText("神田");
   await expect(boot).toHaveCount(0);
 });
+
+test("a pencil on each row opens that person's editor, which fits a narrow phone", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto(APP);
+  await openSheet(page);
+  await page.getByRole("button", { name: "Edit Tora" }).click();
+  const editor = page.locator("section.editor");
+  await expect(editor.getByLabel("Name")).toBeFocused();
+  await expect(editor.getByLabel("Name")).toHaveValue("Tora");
+  const widest = await editor.evaluate((el) => Math.max(...[...el.querySelectorAll("*")].map((e) => e.getBoundingClientRect().right)));
+  expect(widest).toBeLessThanOrEqual(320);
+  await editor.getByRole("button", { name: "Done" }).click();
+  await expect(page.locator('[data-person="p2"]')).toBeFocused();
+});

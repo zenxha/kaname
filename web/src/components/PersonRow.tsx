@@ -6,6 +6,7 @@ import type { PersonResult } from "../../core/types";
 import { t, type Lang } from "../model/i18n";
 import { rideSteps } from "../model/itinerary";
 import { stationName } from "../model/names";
+import { PencilIcon } from "./Icons";
 import { TripPills, TripRail } from "./Trip";
 
 interface Props {
@@ -54,13 +55,15 @@ export function PersonRow({ id, data, lang, number, label, result, hops, meet, f
         {!open && steps.length > 0 && <TripPills data={data} lang={lang} steps={steps} />}
         {elsewhere && <span className="phome">{t(lang, "homeTo", { station: stationName(data.stations[data.byId.get(result.homeStation) ?? -1], lang) })}</span>}
       </button>
+      <button type="button" className="icon-btn prow-edit" onClick={onEdit} aria-label={t(lang, "editPerson", { who: label })} title={t(lang, "editPerson", { who: label })}>
+        <PencilIcon />
+      </button>
       {open && (
         <div className="pdetail">
           {steps.length === 0
             ? <p className="last">{t(lang, "alreadyThere", { station: stationName(data.stations[meet], lang) })}</p>
             : <TripRail data={data} lang={lang} steps={steps} />}
           <LastTrain data={data} lang={lang} result={result} meet={meet} first={first} />
-          <button type="button" className="btn" onClick={onEdit}>{t(lang, "editPerson", { who: label })}</button>
         </div>
       )}
     </li>

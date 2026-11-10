@@ -1,4 +1,4 @@
-import { useDeferredValue, useId, useMemo, useState, type KeyboardEvent } from "react";
+import { useDeferredValue, useId, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import type { MatrixData, StationRecord } from "../../core/data";
 import { useAddresses } from "../data/addresses";
 import { looksLikeAddress, MAX_QUERY, searchAddresses, type Town } from "../model/address";
@@ -14,6 +14,8 @@ interface Props {
   readonly value: string;
   readonly placeholder: string;
   readonly onPick: (place: Place) => void;
+  /** A button at the end of the field, such as "use my location". */
+  readonly trailing?: ReactNode;
 }
 
 type Option = { readonly kind: "station"; readonly station: StationRecord } | { readonly kind: "address"; readonly town: Town };
@@ -30,7 +32,7 @@ function toPlace(o: Option): Place {
  * Combobox: type a station (Japanese, English or kana) or an address, and pick it from the list.
  * Stations come first; addresses follow in their own group once the address index has loaded.
  */
-export function StationField({ data, lang, label, value, placeholder, onPick }: Props) {
+export function StationField({ data, lang, label, value, placeholder, onPick, trailing }: Props) {
   const id = useId();
   const { kana, base } = useStationSearch();
   const [query, setQuery] = useState<string | null>(null);
@@ -82,27 +84,30 @@ export function StationField({ data, lang, label, value, placeholder, onPick }: 
 
   return (
     <div className="field">
-      <label htmlFor={id}>{label}</label>
       <div className="combo">
-        <input
-          id={id}
-          className="input"
-          role="combobox"
-          aria-expanded={open}
-          aria-controls={open ? `${id}-list` : undefined}
-          aria-autocomplete="list"
-          aria-activedescendant={open ? `${id}-${active}` : undefined}
-          autoComplete="off"
-          maxLength={MAX_QUERY}
-          placeholder={placeholder}
-          value={query ?? value}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setActive(0);
-          }}
-          onKeyDown={onKey}
-          onBlur={() => setQuery(null)}
-        />
+        <div className="inline-input">
+          <label htmlFor={id} className="prefix">{label}</label>
+          <input
+            id={id}
+            className="bare"
+            role="combobox"
+            aria-expanded={open}
+            aria-controls={open ? `${id}-list` : undefined}
+            aria-autocomplete="list"
+            aria-activedescendant={open ? `${id}-${active}` : undefined}
+            autoComplete="off"
+            maxLength={MAX_QUERY}
+            placeholder={placeholder}
+            value={query ?? value}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setActive(0);
+            }}
+            onKeyDown={onKey}
+            onBlur={() => setQuery(null)}
+          />
+          {trailing}
+        </div>
         {open && (
           <div className="options" role="listbox" id={`${id}-list`} aria-label={label}>
             {groups.map((g) => (

@@ -1,4 +1,5 @@
-/* Iteration 2: paper and ink by day, dark at night; one vermilion seal; BIZ UDPGothic throughout.
+/* Iteration 2: paper and ink by day, dark at night; one vermilion seal. The station-sign face (BIZ UDPGothic)
+   is kept for the answer's station name and the seal; everything else uses the device's own UI font.
    Phone: the map fills the screen and the result is a sheet over it. Desktop: a side panel. */
 :root {
   --bg: #f2f3f0;
@@ -10,7 +11,8 @@
   --seal: #c8361d;
   --on-seal: #ffffff;
   --shadow: rgba(23, 25, 28, 0.18);
-  --sans: "BIZ UDPGothic", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Segoe UI", "Yu Gothic UI", Meiryo, system-ui, sans-serif;
+  --station: "BIZ UDPGothic", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   color-scheme: light;
 }
@@ -48,7 +50,7 @@ button { cursor: pointer; }
   display: flex; align-items: center; justify-content: space-between; gap: 8px; pointer-events: none; }
 .topbar > * { pointer-events: auto; }
 .brand { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px 0 8px; border-radius: 8px; background: var(--sheet); box-shadow: 0 1px 3px var(--shadow); font: 700 17px var(--sans); }
-.brand i { font-style: normal; width: 24px; height: 24px; display: grid; place-items: center; background: var(--seal); color: var(--on-seal); border-radius: 3px; font-size: 14px; transform: rotate(-4deg); }
+.brand i { font: 700 14px var(--station); width: 24px; height: 24px; display: grid; place-items: center; background: var(--seal); color: var(--on-seal); border-radius: 3px; font-size: 14px; transform: rotate(-4deg); }
 .topbar-end { display: flex; align-items: center; gap: 8px; }
 .example-tag { font-size: 12px; color: var(--muted); background: var(--sheet); border-radius: 999px; padding: 4px 10px; box-shadow: 0 1px 3px var(--shadow); }
 .lang { display: flex; border-radius: 8px; overflow: hidden; background: var(--sheet); box-shadow: 0 1px 3px var(--shadow); }
@@ -68,11 +70,17 @@ button { cursor: pointer; }
 .panel { position: absolute; z-index: 4; top: 68px; left: 16px; bottom: 16px; width: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px;
   padding: 16px; background: var(--sheet); border-radius: 12px; box-shadow: 0 2px 16px -6px var(--shadow); }
 
-.sub { margin: 0; font: 400 12px var(--sans); color: var(--muted); }
+.sub { margin: 0; font: 600 12px var(--sans); letter-spacing: 0.02em; color: var(--muted); }
 .people-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .people-head .t-why { min-height: 44px; }
 .notice { margin: 0; font-size: 14px; color: var(--muted); }
-.btn { min-height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--sheet); font: 700 14px var(--sans); }
+.btn { min-height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--sheet); font: 600 14px var(--sans); }
+.icon-btn { flex: none; width: 44px; height: 44px; display: inline-grid; place-items: center; padding: 0; border: 0; border-radius: 10px; background: none; color: var(--muted); }
+.icon-btn:hover { color: var(--fg); background: var(--ticket); }
+.icon-btn.primary { border-radius: 50%; background: var(--fg); color: var(--sheet); }
+.icon-btn.primary:hover { background: var(--fg); opacity: 0.85; }
+.icon-btn.danger:hover { color: var(--seal); }
+.icon { display: block; }
 .btn.primary { background: var(--fg); color: var(--sheet); border-color: var(--fg); }
 .btn.quiet { color: var(--seal); }
 .badge { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--fg); color: var(--sheet); display: grid; place-items: center; font: 700 12px var(--sans); }
@@ -85,8 +93,8 @@ button { cursor: pointer; }
 .ticket-head { display: grid; gap: 4px; padding: 0; border: 0; background: none; text-align: left; }
 .t-lab { font-size: 12px; color: var(--muted); }
 .t-name { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.t-name b { font: 700 34px/1.1 var(--sans); }
-.t-name span { font: 700 14px var(--sans); color: var(--muted); }
+.t-name b { font: 700 36px/1.1 var(--station); letter-spacing: 0.01em; }
+.t-name span { font: 600 14px var(--sans); color: var(--muted); }
 .t-nums { display: flex; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .t-nums > span { white-space: nowrap; }
 .t-nums b { font: 700 20px var(--sans); color: var(--fg); margin-right: 3px; }
@@ -104,9 +112,10 @@ button { cursor: pointer; }
 .people, .others, .controls { display: grid; gap: 6px; }
 .prows, .others ol { list-style: none; margin: 0; padding: 0; }
 .others ol { position: relative; }
-.prow { border-top: 1px solid var(--line); }
-.prow-main { width: 100%; display: grid; grid-template-columns: 24px 1fr auto; gap: 4px 10px; align-items: center; padding: 10px 0; min-height: 52px; border: 0; background: none; text-align: left; }
-.pname { font: 700 15px var(--sans); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prow { position: relative; border-top: 1px solid var(--line); }
+.prow-edit { position: absolute; top: 4px; right: -10px; }
+.prow-main { width: 100%; display: grid; grid-template-columns: 24px 1fr auto; gap: 4px 10px; align-items: center; padding: 10px 40px 10px 0; min-height: 52px; border: 0; background: none; text-align: left; }
+.pname { font: 600 16px var(--sans); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pmins { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .phome { grid-column: 2 / 4; font-size: 12px; color: var(--muted); }
 .pdetail { display: grid; gap: 8px; padding: 0 0 12px 34px; }
@@ -137,15 +146,23 @@ button { cursor: pointer; }
 .last { margin: 0; font-size: 13px; color: var(--muted); }
 .last.first { color: var(--seal); font-weight: 700; }
 .pdetail .btn { justify-self: start; }
-.add { min-height: 44px; border-radius: 6px; border: 1px dashed var(--muted); background: none; font: 700 14px var(--sans); }
+.add { min-height: 44px; border-radius: 6px; border: 1px dashed var(--muted); background: none; font: 600 14px var(--sans); }
 
 /* Person editor */
-.editor { display: grid; gap: 12px; padding: 12px 0 14px; }
-.editor-head { display: flex; align-items: flex-end; gap: 10px; }
-.editor-head .badge { margin-bottom: 10px; }
-.field { display: grid; gap: 4px; }
-.field > span, .field > label { font-size: 12px; color: var(--muted); }
-.input { height: 44px; width: 100%; padding: 0 12px; background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; font: 400 15px var(--sans); }
+.editor { display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: start; padding: 12px 0; }
+.editor > .badge { margin-top: 12px; }
+.editor-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
+.field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+/* A field with its label inside: the label on the left, the input, then an optional button. */
+.inline-input { display: flex; align-items: center; min-height: 48px; padding-left: 12px; background: var(--sheet); border: 1px solid var(--line); border-radius: 10px; }
+.inline-input:has(.bare:focus-visible) { outline: 2px solid var(--seal); outline-offset: 1px; }
+.prefix { flex: none; min-width: 3.2em; font: 600 12px var(--sans); color: var(--muted); }
+/* 16px stops iPhones from zooming in when the field gets focus. */
+/* width 0 and flex 1: the input fills the field, and its built-in width never widens it. */
+.bare { flex: 1; width: 0; min-width: 0; height: 46px; padding: 0 8px; border: 0; background: none; font: 400 16px var(--sans); }
+.bare:focus-visible { outline: none; }
+.editor-foot { display: flex; align-items: center; gap: 4px; }
+.editor-foot .check { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); }
 .combo { position: relative; }
 .options { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px; list-style: none; background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; max-height: 260px; overflow-y: auto; box-shadow: 0 8px 20px -10px var(--shadow); }
 .options li { display: flex; align-items: baseline; gap: 8px; padding: 10px; border-radius: 4px; cursor: pointer; min-height: 44px; }
@@ -189,10 +206,10 @@ button { cursor: pointer; }
 .mk-label small { font: 400 12px var(--sans); color: var(--muted); }
 .mk-person.dimmed { opacity: 0.2; }
 .mk-meet { width: 34px; height: 34px; }
-.mk-meet .seal { position: absolute; inset: 0; display: grid; place-items: center; background: var(--seal); color: var(--on-seal); font: 700 19px var(--sans); border-radius: 4px; transform: rotate(-4deg); box-shadow: 0 0 0 3px var(--bg); }
+.mk-meet .seal { position: absolute; inset: 0; display: grid; place-items: center; background: var(--seal); color: var(--on-seal); font: 700 19px var(--station); border-radius: 4px; transform: rotate(-4deg); box-shadow: 0 0 0 3px var(--bg); }
 .mk-meet .seal.wait { opacity: 0; }
 .mk-meet .seal.stamp { animation: stamp 220ms var(--ease) both; }
-.mk-name { left: 44px; font: 700 16px var(--sans); }
+.mk-name { left: 44px; font: 700 16px var(--station); }
 .mk-cand { width: 44px; height: 44px; display: grid; place-items: center; }
 .mk-cand-box { width: 18px; height: 18px; border: 1.5px solid var(--seal); border-radius: 2px; background: var(--sheet); color: var(--seal); font: 700 11px/15px var(--sans); text-align: center; }
 .mk-cand.crowded, .mk-cand.hidden { visibility: hidden; }

@@ -10,9 +10,9 @@
     <style>
       /* The loading screen shows before the app's code arrives. The colors repeat theme.css. */
       .boot { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px;
-        background: #f2f3f0; color: #5c6168; font: 400 14px/1.6 "BIZ UDPGothic", "Hiragino Sans", system-ui, sans-serif; text-align: center; }
+        background: #f2f3f0; color: #5c6168; font: 400 14px/1.6 -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif; text-align: center; }
       .boot-seal { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 5px; transform: rotate(-4deg);
-        background: #c8361d; color: #ffffff; font-size: 26px; font-weight: 700; }
+        background: #c8361d; color: #ffffff; font: 700 26px "BIZ UDPGothic", "Hiragino Sans", system-ui, sans-serif; }
       .boot-name { margin: 0; color: #17191c; font-size: 18px; font-weight: 700; }
       .boot-msg { margin: 0; }
       @media (prefers-color-scheme: dark) {
@@ -40,7 +40,7 @@
     <meta name="twitter:image:alt" content="Two train routes on a Tokyo rail map meet at 神保町 under a red 要 seal, next to the words Where should we meet?" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@700&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root">
