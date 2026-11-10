@@ -30,8 +30,8 @@ export function Ticket({ lang, shown, first, onOpen, onShare, punched, onStartOw
   const plain = plainSummary(shown);
   return (
     <section className="ticket">
-      {/* Three paper bits fall from the punch; theme.css animates them once. */}
-      {punched && <span className="t-punch" aria-hidden="true"><i /><i /><i /></span>}
+      {/* Five paper bits fall from the punch; theme.css animates them once. */}
+      {punched && <span className="t-punch" aria-hidden="true"><i /><i /><i /><i /><i /></span>}
       <p className="sr-only" aria-live="polite">{`${shown.station.ja} ${shown.station.en}, ${Math.round(plain.average)} ${t(lang, "avgUnit")}`}</p>
       {onStartOwn ? (
         <button type="button" className="t-share t-own" onClick={onStartOwn}>

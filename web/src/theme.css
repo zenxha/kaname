@@ -94,14 +94,21 @@ button { cursor: pointer; }
 .ticket::before, .ticket::after { content: ""; position: absolute; top: 52px; width: 14px; height: 14px; border-radius: 50%; background: var(--sheet); }
 .ticket::before { left: -7px; }
 .ticket::after { right: -7px; }
-/* The 改札鋏 punch after a share: a bite out of the top edge in the sheet's color, and three paper bits that fall once. */
-.t-punch { position: absolute; top: -8px; right: 132px; width: 16px; height: 16px; border-radius: 50%; background: var(--sheet); animation: t-bite 200ms var(--ease) both; }
-/* The bits are the ticket's own paper, so a thin outline keeps them visible as they fall across it. */
-.t-punch i { position: absolute; left: 5px; top: 10px; width: 6px; height: 5px; border-radius: 1px; background: var(--ticket); box-shadow: 0 0 0 1px var(--muted); opacity: 0; animation: t-bit 640ms cubic-bezier(0.3, 0, 0.7, 1) 120ms forwards; }
-.t-punch i:nth-child(2) { left: 2px; --bx: -9px; animation-delay: 160ms; }
-.t-punch i:nth-child(3) { left: 10px; --bx: 8px; animation-delay: 200ms; }
+/* The 改札鋏 punch after a share: a bite out of the top edge in the sheet's color, and five paper bits that tumble out once. */
+.t-punch { position: absolute; top: -10px; right: 128px; width: 20px; height: 20px; border-radius: 50%; background: var(--sheet); animation: t-bite 200ms var(--ease) both; }
+/* The bits are the ticket's own paper: an outline and a soft shadow keep them visible as they fall across it. */
+.t-punch i { position: absolute; left: 5px; top: 12px; width: 10px; height: 8px; border-radius: 1.5px; background: var(--ticket);
+  box-shadow: 0 0 0 1.5px var(--muted), 0 3px 6px -2px var(--shadow); opacity: 0; animation: t-bit 900ms cubic-bezier(0.3, 0, 0.7, 1) 110ms forwards; }
+.t-punch i:nth-child(2) { --bx: -26px; --spin: -220deg; width: 8px; height: 7px; animation-delay: 150ms; }
+.t-punch i:nth-child(3) { --bx: 22px; --spin: 260deg; width: 9px; height: 6px; animation-delay: 190ms; }
+.t-punch i:nth-child(4) { --bx: -10px; --spin: 300deg; width: 7px; height: 7px; animation-delay: 240ms; }
+.t-punch i:nth-child(5) { --bx: 34px; --spin: -180deg; width: 8px; height: 6px; animation-delay: 280ms; }
 @keyframes t-bite { from { transform: scale(0); } 70% { transform: scale(1.15); } to { transform: scale(1); } }
-@keyframes t-bit { from { opacity: 1; transform: translate(0, 0) rotate(0deg); } to { opacity: 0; transform: translate(var(--bx, 2px), 30px) rotate(160deg); } }
+@keyframes t-bit {
+  0%   { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--bx, 8px), 64px) rotate(var(--spin, 200deg)); }
+}
 .ticket-head { display: grid; gap: 4px; padding: 0; border: 0; background: none; text-align: left; }
 .t-lab { font-size: 12px; color: var(--muted); }
 .t-name { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
