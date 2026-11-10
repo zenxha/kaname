@@ -22,6 +22,13 @@ describe("encodePlan", () => {
       "?p=seiseki-sakuragaoka_Shizuku&p=shibamata&p=kanazawa-hakkei.yokohama_%E3%81%B2%E3%81%A8%E3%82%8A_2&fair=75&at=tokyo");
   });
 
+  it("encodes a name that looks like a setting, so it stays a name", () => {
+    const plan = { people: [{ start: "kanda", home: null, name: "&fair=0" }, { start: "ueno", home: null, name: "a&at=tokyo" }], alpha: 0.5, at: null };
+    const link = encodePlan(plan, new URLSearchParams());
+    expect(link).toBe("?p=kanda_%26fair%3D0&p=ueno_a%26at%3Dtokyo");
+    expect(decodePlan(link, isStation)).toEqual({ plan, unknown: 0 });
+  });
+
   it("leaves out defaults and keeps parameters that are not part of the plan", () => {
     const plain: Plan = { people: PLAN.people.slice(0, 2), alpha: 0.5, at: null };
     expect(encodePlan(plain, new URLSearchParams("basemap=none&at=old"))).toBe("?basemap=none&p=seiseki-sakuragaoka_Shizuku&p=shibamata");
