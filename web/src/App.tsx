@@ -9,7 +9,7 @@ import type { AppData } from "./data/load";
 import { useAppData, useRouteBlocks } from "./data/useAppData";
 import { MapView, type MapText } from "./map/MapView";
 import type { MapStation, Padding } from "./map/types";
-import { t, type Lang } from "./model/i18n";
+import { STRINGS, t, type Lang } from "./model/i18n";
 import { problemText } from "./model/problem";
 import { isExample, type Person } from "./model/scenario";
 import { planOf } from "./model/share";
@@ -18,16 +18,25 @@ import { buildMapPeople, fitKey, personRoutes, scoredIndexes, stationIndex, toMa
 import { useStacked, useTheme, useViewportHeight } from "./useScreen";
 import { readOpening, useLinkSync, useShare } from "./useShareLink";
 
+/** The loading screen from index.html, kept on screen while the data loads, so nothing jumps. */
+function Boot() {
+  return (
+    <main className="boot" role="status">
+      <span className="boot-seal" aria-hidden="true">要</span>
+      <p className="boot-name">Kaname</p>
+      <p className="boot-msg">{STRINGS.en.loading}<br /><span lang="ja">{STRINGS.ja.loading}</span></p>
+    </main>
+  );
+}
+
 export function App() {
   const loaded = useAppData(import.meta.env.BASE_URL);
   const [lang, setLang] = useState<Lang>(() => (navigator.language.startsWith("ja") ? "ja" : "en"));
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
-  if (loaded.status !== "ready") {
-    const msg = loaded.status === "loading" ? t(lang, "loading") : t(lang, "loadError", { msg: loaded.message });
-    return <main className="notice-page" role={loaded.status === "error" ? "alert" : "status"}>{msg}</main>;
-  }
+  if (loaded.status === "loading") return <Boot />;
+  if (loaded.status === "error") return <main className="notice-page" role="alert">{t(lang, "loadError", { msg: loaded.message })}</main>;
   return <Planner data={loaded.data} lang={lang} setLang={setLang} />;
 }
 

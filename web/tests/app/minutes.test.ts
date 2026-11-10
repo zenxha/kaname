@@ -1,7 +1,7 @@
 /** The app shows plain trip minutes. The transfer penalty only orders the stations. */
 import { describe, expect, it } from "vitest";
 import { DEFAULT_LAMBDA, rank } from "../../core/rank";
-import { changesText, compareToFirst, plainSummary, tripMinutes } from "../../src/model/compare";
+import { changesText, compareToFirst, comparisonText, plainSummary, tripMinutes } from "../../src/model/compare";
 import { real } from "../realData";
 
 const SHIZUKU = { label: "Shizuku", start: { station: "seiseki-sakuragaoka" } };
@@ -48,5 +48,23 @@ describe("plain trip minutes", () => {
     const c = compareToFirst(second!, first!)!;
     expect(c.average).toBe(Math.round(plainSummary(second!).average) - Math.round(plainSummary(first!).average));
     expect(c.people.map((p) => p.minutes)).toEqual(second!.people.map((p, i) => tripMinutes(p) - tripMinutes(first!.people[i]!)));
+  });
+
+  it("name each person's change in changes of train, so a lower station's rank makes sense", () => {
+    const [first, second] = rank([SHIZUKU, TORA], {}, real).candidates; // 神田, then 日暮里
+    const c = compareToFirst(second!, first!)!;
+    expect(c.people.map((p) => p.changes)).toEqual([0, -2]); // Tora: 4 changes at 神田, 2 at 日暮里
+    expect(comparisonText("en", c)).toBe("6 min less on average than Kanda. Shizuku's trip is 22 min longer, Tora's trip is 34 min shorter and has 2 fewer changes.");
+    expect(comparisonText("ja", c)).toBe("平均は神田より6分短い。Shizukuは22分長い、Toraは34分短い（乗換2回少ない）。");
+  });
+
+  it("say one change in the singular", () => {
+    const c = { station: real.stations[0]!, average: 0, people: [{ label: "Aki", minutes: 3, changes: 1 }, { label: "Ben", minutes: 0, changes: -1 }] };
+    expect(comparisonText("en", c)).toMatch(/Aki's trip is 3 min longer and has 1 more change, Ben's trip is the same and has 1 fewer change\.$/);
+  });
+
+  it("say \"but\" when the minutes and the changes go different ways", () => {
+    const c = { station: real.stations[0]!, average: -2, people: [{ label: "Aki", minutes: -5, changes: 2 }, { label: "Ben", minutes: 4, changes: -1 }] };
+    expect(comparisonText("en", c)).toMatch(/Aki's trip is 5 min shorter but has 2 more changes, Ben's trip is 4 min longer but has 1 fewer change\.$/);
   });
 });

@@ -29,6 +29,7 @@ Tokyo meetup optimizer. Read these before doing anything:
 - **2026-11-10: after M4, two fixes.** Deep JR platforms add 3 minutes to a change (24/24 fresh pairs within ±5 min, up from 22/24; `pipeline/validation/m4_reference.csv`). Map markers had `position: relative`, which moved each badge and the seal 26 px right per earlier person. They now sit on their stations, and names pick a free spot or hide.
 - **2026-11-10: the owner closed the data license question** and judged the license okay. The site still sends `noindex`. Removing it is a launch step for the owner to decide. Look at the ODPT terms again before a data refresh after 2027-03-12.
 - **2026-11-10: routes follow the real tracks** (MLIT N02, `data/shapes.json`, built by `kaname-pipeline fetch-shapes` and `shapes`). 1,769 of 1,770 station pairs follow the track.
+- **2026-11-10: usability pass.** A first visit loads about 1.6 MB instead of 12.2 MB (packed files, `web/scripts/pack.ts`). A "Start your own plan" button clears the example. The ticket's comparison names differences in changes of train. A loading screen replaces the blank page on slow connections.
 - **Open items:** the top 10 instead of 5 and a view of the tradeoff; weekday evenings only; no per-ride minutes; deep JR changes still about 1 min short on average; one link preview for every plan; 26 stations without kana.
 
 ## Rules

@@ -95,11 +95,11 @@ describe("compareToFirst", () => {
   it("says how the average and each round trip change at the runner-up", () => {
     expect(first!.station.id).toBe("kanda");
     expect(second!.station.id).toBe("nippori");
-    // 神田: Shizuku 100, Tora 85 (average 92.5). 日暮里: Shizuku 122, Tora 51 (average 86.5).
+    // 神田: Shizuku 100 min and 2 changes, Tora 85 and 4. 日暮里: Shizuku 122 and 2, Tora 51 and 2.
     expect(compareToFirst(second!, first!)).toEqual({
       station: first!.station,
       average: -6,
-      people: [{ label: "Shizuku", minutes: 22 }, { label: "Tora", minutes: -34 }],
+      people: [{ label: "Shizuku", minutes: 22, changes: 0 }, { label: "Tora", minutes: -34, changes: -2 }],
     });
   });
 });

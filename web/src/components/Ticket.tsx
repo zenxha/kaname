@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { DEFAULT_LAMBDA } from "../../core/rank";
 import { formatClock } from "../../core/time";
-import type { CandidateResult, StationInfo } from "../../core/types";
-import { changesText, compareToFirst, earliestLastTrain, plainSummary, type Comparison, type LastTrain } from "../model/compare";
+import type { CandidateResult } from "../../core/types";
+import { changesText, compareToFirst, comparisonText, earliestLastTrain, plainSummary, type LastTrain } from "../model/compare";
 import { t, type Lang } from "../model/i18n";
 
 interface Props {
@@ -12,18 +12,6 @@ interface Props {
   readonly first: CandidateResult;
   readonly onOpen: () => void;
   readonly onShare: () => void;
-}
-
-const name = (s: StationInfo, lang: Lang) => (lang === "ja" ? s.ja : s.en);
-
-function comparisonText(c: Comparison, lang: Lang): string {
-  const station = name(c.station, lang);
-  const n = Math.abs(c.average);
-  const avg = c.average === 0 ? t(lang, "sameAverage", { station })
-    : t(lang, c.average > 0 ? "moreAverage" : "lessAverage", { station, n });
-  const trips = c.people.map((p) => (p.minutes === 0 ? t(lang, "tripSame", { who: p.label })
-    : t(lang, p.minutes > 0 ? "tripLonger" : "tripShorter", { who: p.label, n: Math.abs(p.minutes) })));
-  return `${avg} ${trips.join(lang === "ja" ? "、" : ", ")}${lang === "ja" ? "。" : "."}`;
 }
 
 function stayText(last: LastTrain, lang: Lang): string {
@@ -53,7 +41,7 @@ export function Ticket({ lang, shown, first, onOpen, onShare }: Props) {
         </span>
       </button>
       {last && <p className="t-stay">{stayText(last, lang)}</p>}
-      {comparison && <p className="t-note">{comparisonText(comparison, lang)}</p>}
+      {comparison && <p className="t-note">{comparisonText(lang, comparison)}</p>}
       <button type="button" className="t-why" aria-expanded={why} onClick={() => setWhy((w) => !w)}>{t(lang, "whatNumbers")}</button>
       {why && <p className="t-note muted">{t(lang, "numbersExplain", { n: DEFAULT_LAMBDA })}</p>}
     </section>

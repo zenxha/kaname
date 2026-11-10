@@ -69,6 +69,8 @@ button { cursor: pointer; }
   padding: 16px; background: var(--sheet); border-radius: 12px; box-shadow: 0 2px 16px -6px var(--shadow); }
 
 .sub { margin: 0; font: 400 12px var(--sans); color: var(--muted); }
+.people-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.people-head .t-why { min-height: 44px; }
 .notice { margin: 0; font-size: 14px; color: var(--muted); }
 .btn { min-height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--sheet); font: 700 14px var(--sans); }
 .btn.primary { background: var(--fg); color: var(--sheet); border-color: var(--fg); }

@@ -82,7 +82,7 @@ test("another station, the slider and a third person each say what changed, and 
   await page.locator(".others li").nth(1).getByRole("button").click();
   await expect(page.locator(".t-lab")).toHaveText("Number 2 of the ranking");
   await expect(page.locator(".t-name b")).toHaveText("日暮里");
-  await expect(page.locator(".ticket")).toContainText("6 min less on average than Kanda. Shizuku's trip is 22 min longer, Tora's trip is 34 min shorter.");
+  await expect(page.locator(".ticket")).toContainText("6 min less on average than Kanda. Shizuku's trip is 22 min longer, Tora's trip is 34 min shorter and has 2 fewer changes.");
 
   await page.getByLabel("Efficient to fair").fill("0");
   await expect(page.locator(".t-name b")).toHaveText("日暮里");
@@ -249,4 +249,46 @@ test("each badge and the seal sit on their own station", async ({ page }) => {
   const aki = await center('[data-marker="p1"] .mk-badge');
   expect(await center('[data-marker="p2"] .mk-badge')).toEqual(aki);
   expect(await center(".mk-meet .seal")).toEqual(aki);
+});
+
+test("a first visit loads the packed data, never the whole route files", async ({ page }) => {
+  const urls: string[] = [];
+  page.on("response", (r) => urls.push(new URL(r.url()).pathname));
+  await page.goto(APP);
+  await expect(page.locator(".mk-meet .seal")).not.toHaveClass(/wait/);
+  expect(urls.filter((u) => /_routes\.u16$/.test(u))).toEqual([]);
+  expect(urls.filter((u) => /\/packed\/routes\/(out|home)\/\d+\.gz$/.test(u)).length).toBeGreaterThanOrEqual(2);
+  // Development mode runs the loading effect twice, so count each file once.
+  expect(new Set(urls.filter((u) => /\/packed\/[a-z_]+\.u(8|16)\.gz$/.test(u))).size).toBe(5);
+  expect(urls.filter((u) => /^\/[a-z_]+\.u(8|16)$/.test(u))).toEqual([]); // no unpacked matrix
+});
+
+test("a visitor can clear the example and start their own plan", async ({ page }) => {
+  await page.goto(APP);
+  await openSheet(page);
+  await expect(page.locator(".example-tag")).toHaveText("Example group");
+  await page.getByRole("button", { name: "Start your own plan" }).click();
+  await expect(page.locator(".example-tag")).toHaveCount(0);
+  await expect(page.locator("section.editor").getByLabel("Name")).toBeFocused();
+  await expect(page.locator(".prow")).toHaveCount(1);
+  await expect(page.getByText("Add at least two people")).toBeVisible();
+  await page.locator("section.editor").getByLabel("Name").fill("Mio");
+  await pickStation(page, "From", "ueno", /Ueno/);
+  await page.locator("section.editor").getByRole("button", { name: "Done" }).click();
+  await addPerson(page, "Ren", "machida", /Machida/);
+  await expect(page.locator(".t-name b")).not.toHaveText("");
+  await expect(page.getByRole("button", { name: "Start your own plan" })).toHaveCount(0); // only on the example
+});
+
+test("a slow connection shows a loading screen, not a blank page, until the answer is ready", async ({ page }) => {
+  // Hold back the app's code, then the data, as a slow phone connection would.
+  await page.route("**/src/main.tsx", async (route) => { await new Promise((r) => setTimeout(r, 1500)); await route.continue(); });
+  await page.route("**/meta.json", async (route) => { await new Promise((r) => setTimeout(r, 1500)); await route.continue(); });
+  await page.goto(APP);
+  const boot = page.locator(".boot");
+  await expect(boot).toBeVisible();
+  await expect(boot).toContainText("Loading train times");
+  await expect(boot).toContainText("時刻データを読み込み中");
+  await expect(page.locator(".t-name b")).toHaveText("神田");
+  await expect(boot).toHaveCount(0);
 });

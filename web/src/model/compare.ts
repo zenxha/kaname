@@ -7,9 +7,11 @@ export interface Comparison {
   readonly station: StationInfo;
   /** Rounded average minutes, picked minus first. */
   readonly average: number;
-  /** Each person's round trip in minutes, picked minus first. */
-  readonly people: readonly { readonly label: string; readonly minutes: number }[];
+  /** Each person's round trip in minutes, and their changes of train there and back, picked minus first. */
+  readonly people: readonly { readonly label: string; readonly minutes: number; readonly changes: number }[];
 }
+
+const personChanges = (p: PersonResult): number => p.outTransfers + p.homeTransfers;
 
 /**
  * A person's trip as a journey planner shows it: the ride there, the ride back and the walk from a
@@ -48,8 +50,31 @@ export function compareToFirst(shown: CandidateResult, first: CandidateResult): 
   return {
     station: first.station,
     average: Math.round(plainSummary(shown).average) - Math.round(plainSummary(first).average),
-    people: shown.people.map((p, i) => ({ label: p.label, minutes: tripMinutes(p) - tripMinutes(first.people[i] ?? p) })),
+    people: shown.people.map((p, i) => {
+      const before = first.people[i] ?? p;
+      return { label: p.label, minutes: tripMinutes(p) - tripMinutes(before), changes: personChanges(p) - personChanges(before) };
+    }),
   };
+}
+
+function tripText(lang: Lang, p: Comparison["people"][number]): string {
+  const trip = p.minutes === 0 ? t(lang, "tripSame", { who: p.label })
+    : t(lang, p.minutes > 0 ? "tripLonger" : "tripShorter", { who: p.label, n: Math.abs(p.minutes) });
+  if (p.changes === 0) return trip;
+  const n = Math.abs(p.changes);
+  const key = p.changes > 0 ? (n === 1 ? "oneMoreChange" : "moreChanges") : n === 1 ? "oneFewerChange" : "fewerChanges";
+  const against = (p.minutes < 0 && p.changes > 0) || (p.minutes > 0 && p.changes < 0);
+  return trip + t(lang, key, { n, join: t(lang, against ? "butJoin" : "andJoin") });
+}
+
+/** What changes for each person at a lower station: minutes, and changes of train when they differ. */
+export function comparisonText(lang: Lang, c: Comparison): string {
+  const station = lang === "ja" ? c.station.ja : c.station.en;
+  const n = Math.abs(c.average);
+  const average = c.average === 0 ? t(lang, "sameAverage", { station })
+    : t(lang, c.average > 0 ? "moreAverage" : "lessAverage", { station, n });
+  const trips = c.people.map((p) => tripText(lang, p));
+  return lang === "ja" ? `${average}${trips.join("、")}。` : `${average} ${trips.join(", ")}.`;
 }
 
 export interface LastTrain {

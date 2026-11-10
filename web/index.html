@@ -7,6 +7,20 @@
     <meta name="theme-color" content="#0f1215" media="(prefers-color-scheme: dark)" />
     <title>Kaname 要 · Where should we meet?</title>
     <meta name="description" content="Find the closest station for all your friends in Tokyo. Add everyone's station, and Kaname finds the one with the shortest train trips for all." />
+    <style>
+      /* The loading screen shows before the app's code arrives. The colors repeat theme.css. */
+      .boot { position: fixed; inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px;
+        background: #f2f3f0; color: #5c6168; font: 400 14px/1.6 "BIZ UDPGothic", "Hiragino Sans", system-ui, sans-serif; text-align: center; }
+      .boot-seal { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 5px; transform: rotate(-4deg);
+        background: #c8361d; color: #ffffff; font-size: 26px; font-weight: 700; }
+      .boot-name { margin: 0; color: #17191c; font-size: 18px; font-weight: 700; }
+      .boot-msg { margin: 0; }
+      @media (prefers-color-scheme: dark) {
+        .boot { background: #0f1215; color: #9aa3a0; }
+        .boot-seal { background: #ff6b4f; color: #0f1215; }
+        .boot-name { color: #eef0ec; }
+      }
+    </style>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
@@ -29,7 +43,13 @@
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main class="boot" role="status">
+        <span class="boot-seal" aria-hidden="true">要</span>
+        <p class="boot-name">Kaname</p>
+        <p class="boot-msg">Loading train times…<br /><span lang="ja">時刻データを読み込み中…</span></p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

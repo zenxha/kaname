@@ -4,7 +4,7 @@ import type { MatrixData } from "../../core/data";
 import { MAX_PARTICIPANTS } from "../../core/participants";
 import { earliestLastTrain } from "../model/compare";
 import { t, type Lang } from "../model/i18n";
-import { addPerson, canAddPerson, removePerson, updatePerson, visibleName, type Person } from "../model/scenario";
+import { addPerson, canAddPerson, isExample, removePerson, updatePerson, visibleName, type Person } from "../model/scenario";
 import { scoredIndexes, stationIndex, type Outcome, type PersonRoute } from "../usePlan";
 import { PersonEditor } from "./PersonEditor";
 import { PersonRow } from "./PersonRow";
@@ -42,10 +42,19 @@ export function PeopleList({ data, lang, people, outcome, routes, open, onOpen, 
     edit((prev) => addPerson(prev, ""), true);
     setEditing(id);
   };
+  /** Replaces the example with one empty person, whose editor opens. */
+  const startOwn = () => {
+    const fresh = addPerson([], "");
+    edit(() => fresh, true);
+    setEditing(fresh[0]!.id);
+  };
 
   return (
     <section className="people" aria-labelledby={headingId}>
-      <h2 className="sub" id={headingId}>{t(lang, "people", { n: people.length })}</h2>
+      <div className="people-head">
+        <h2 className="sub" id={headingId}>{t(lang, "people", { n: people.length })}</h2>
+        {isExample(people) && <button type="button" className="t-why" onClick={startOwn}>{t(lang, "startOwn")}</button>}
+      </div>
       <ol className="prows">
         {people.map((p, i) => {
           const j = slots.indexOf(i);
