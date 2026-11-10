@@ -3,6 +3,7 @@ import { LngLatBounds, Map as MapLibreMap, type Marker, type StyleSpecification 
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import type { LngLat } from "../model/geometry";
+import { fadeLabelsUnder } from "./basemapLabels";
 import { placeLabels, type Placement, type Rect } from "./labels";
 import { addRouteLayers, BASEMAPS, blankStyle, setFocus } from "./layers";
 import { personMarker, sealMarker, stationMarker } from "./markers";
@@ -77,6 +78,9 @@ function useMap(box: RefObject<HTMLDivElement | null>, theme: Theme, basemap: bo
   return map;
 }
 
+/** Our marker parts that a base map name must not show under. A hidden name or station is not one. */
+const OURS = ".mk-badge, .mk-person:not(.nolabel) .mk-label, .mk-meet .seal, .mk-meet .mk-name, .mk-cand:not(.hidden) .mk-cand-box";
+
 /** An element's box in map pixels. */
 function rectIn(el: Element, box: DOMRect): Rect {
   const r = el.getBoundingClientRect();
@@ -141,11 +145,21 @@ export function MapView(props: Props) {
         s.el.classList.toggle("crowded", Math.hypot(p.x - c.x, p.y - c.y) < CROWDED_PX);
       });
     };
+    // After a move, not during it: the base map's names under our markers fade out.
+    const fade = () => {
+      const container = map.getContainer();
+      const box = container.getBoundingClientRect();
+      fadeLabelsUnder(map, [...container.querySelectorAll(OURS)].map((el) => rectIn(el, box)));
+    };
     declutter();
     declutterNow.current = declutter;
     map.on("move", declutter);
+    map.on("moveend", fade);
+    map.on("idle", fade);
     return () => {
       map.off("move", declutter);
+      map.off("moveend", fade);
+      map.off("idle", fade);
       declutterNow.current = null;
       markers.forEach((mk) => mk.remove());
       seal.current = null;
