@@ -2,7 +2,7 @@
 import { useLayoutEffect, useRef } from "react";
 import type { CandidateResult } from "../../core/types";
 import { t, type Lang } from "../model/i18n";
-import { changesText, plainSummary } from "../model/compare";
+import { changesAllText, changesText, plainSummary } from "../model/compare";
 
 interface Props {
   readonly lang: Lang;
@@ -34,9 +34,13 @@ function useReorder() {
   return list;
 }
 
-function numbers(lang: Lang, c: CandidateResult): string {
+/** The four numbers the order depends on: the average and the group's changes, then the hardest trip. */
+function numbers(lang: Lang, c: CandidateResult): { readonly group: string; readonly hardest: string } {
   const p = plainSummary(c);
-  return t(lang, "avgLongest", { avg: Math.round(p.average), worst: p.longest.minutes, changes: changesText(lang, p.changes) });
+  return {
+    group: t(lang, "avgChanges", { avg: Math.round(p.average), changes: changesAllText(lang, p.changes) }),
+    hardest: t(lang, "rowHardest", { who: p.hardest.label, min: p.hardest.minutes, changes: changesText(lang, p.hardest.changes) }),
+  };
 }
 
 export function Alternatives({ lang, candidates, selected, onSelect }: Props) {
@@ -45,15 +49,19 @@ export function Alternatives({ lang, candidates, selected, onSelect }: Props) {
     <section className="others">
       <h2 className="sub">{t(lang, "others")}</h2>
       <ol ref={list}>
-        {candidates.slice(0, SHOWN).map((c) => (
-          <li key={c.station.id} data-id={c.station.id}>
-            <button type="button" aria-current={c.station.id === selected} onClick={() => onSelect(c.station.id)}>
-              <span className="rank">{c.rank}</span>
-              <span className="name">{c.station.ja}<small>{c.station.en}</small></span>
-              <span className="nums">{numbers(lang, c)}</span>
-            </button>
-          </li>
-        ))}
+        {candidates.slice(0, SHOWN).map((c) => {
+          const n = numbers(lang, c);
+          return (
+            <li key={c.station.id} data-id={c.station.id}>
+              <button type="button" aria-current={c.station.id === selected} onClick={() => onSelect(c.station.id)}>
+                <span className="rank">{c.rank}</span>
+                <span className="name">{c.station.ja}<small>{c.station.en}</small></span>
+                <span className="nums">{n.group}</span>
+                <span className="hardest">{n.hardest}</span>
+              </button>
+            </li>
+          );
+        })}
       </ol>
     </section>
   );

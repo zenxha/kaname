@@ -1,7 +1,8 @@
 /** The app shows plain trip minutes. The transfer penalty only orders the stations. */
 import { describe, expect, it } from "vitest";
 import { DEFAULT_LAMBDA, rank } from "../../core/rank";
-import { changesText, compareToFirst, comparisonText, plainSummary, tripMinutes } from "../../src/model/compare";
+import { changesAllText, changesText, compareToFirst, comparisonText, hardestText, plainSummary, tripMinutes } from "../../src/model/compare";
+import type { CandidateResult } from "../../core/types";
 import { real } from "../realData";
 
 const SHIZUKU = { label: "Shizuku", start: { station: "seiseki-sakuragaoka" } };
@@ -17,18 +18,53 @@ describe("plain trip minutes", () => {
     }
   });
 
-  it("give the same summary for a station whatever the penalty is", () => {
-    const at = (lambda: number) => rank([SHIZUKU, TORA], { lambda, limit: 207 }, real).candidates.find((c) => c.station.id === "jimbocho")!;
-    expect(plainSummary(at(0))).toEqual(plainSummary(at(10)));
+  it("stay plain whatever the penalty is, which only picks the hardest trip", () => {
+    const at = (lambda: number) => plainSummary(rank([SHIZUKU, TORA], { lambda, limit: 207 }, real).candidates.find((c) => c.station.id === "jimbocho")!);
+    const [none, ten] = [at(0), at(10)];
+    expect([none.average, none.changes]).toEqual([ten.average, ten.changes]);
+    // With no penalty the hardest trip is the longest ride. With one, Tora's 4 changes make that trip the hardest.
+    expect(none.hardest).toEqual({ label: "Shizuku", minutes: 99, changes: 2 });
+    expect(ten.hardest).toEqual({ label: "Tora", minutes: 86, changes: 4 });
   });
 
-  it("average everyone's trip and name the longest one", () => {
-    const best = rank([SHIZUKU, TORA], {}, real).candidates[0]!;
+  it("average everyone's trip and name the hardest one: the ranking's worst, where a change counts as minutes", () => {
+    const top = rank([SHIZUKU, TORA], {}, real).candidates;
+    const best = top[0]!;
     const trips = best.people.map(tripMinutes);
     const summary = plainSummary(best);
     expect(summary.average).toBeCloseTo((trips[0]! + trips[1]!) / 2);
-    expect(summary.longest.minutes).toBe(Math.max(...trips));
-    expect(trips[best.people.findIndex((p) => p.label === summary.longest.label)]).toBe(summary.longest.minutes);
+    // 神田: Shizuku rides longer (100 min, 2 changes), but Tora's trip (85 min, 4 changes) is the hardest.
+    expect(best.station.id).toBe("kanda");
+    expect(summary.hardest).toEqual({ label: "Tora", minutes: 85, changes: 4 });
+    expect(summary.hardest.label).toBe(best.worst.label);
+    // 九段下 has the shorter longest trip (96 min), but its hardest trip is harder, so it ranks lower.
+    const kudan = top.find((c) => c.station.id === "kudanshita")!;
+    expect(kudan.rank).toBeGreaterThan(best.rank);
+    expect(plainSummary(kudan).hardest).toEqual({ label: "Tora", minutes: 89, changes: 4 });
+  });
+
+  it("never show a lower station that looks at least as good on every number", () => {
+    const shown = (c: CandidateResult) => {
+      const p = plainSummary(c);
+      return [Math.round(p.average), p.changes, p.hardest.minutes, p.hardest.changes];
+    };
+    let seed = 7;
+    const random = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const ids = real.stations.slice(0, real.nCandidates).map((s) => s.id);
+    let groups = 0;
+    for (let g = 0; g < 150; g++) {
+      const people = Array.from({ length: 2 + Math.floor(random() * 4) }, (_, i) => ({ label: `P${i}`, start: { station: ids[Math.floor(random() * ids.length)]! } }));
+      const top = rank(people, {}, real).candidates.slice(0, 5).map(shown);
+      groups++;
+      for (let a = 0; a < top.length; a++) {
+        for (let b = a + 1; b < top.length; b++) {
+          const [hi, lo] = [top[a]!, top[b]!];
+          const looksBetter = lo.every((v, i) => v <= hi[i]!) && lo.some((v, i) => v < hi[i]!);
+          expect(looksBetter, `group ${g}: rank ${b + 1} ${lo} looks better than rank ${a + 1} ${hi}`).toBe(false);
+        }
+      }
+    }
+    expect(groups).toBe(150);
   });
 
   it("count everyone's changes of train, there and back, so the order can be explained", () => {
@@ -41,6 +77,15 @@ describe("plain trip minutes", () => {
     expect(changesText("en", 1)).toBe("1 change");
     expect(changesText("en", 6)).toBe("6 changes");
     expect(changesText("ja", 6)).toBe("乗換6回");
+  });
+
+  it("say the group's changes and the hardest trip in both languages", () => {
+    expect(changesAllText("en", 1)).toBe("1 change in all");
+    expect(changesAllText("en", 6)).toBe("6 changes in all");
+    expect(changesAllText("ja", 6)).toBe("乗換 計6回");
+    const hardest = { label: "Tora", minutes: 85, changes: 4 };
+    expect(hardestText("en", hardest)).toBe("hardest trip, Tora, 4 changes");
+    expect(hardestText("ja", hardest)).toBe("いちばん大変 Tora（乗換4回）");
   });
 
   it("drive the comparison with the first station", () => {

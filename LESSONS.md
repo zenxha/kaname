@@ -186,22 +186,29 @@ The owner set the goals, the gates and the product calls. Claude Code wrote most
 - Lesson: answer a usability question with the gesture that the platform already teaches. A keyboard shortcut is an extra, not the answer.
 - Where to look: `web/src/useOutsideTap.ts`, the editor tests near the end of `web/e2e/plan.spec.ts`.
 
+### 25. Show the numbers that set the order
+
+- What happened: the list ranked 九段下 4th, below 神田. On screen, 九段下 looked as good or better on every number: 93 minutes on average, 96 for the longest trip and 6 changes. 神田 showed 93, 100 and 6. The ranking adds 10 minutes for each change. So its worst trip at 神田 was Tora's 85 minutes with 4 changes, not Shizuku's 100 minutes with 2. The screen showed the longest trip, but the ranking used the hardest one.
+- What we did: we measured the problem first. In 95 of 388 random groups, a lower station looked as good or better on every number in its row. The ticket and the list now show the average, the group's changes, and the hardest trip with its own changes. All minutes stay plain. The order depends only on these four numbers, so the count fell to 0. If the longest trip comes back, a unit test on 150 groups fails.
+- Lesson: if the screen explains a ranking, show the inputs of the ranking. Then count how often the screen contradicts the order.
+- Where to look: `plainSummary` in `web/src/model/compare.ts`, `web/tests/app/minutes.test.ts`, `docs/tuning.md`.
+
 ## Working with an AI agent
 
-### 25. A separate reviewer finds what the author cannot
+### 26. A separate reviewer finds what the author cannot
 
 - What happened: each milestone ended with a code review by a separate agent that saw the code but not the author's reasoning.
 - What we did: every review found real defects, for example a check that never failed, a map race, an address ranking error and a retry loop with no limit. Each fix came with a regression test.
 - Lesson: keep the author and the reviewer apart. Give the reviewer the code, not the conclusion.
 - Where to look: the commits named "fix: address the ... review".
 
-### 26. Decisions written down make the story possible
+### 27. Decisions written down make the story possible
 
 - What happened: two days produced about 70 logged decisions, each with a reason.
 - What we did: every non-obvious decision got one line in DECISIONS.md, and every commit says what changed and why. This file was written from that record.
 - Lesson: the decision log is the cheapest documentation there is. Write the reason while you still know it.
 
-### 27. The agent makes mistakes too, so check its work
+### 28. The agent makes mistakes too, so check its work
 
 - What happened: some bugs came from the agent itself. A `pkill -f` pattern killed its own shell, so a commit did not happen. A page script named a variable `top`, which clashes with the browser's `window.top`. A Python class shadowed the built-in `LookupError`.
 - What we did: each one surfaced because a command, a test or a reviewer checked the result instead of trusting the claim.

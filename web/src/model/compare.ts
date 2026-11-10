@@ -21,27 +21,47 @@ export function tripMinutes(p: PersonResult): number {
   return p.outMinutes + p.homeMinutes + p.walkMinutes;
 }
 
-export interface PlainSummary {
-  readonly average: number;
-  readonly longest: { readonly label: string; readonly minutes: number };
-  /**
-   * Everyone's changes of train, there and back. The ranking counts each one as extra minutes, so a
-   * station can rank first with longer plain trips but fewer changes; this number shows why.
-   */
+/** One person's trip in plain minutes, with their changes of train there and back. */
+export interface Hardest {
+  readonly label: string;
+  readonly minutes: number;
   readonly changes: number;
 }
 
-/** The group's average trip and its longest trip, in plain minutes. The first person wins a tie. */
+/**
+ * The four numbers the ranking depends on, shown without the penalty. The ranking weighs the average
+ * against the hardest trip, and counts each change of train as extra minutes in both. So a station
+ * that ranks lower is never as good or better on all four.
+ */
+export interface PlainSummary {
+  readonly average: number;
+  /** Everyone's changes of train, there and back. */
+  readonly changes: number;
+  /** The ranking's worst trip: the most minutes once changes count. It can be shorter than the longest ride. */
+  readonly hardest: Hardest;
+}
+
 export function plainSummary(c: CandidateResult): PlainSummary {
-  const trips = c.people.map((p) => ({ label: p.label, minutes: tripMinutes(p) }));
-  const longest = trips.reduce((a, b) => (b.minutes > a.minutes ? b : a), trips[0] ?? { label: "", minutes: 0 });
-  const average = trips.length === 0 ? 0 : trips.reduce((s, x) => s + x.minutes, 0) / trips.length;
-  const changes = c.people.reduce((n, p) => n + p.outTransfers + p.homeTransfers, 0);
-  return { average, longest, changes };
+  const average = c.people.length === 0 ? 0 : c.people.reduce((s, p) => s + tripMinutes(p), 0) / c.people.length;
+  const changes = c.people.reduce((n, p) => n + personChanges(p), 0);
+  // The engine names the worst person; a repeated name is found by its cost too.
+  const worst = c.people.find((p) => p.label === c.worst.label && p.cost === c.worst.cost) ?? c.people[0];
+  const hardest = worst ? { label: worst.label, minutes: tripMinutes(worst), changes: personChanges(worst) } : { label: "", minutes: 0, changes: 0 };
+  return { average, changes, hardest };
 }
 
 export function changesText(lang: Lang, n: number): string {
   return t(lang, n === 1 ? "changeOne" : "changesN", { n });
+}
+
+/** The group's changes of train, said so that they do not read as one person's. */
+export function changesAllText(lang: Lang, n: number): string {
+  return t(lang, n === 1 ? "changeOneAll" : "changesAll", { n });
+}
+
+/** The words after the hardest trip's minutes on the ticket. */
+export function hardestText(lang: Lang, h: Hardest): string {
+  return t(lang, "hardestWho", { who: h.label, changes: changesText(lang, h.changes) });
 }
 
 /** null when `shown` is the first station. Both results list the same people in the same order. */

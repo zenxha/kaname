@@ -62,5 +62,7 @@ Result: the owner chose λ = 10 on 2026-11-10. Two things changed with it:
 
 A station can then look shorter on both numbers than the winner, because its trips have more changes. In 300 sampled groups, this happens in the top 5 for 14% of groups at λ = 10, and for 7% at λ = 5.
 
+Later the same day, the ticket and the list changed to the four numbers that the order depends on: the average trip, the group's changes, and the hardest trip with its changes. The hardest trip is the one with the most minutes after the penalty for changes. The penalty also picks which trip that is. The minutes on screen stay plain. The old row showed the average, the longest trip and all changes. In 95 of 388 random groups of 2 to 5 people, it showed a lower station that looked as good or better on every number. The new row shows none, and a unit test checks this rule.
+
 [mit]: https://dspace.mit.edu/bitstream/handle/1721.1/65385/1-258j-spring-2006/contents/lecture-notes/lect23.pdf
 [wtr]: https://www.worldtransitresearch.info/research/9198

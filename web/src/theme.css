@@ -183,6 +183,8 @@ button { cursor: pointer; }
 .others .name { font: 700 15px var(--sans); }
 .others .name small { font: 400 11px var(--sans); color: var(--muted); margin-left: 6px; }
 .others .nums { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* The hardest trip, under the name: with the average and the changes, the numbers that set the order. */
+.others .hardest { grid-column: 2 / -1; margin-top: -4px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .others button[aria-current="true"] .name { color: var(--seal); }
 
 /* Controls */
