@@ -143,6 +143,17 @@ Outside ±5 min, all optimistic:
 
 h14 (舞浜→新宿, Keiyo→Chuo at 東京) sits at exactly −5. **Pattern:** changes to and from deep underground JR platforms (東京 Keiyo and Sobu, 新橋, 馬喰町) are still too short. **Follow-up for M4:** raise the deep-platform allowance and add 新橋, 馬喰町 and 新日本橋, then validate on another fresh set, not these pairs.
 
+**Done in M4 (2026-11-10).** Each deep JR platform now adds 3 minutes, and the rule covers 新橋, 新日本橋 and 馬喰町 (decision log, 2026-11-10). A fresh set of 24 pairs was picked and committed with the change (`444d6b2`), then compared with the planner. 18 pairs are likely to change at a deep platform, and 6 are controls.
+
+| Model | Within ±5 | Exact | MAE | Mean signed, deep pairs | Mean signed, controls |
+|---|---|---|---|---|---|
+| Before (`444d6b2~1`) | 22/24 | 3 | 2.79 | −2.83 | −0.33 |
+| After | 24/24 | 7 | 2.08 | −1.33 | −0.33 |
+
+The old misses 市川→日本橋 (−8) and 津田沼→田町 (−6) are now 0 and −3. On the M0 set, 千葉→渋谷 went from −6 to −2. Changes at deep platforms are still about 1.3 min short on average, and three fresh pairs sit at −5. The set is now seen, so a further change needs another fresh set.
+
+The M1 diagnosis was right for 千葉→渋谷 only. c11 now changes at 品川 with 5 minutes instead of at 新橋, for the same 29 min. h18 takes three tight changes (浦和, 上野, 有楽町) that the planner does not allow. h14 needs a longer walk from the Keiyo platform to the raised Chuo platforms at 東京. None of the three is a deep-platform problem.
+
 ### Candidate set
 
 207 complexes within 30 km of Tokyo Station served by at least 2 line families (`data/candidates.csv`). A branch counts as its parent line, so 鶴見線大川支線 is 鶴見線. Before that rule, industrial stops such as 安善 and 浅野 counted as 2-line stations. One override: 浜川崎 is excluded. It has about 2 trains an hour after 20:00, so from 36 candidates most of the home window has no journey to it. No single-line terminus needed adding.

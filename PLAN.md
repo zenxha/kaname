@@ -81,4 +81,5 @@ Spike code lives in `spike/m0/`. It is throwaway, but versioned so the numbers c
 - Done: the transfer penalty λ is 10 (owner's choice). The app shows plain trip minutes and the group's changes of train, and the example group meets at 神田.
 - Done: the README demo, a group of three at three slider positions, with links into the app.
 - Gate met: the README has a limits section and a demo scenario.
-- Still open from M1: longer transfers at deep JR platforms. That needs a fresh set of reference journeys.
+- Done after M4: longer transfers at deep JR platforms, checked on 24 fresh pairs (24 within ±5 min, up from 22). See DECISIONS.md, "Done in M4".
+- Done after M4: map markers sit on their stations, and names no longer cover each other.

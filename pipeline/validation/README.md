@@ -14,5 +14,10 @@ transfer tables were committed (f931bc5) before these pairs were compared with t
   planner shows it. Only these summary facts are kept. The pages themselves are not stored.
 - `ref_route` comes from a simple text parse and can miss a line name. It is informative only.
 
+`m4_reference.csv` holds the M4 deep-platform set. Its 24 pairs (`m4_pairs.csv`) were picked and
+committed with the deep-platform change (444d6b2), before the planner was asked. 18 pairs are likely
+to change at a deep JR platform (東京, 新橋, 新日本橋, 馬喰町), and 6 are controls. The pages were
+fetched on 2026-11-10 with the settings above, 3 seconds apart.
+
 Run the comparison with `uv run kaname-pipeline validate` (from `pipeline/`).
 The M0 sets stay in `spike/m0/`.

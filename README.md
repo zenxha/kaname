@@ -156,7 +156,7 @@ Link previews need the full URL of the preview image. Set `KANAME_SITE_URL` to y
 ## Limits
 
 - The times are estimates from one weekday timetable and a simple transfer model. They do not include delays or timetable changes. Before you rely on a last train, look it up in an official source.
-- On 26 test pairs that the model never saw, 24 values are within 5 minutes of a commercial journey planner. Long transfers at large terminals come out a little short.
+- On two sets of test pairs that the model never saw, 48 of 50 trips are within 5 minutes of a commercial journey planner. Changes at deep underground platforms come out about 1 minute short on average.
 - Stations more than 60 km from Tokyo Station have no data.
 - 26 of the 1,419 stations have no kana reading. Search still finds them by name.
 

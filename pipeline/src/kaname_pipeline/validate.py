@@ -23,6 +23,7 @@ REFERENCE_SETS = (
     ("M0 gate set (18:30)", REPO_DIR / "spike" / "m0" / "reference_times.csv"),
     ("M0 late set", REPO_DIR / "spike" / "m0" / "reference_times_late.csv"),
     ("M1 held-out set", REPO_DIR / "pipeline" / "validation" / "heldout_reference.csv"),
+    ("M4 deep-platform set", REPO_DIR / "pipeline" / "validation" / "m4_reference.csv"),
 )
 
 
