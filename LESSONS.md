@@ -225,7 +225,7 @@ The owner set the goals, the gates and the product calls. Claude Code wrote most
 ### 30. The agent makes mistakes too, so check its work
 
 - What happened: some bugs came from the agent itself. A `pkill -f` pattern killed its own shell, so a commit did not happen. A page script named a variable `top`, which clashes with the browser's `window.top`. A Python class shadowed the built-in `LookupError`.
-- What we did: each one surfaced because a command, a test or a reviewer checked the result instead of trusting the claim.
+- What we did: each one surfaced because a command, a test or a reviewer checked the result instead of trusting the claim. Once, one long shell command ran the tests, then committed and deployed. A rare random test in the ranking engine failed, and the command went on anyway. The change was only CSS. But the agent had cut the test output to a few lines, so the seed that replays the failure was lost. Now a failed check stops the command, and the full output of a failure is kept.
 - Lesson: treat generated code like any other code. Run it, test it and read the diff.
 
 ## Telling these stories
