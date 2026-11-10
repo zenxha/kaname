@@ -16,6 +16,24 @@ Try it at https://kaname-1l6.pages.dev/. The app runs in the browser on static d
 - Shares a plan as a link. The link holds stations, names and settings, never a location or an address.
 - English and Japanese, light and dark mode, phone and desktop layouts.
 
+## Demo
+
+Three friends meet after work on a weekday. Aki works in 大宮 and lives in 柏. Ben and Chie work in 新宿, and they live in 川崎 and 渋谷. Each link opens the group in the app with the slider at that position.
+
+| Slider | Station | Average trip | Longest trip | Changes |
+| --- | --- | --- | --- | --- |
+| [Efficient](https://kaname-1l6.pages.dev/?p=omiya.kashiwa_Aki&p=shinjuku.kawasaki_Ben&p=shinjuku.shibuya_Chie&fair=0) | 新宿 | 40 min | 84 min (Aki) | 2 |
+| [Middle, the default](https://kaname-1l6.pages.dev/?p=omiya.kashiwa_Aki&p=shinjuku.kawasaki_Ben&p=shinjuku.shibuya_Chie) | 東京 | 45 min | 70 min (Aki) | 1 |
+| [Fair](https://kaname-1l6.pages.dev/?p=omiya.kashiwa_Aki&p=shinjuku.kawasaki_Ben&p=shinjuku.shibuya_Chie&fair=100) | 日暮里 | 55 min | 59 min (Aki) | 2 |
+
+The efficient end picks the station where Ben and Chie already are, so Aki rides 84 minutes. The default picks 東京, which cuts Aki's trip to 70 minutes and keeps the others near half an hour. The fair end gives everyone 50 to 59 minutes.
+
+The command line ranks the same group:
+
+```bash
+npm --prefix web run cli -- --person "Aki:大宮>柏" --person "Ben:新宿>川崎" --person "Chie:新宿>渋谷"
+```
+
 ## Quick start
 
 You need Node.js 22.12 or later. The generated data is in the repo, so you do not need the data pipeline to run the app.

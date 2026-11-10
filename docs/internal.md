@@ -21,8 +21,9 @@ These notes are for the owner. They keep the project history, the approvals and 
 | M1, data pipeline | 207 candidates. 24 of 26 held-out pairs within 5 minutes |
 | M2, scoring engine and command line | Every acceptance test in `BRIEF.md` passes |
 | M3, web app | Iteration 1, then the iteration 2 redesign. After that: trip pills, link preview, plan links, the proposed meeting end, and kana and address search |
+| M4, validation and polish | The tuning study (`docs/tuning.md`): the slider stays at the middle, and a change of train counts as 10 minutes. The app shows plain minutes and changes. The README has a demo |
 
-M4 is next: tune the transfer penalty and the default slider position, and add a demo to the README.
+All milestones in `BRIEF.md` up to M4 are done. M5 is a stretch: time-of-day data, last-train detail and a venue search.
 
 ## Open decision: the data license
 

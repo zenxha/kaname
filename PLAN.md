@@ -23,7 +23,7 @@ Source of truth for scope: `BRIEF.md`. Decisions with reasons go in `DECISIONS.m
 | M1 | Matrix pipeline | Full matrix for the candidate set, no unreachable candidate pairs, build documented in the README | **done** |
 | M2 | Scoring engine and CLI | All acceptance tests in BRIEF.md pass | **done** |
 | M3 | Web UI | 5-person scenario end to end on a phone viewport | **iteration 2** (journey redesign, gate test passes) |
-| M4 | Validation and polish | README limits section and a demo scenario | in progress |
+| M4 | Validation and polish | README limits section and a demo scenario | **done** |
 | M5 | Stretch | Time-of-day matrices, last-train detail, venue search | no |
 
 ## M0: concrete steps
@@ -74,10 +74,11 @@ Spike code lives in `spike/m0/`. It is throwaway, but versioned so the numbers c
 - Done 2026-11-10: kana search and address search (M4).
 - Next iterations: owner feedback, and track shapes from MLIT N02.
 
-## M4: validation and polish (started 2026-11-10)
+## M4: validation and polish (done 2026-11-10)
 
 - Done: Japanese strings, the shareable link, the README limits section, and the spot check against reference journeys (M1 and the `spotcheck` command).
 - Done: the tuning study (`npm --prefix web run tune`, `docs/tuning.md`). The default slider stays at α = 0.5.
-- Waiting for the owner: the transfer penalty λ. The study supports about 10, but a higher λ moves the example group to 神田 and raises the numbers on screen.
-- Next: the README demo scenario, after the λ decision.
+- Done: the transfer penalty λ is 10 (owner's choice). The app shows plain trip minutes and the group's changes of train, and the example group meets at 神田.
+- Done: the README demo, a group of three at three slider positions, with links into the app.
+- Gate met: the README has a limits section and a demo scenario.
 - Still open from M1: longer transfers at deep JR platforms. That needs a fresh set of reference journeys.
