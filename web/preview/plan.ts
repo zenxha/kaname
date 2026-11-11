@@ -79,6 +79,6 @@ export function previewText(best: CandidateResult): PreviewText {
       `longest trip ${longest.minutes} min (${longest.label})`,
       ...(last === null ? [] : [`last train ${formatClock(last.time)} (${last.labels.join(" and ")})`]),
     ].join(" · "),
-    alt: `Each person's train route on a Tokyo rail map, to ${station} under a red 要 seal.`,
+    alt: `A station sign for ${station} with a red 要 seal, and each person's train route to it on a Tokyo rail map.`,
   };
 }

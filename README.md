@@ -172,6 +172,8 @@ A link with a plan gets its own link preview from two Cloudflare Pages Functions
 - `/` with a `p` parameter: the function rewrites the preview tags of the page, for example "Shizuku and Tora meet at 神田 (Kanda)".
 - `/og/plan`: the function draws the plan's picture, 1200 by 630, with resvg and the BIZ UDPGothic fonts in `web/static/`. Cloudflare's cache keeps each picture for a day.
 
+The picture is a station sign in the middle, with each person's trains on a rail map around it. Some chat apps, such as Instagram, crop a preview picture to its middle square. So the sign stays inside the middle 630 by 630 pixels, and the map keeps the meeting station under the sign. The sign covers a person who starts very close to the station. That person's name is still in the line "… meet at" on the sign.
+
 Drawing a picture takes more processing time than the Workers Free plan gives (10 ms for each request), so the account needs Workers Paid. If a function fails, the page and the general picture are served instead. A host without functions serves the site with the general preview for every link.
 
 To see a plan's picture without a deploy, draw it from the local data:
