@@ -1,26 +1,32 @@
 /**
- * Renders the link preview (static/og.png, 1200x630) and the icons from the real data, with Playwright.
- * Run with `npm --prefix web run og` after a design change; the build copies static/ into the site.
+ * Renders the site's link preview (static/og.png, 1200x630) and the icons from the real data.
+ * The preview is a 要 station sign in the middle, with the example group's trains running in to it, like
+ * a plan's preview (preview/card.ts). The sign and the words stay inside the middle square, which some
+ * chat apps keep when they crop. Run with `npm --prefix web run og` after a design change; the build
+ * copies static/ into the site.
  */
 import { chromium } from "@playwright/test";
 import { readFileSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { join } from "node:path";
 import { defaultDataDir, loadMatrixData, loadRouteData } from "../../cli/loadData";
 import { rank } from "../core/rank";
 import { routeFor } from "../core/routes";
-import { cardPeople, COLORS, mapSvg } from "../preview/card";
+import { cardPeople, cardSvg, COLORS, SIGN, signMap, signSvg, textWidth, W } from "../preview/card";
+import { CARD_FONTS, renderPng } from "../preview/render";
 import type { LngLat } from "../src/model/geometry";
-import { plainSummary } from "../src/model/compare";
 import { parseShapes, stationsChecksum } from "../src/model/shapes";
 import { DEFAULT_PEOPLE, toParticipants } from "../src/model/scenario";
 
 const OUT = join(import.meta.dirname, "..", "static");
-const W = 1200;
-const H = 630;
-/** Where the routes sit: the right of the card, clear of the text. */
-const BOX = { x0: 730, y0: 130, x1: 1090, y1: 510 };
-const { paper: PAPER, ink: INK, muted: MUTED, seal: SEAL } = COLORS;
+const { paper: PAPER, ink: INK, seal: SEAL } = COLORS;
 const FONT = "https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap";
+const SVG_FONT = 'font-family="BIZ UDPGothic"';
+const HEADLINE = "Where should we meet?";
+/** The widest line of words, in pixels: inside the middle square, with a margin. */
+const TEXT_MAX = 560;
+const TAGLINE = ["Find the closest station", "for all your friends in Tokyo."] as const;
+const SIGN_TEXT = { lead: "かなめ", name: "要", en: "Kaname", band: "みんなにとって最適な集合場所を、東京の駅から。" } as const;
 
 const data = loadMatrixData(defaultDataDir());
 const routes = loadRouteData(defaultDataDir());
@@ -30,38 +36,22 @@ if (shapes === null) throw new Error("data/shapes.json does not fit the station 
 const best = rank(toParticipants(DEFAULT_PEOPLE), {}, data).candidates[0]!;
 const k = data.byId.get(best.station.id)!;
 const meet: LngLat = [data.stations[k]!.lng, data.stations[k]!.lat];
-// The same map as a plan's link preview (preview/card.ts), in the box on the right of this card.
+// The example group's trains run in under the sign, as a plan's do.
 const people = cardPeople(data, best, (station) => routeFor(routes, "out", k, station), shapes);
-const map = mapSvg(data, people, { at: meet, ja: best.station.ja }, BOX);
+const map = signMap(data, people, meet);
 
-const card = `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${FONT}"><style>
-* { margin: 0; box-sizing: border-box; }
-body { width: ${W}px; height: ${H}px; overflow: hidden; background: ${PAPER}; font-family: "BIZ UDPGothic", sans-serif; color: ${INK}; position: relative; }
-svg { position: absolute; inset: 0; }
-.fade { position: absolute; inset: 0; background: linear-gradient(90deg, ${PAPER} 0%, ${PAPER} 40%, rgba(242, 243, 240, 0) 56%); }
-.text { position: absolute; left: 64px; top: 60px; width: 580px; display: grid; gap: 18px; }
-.brand { display: flex; align-items: center; gap: 14px; font: 700 34px "BIZ UDPGothic"; }
-.brand i { font-style: normal; width: 48px; height: 48px; display: grid; place-items: center; background: ${SEAL}; color: #fff; border-radius: 5px; font-size: 28px; transform: rotate(-4deg); }
-h1 { font: 700 66px/1.08 "BIZ UDPGothic"; letter-spacing: -0.01em; margin-top: 18px; }
-.sub { font: 400 25px/1.45 "BIZ UDPGothic"; color: ${MUTED}; max-width: 520px; }
-.ja { font: 700 23px "BIZ UDPGothic"; white-space: nowrap; }
-.ticket { position: absolute; left: 64px; bottom: 56px; display: grid; gap: 2px; padding: 16px 24px; background: #e8eae3; border-radius: 8px; }
-.ticket::before, .ticket::after { content: ""; position: absolute; top: 50%; margin-top: -10px; width: 20px; height: 20px; border-radius: 50%; background: ${PAPER}; }
-.ticket::before { left: -10px; } .ticket::after { right: -10px; }
-.ticket small { font: 400 17px "BIZ UDPGothic"; color: ${MUTED}; }
-.ticket b { font: 700 34px "BIZ UDPGothic"; }
-.ticket b span { font-size: 20px; color: ${MUTED}; margin-left: 10px; }
-</style></head><body>
-<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${map}</svg>
-<div class="fade"></div>
-<div class="text">
-  <div class="brand"><i>要</i>Kaname</div>
-  <h1>Where should<br>we meet?</h1>
-  <p class="sub">Find the closest station for all your friends in Tokyo.</p>
-  <p class="ja">みんなにとって最適な集合場所を、東京の駅から。</p>
-</div>
-<div class="ticket"><small>${people.map((p) => p.label).join(" and ")} meet at</small><b>${best.station.ja}<span>${best.station.en} · ${Math.round(plainSummary(best).average)} min on average</span></b></div>
-</body></html>`;
+/** Centered words over the map, with a paper halo so a route under them does not hide them. */
+const words = (text: string, y: number, size: number, weight: number) =>
+  `<text ${SVG_FONT} x="${W / 2}" y="${y}" font-size="${size}" font-weight="${weight}" fill="${INK}" text-anchor="middle" paint-order="stroke" stroke="${PAPER}" stroke-width="12" stroke-linejoin="round">${text}</text>`;
+const bottom = SIGN.y0 + SIGN.h;
+const card = cardSvg(map.under
+  + words(HEADLINE, SIGN.y0 - 38, Math.min(46, Math.floor(TEXT_MAX / textWidth(HEADLINE))), 700)
+  + signSvg(SIGN_TEXT, SEAL, false)
+  + TAGLINE.map((line, i) => words(line, bottom + 52 + i * 36, 26, 400)).join("")
+  + map.over);
+const fonts = CARD_FONTS.map((f) => readFileSync(join(OUT, f)));
+const wasm = readFileSync(createRequire(import.meta.url).resolve("@resvg/resvg-wasm/index_bg.wasm"));
+writeFileSync(join(OUT, "og.png"), await renderPng(card, fonts, wasm));
 
 const icon = (size: number) => `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="${FONT}"><style>
 * { margin: 0; } body { width: ${size}px; height: ${size}px; display: grid; place-items: center; background: ${SEAL}; color: #fff; font: 700 ${Math.round(size * 0.62)}px/1 "BIZ UDPGothic"; }
@@ -76,7 +66,6 @@ async function render(html: string, width: number, height: number, file: string)
   await browser.close();
 }
 
-await render(card, W, H, "og.png");
 await render(icon(180), 180, 180, "apple-touch-icon.png");
 await render(icon(32), 32, 32, "favicon-32.png");
 writeFileSync(join(OUT, "favicon.svg"), `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="${SEAL}"/>`

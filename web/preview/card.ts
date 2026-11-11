@@ -260,28 +260,49 @@ function bandColor(data: MatrixData, station: number): string {
   return /^#[0-9a-f]{6}$/i.test(color) ? color : COLORS.ink;
 }
 
-/** The station sign: who meets, the station in Japanese and English, a band in the line's color with the numbers, and the seal. */
-function signSvg(best: CandidateResult, band: string): string {
-  const { ink, muted, seal, paper } = COLORS;
+/** The words on a station sign. */
+export interface SignText {
+  /** A small line at the top, such as "Shizuku and Tora meet at". */
+  readonly lead: string;
+  /** The large name, such as 神田. */
+  readonly name: string;
+  /** The name in English. */
+  readonly en: string;
+  /** The line on the band. */
+  readonly band: string;
+}
+
+/** A station sign: the lead, the name in Japanese and English, a colored band with a line, and the 要 seal at the corner if `seal`. */
+export function signSvg(text: SignText, band: string, seal: boolean): string {
+  const { ink, muted, paper } = COLORS;
   const { x0, y0, w, h } = SIGN;
   const cx = x0 + w / 2;
-  const lead = `${namesText(best.people.map((p) => shorten(p.label)))} meet at`;
-  const size = stationFontSize(best.station.ja);
+  const size = stationFontSize(text.name);
   const nameY = y0 + 58 + size * 0.88;
-  const { average, hardest } = plainSummary(best);
-  const line = `${Math.round(average)} min on average · hardest trip ${hardest.minutes} min (${shorten(hardest.label)})`;
-  const lineSize = fitSize(line, BAND_TEXT_MAX, w - 50);
+  const lineSize = fitSize(text.band, BAND_TEXT_MAX, w - 50);
   const bandTop = y0 + h - BAND;
   const r = 10;
   return `<g class="sign"><rect x="${x0 + 4}" y="${y0 + 6}" width="${w}" height="${h}" rx="${r}" fill="${ink}" opacity="0.12"/>`
     + `<rect x="${x0}" y="${y0}" width="${w}" height="${h}" rx="${r}" fill="${WHITE}" stroke="${ink}" stroke-width="2"/>`
-    + `<text ${FONT} x="${cx}" y="${y0 + 46}" font-size="${fitSize(lead, LEAD_MAX, w - 120)}" fill="${muted}" text-anchor="middle">${escapeXml(lead)}</text>`
-    + `<text class="station" ${FONT} x="${cx}" y="${nameY.toFixed(0)}" font-size="${size}" font-weight="700" fill="${ink}" text-anchor="middle">${escapeXml(best.station.ja)}</text>`
-    + `<text ${FONT} x="${cx}" y="${(nameY + 40).toFixed(0)}" font-size="${fitSize(best.station.en, 30, w - 60)}" font-weight="700" fill="${muted}" text-anchor="middle">${escapeXml(best.station.en)}</text>`
+    + `<text ${FONT} x="${cx}" y="${y0 + 46}" font-size="${fitSize(text.lead, LEAD_MAX, w - 120)}" fill="${muted}" text-anchor="middle">${escapeXml(text.lead)}</text>`
+    + `<text class="station" ${FONT} x="${cx}" y="${nameY.toFixed(0)}" font-size="${size}" font-weight="700" fill="${ink}" text-anchor="middle">${escapeXml(text.name)}</text>`
+    + `<text ${FONT} x="${cx}" y="${(nameY + 40).toFixed(0)}" font-size="${fitSize(text.en, 30, w - 60)}" font-weight="700" fill="${muted}" text-anchor="middle">${escapeXml(text.en)}</text>`
     + `<path d="M${x0} ${bandTop} H${x0 + w} V${y0 + h - r} Q${x0 + w} ${y0 + h} ${x0 + w - r} ${y0 + h} H${x0 + r} Q${x0} ${y0 + h} ${x0} ${y0 + h - r} Z" fill="${band}"/>`
-    + `<text class="band" ${FONT} x="${cx}" y="${(bandTop + BAND / 2 + lineSize * 0.36).toFixed(0)}" font-size="${lineSize}" font-weight="700" fill="${textOn(band)}" text-anchor="middle">${escapeXml(line)}</text>`
-    + `<g transform="translate(${x0 + w - 30},${y0 + 8}) rotate(8)"><rect x="-32" y="-32" width="64" height="64" rx="6" fill="${seal}" stroke="${paper}" stroke-width="4"/>`
-    + `<text ${FONT} font-size="40" font-weight="700" fill="#fff" text-anchor="middle" y="14">要</text></g></g>`;
+    + `<text class="band" ${FONT} x="${cx}" y="${(bandTop + BAND / 2 + lineSize * 0.36).toFixed(0)}" font-size="${lineSize}" font-weight="700" fill="${textOn(band)}" text-anchor="middle">${escapeXml(text.band)}</text>`
+    + (seal ? `<g transform="translate(${x0 + w - 30},${y0 + 8}) rotate(8)"><rect x="-32" y="-32" width="64" height="64" rx="6" fill="${COLORS.seal}" stroke="${paper}" stroke-width="4"/>`
+      + `<text ${FONT} font-size="40" font-weight="700" fill="#fff" text-anchor="middle" y="14">要</text></g>` : "")
+    + "</g>";
+}
+
+/** A plan's sign: who meets where, and the average and the hardest trip on the band. */
+function planSign(best: CandidateResult): SignText {
+  const { average, hardest } = plainSummary(best);
+  return {
+    lead: `${namesText(best.people.map((p) => shorten(p.label)))} meet at`,
+    name: best.station.ja,
+    en: best.station.en,
+    band: `${Math.round(average)} min on average · hardest trip ${hardest.minutes} min (${shorten(hardest.label)})`,
+  };
 }
 
 /** Kaname's name at the top left. A square crop leaves it out, and nothing depends on it. */
@@ -298,14 +319,33 @@ function underSign([x, y]: readonly [number, number]): boolean {
   return x > SIGN.x0 + margin && x < SIGN.x0 + SIGN.w - margin && y > SIGN.y0 + margin && y < SIGN.y0 + SIGN.h - margin;
 }
 
-/** The map centered under a station sign. A badge at the sign's edge goes over the sign, so it stays readable. */
-export function planCardSvg({ data, best, people }: PlanCardInput): string {
-  const k = data.byId.get(best.station.id)!;
-  const meet: LngLat = [data.stations[k]!.lng, data.stations[k]!.lat];
+/** The map for a sign card: the parts under the sign, and the badges that go over it. */
+export interface SignMap {
+  /** The network, the routes and the badges that the sign covers. */
+  readonly under: string;
+  /** The badges at the sign's edge and beyond. */
+  readonly over: string;
+}
+
+/** The map centered under the station sign, with the meeting station under the sign. */
+export function signMap(data: MatrixData, people: readonly CardPerson[], meet: LngLat): SignMap {
   const px = meetProjection(mapPoints(people, meet), meet, MAP_BOX, MEET_AREA);
   const covered = people.filter((p) => underSign(px(p.start)));
   const shown = people.filter((p) => !underSign(px(p.start)));
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`
-    + `<rect width="${W}" height="${H}" fill="${COLORS.paper}"/>${networkSvg(data, px)}${routesSvg(people, px)}`
-    + `${badgesSvg(covered, meet, px)}${brandSvg()}${signSvg(best, bandColor(data, k))}${badgesSvg(shown, meet, px)}</svg>`;
+  return {
+    under: `${networkSvg(data, px)}${routesSvg(people, px)}${badgesSvg(covered, meet, px)}`,
+    over: badgesSvg(shown, meet, px),
+  };
+}
+
+/** A card's SVG document, on paper. */
+export function cardSvg(body: string): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><rect width="${W}" height="${H}" fill="${COLORS.paper}"/>${body}</svg>`;
+}
+
+/** The plan's card: the map, Kaname's name, and the station sign. A badge at the sign's edge goes over the sign, so it stays readable. */
+export function planCardSvg({ data, best, people }: PlanCardInput): string {
+  const k = data.byId.get(best.station.id)!;
+  const map = signMap(data, people, [data.stations[k]!.lng, data.stations[k]!.lat]);
+  return cardSvg(`${map.under}${brandSvg()}${signSvg(planSign(best), bandColor(data, k), true)}${map.over}`);
 }

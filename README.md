@@ -163,7 +163,7 @@ A name keeps ASCII letters, digits, `_` and `-` as they are. The link percent-en
 
 Link previews need the full URL of the preview image. Set `KANAME_SITE_URL` to your site before the build, for example `KANAME_SITE_URL=https://example.org npm --prefix web run build`.
 
-`npm --prefix web run og` renders the preview image and the icons in `web/static/` from the real data. Run it again after a design change.
+`npm --prefix web run og` renders the preview image and the icons in `web/static/` from the real data. Like a plan's preview, the image is a 要 station sign in the middle of the map. The example group's trains run in to the sign. Run it again after a design change.
 
 ### Plan previews
 
