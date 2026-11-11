@@ -14,7 +14,7 @@ import type { TrackShapes } from "../src/model/shapes";
 import { namesText } from "./plan";
 
 /** Part of each picture's cache key: change it with the design, so old pictures are not served. */
-export const CARD_VERSION = "2";
+export const CARD_VERSION = "3";
 
 export const W = 1200;
 export const H = 630;
@@ -254,10 +254,20 @@ export function textOn(color: string): string {
   return 1.05 / (back + 0.05) >= (back + 0.05) / (luminance(COLORS.ink) + 0.05) ? WHITE : COLORS.ink;
 }
 
-/** The sign's band takes the color of the station's first line, as a real station sign does. */
-function bandColor(data: MatrixData, station: number): string {
-  const color = data.railways[data.stations[station]!.railways[0] ?? -1]?.color ?? "";
-  return /^#[0-9a-f]{6}$/i.test(color) ? color : COLORS.ink;
+const HEX = /^#[0-9a-f]{6}$/i;
+
+/**
+ * The sign's band: the color of the line that most people arrive on, so the sign shows the platform where
+ * the group meets. A tie goes to the line that the station lists first. If nobody rides in (everyone
+ * starts at the station), the band takes the station's first line.
+ */
+export function bandColor(data: MatrixData, station: number, people: readonly CardPerson[]): string {
+  const own = data.stations[station]!.railways.map((r) => (data.railways[r]?.color ?? "").toUpperCase());
+  const arrivals = people.flatMap((p) => p.legs.filter((l) => !l.walk).slice(-1).map((l) => l.color.toUpperCase()));
+  const count = (c: string) => arrivals.filter((a) => a === c).length;
+  const order = (c: string) => (own.includes(c) ? own.indexOf(c) : own.length);
+  const pick = [...new Set(arrivals)].sort((a, b) => count(b) - count(a) || order(a) - order(b))[0] ?? own[0] ?? "";
+  return HEX.test(pick) ? pick : COLORS.ink;
 }
 
 /** The words on a station sign. */
@@ -347,5 +357,5 @@ export function cardSvg(body: string): string {
 export function planCardSvg({ data, best, people }: PlanCardInput): string {
   const k = data.byId.get(best.station.id)!;
   const map = signMap(data, people, [data.stations[k]!.lng, data.stations[k]!.lat]);
-  return cardSvg(`${map.under}${brandSvg()}${signSvg(planSign(best), bandColor(data, k), true)}${map.over}`);
+  return cardSvg(`${map.under}${brandSvg()}${signSvg(planSign(best), bandColor(data, k, people), true)}${map.over}`);
 }

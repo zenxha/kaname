@@ -1,6 +1,6 @@
 /** The link preview picture of a plan, as SVG: who meets where, and each person's trains on the map. */
 import { describe, expect, it } from "vitest";
-import { cardPeople, COLORS, escapeXml, meetProjection, MIDDLE, planCardSvg, SIGN, stationFontSize, textOn, textWidth } from "../../preview/card";
+import { bandColor, cardPeople, COLORS, escapeXml, meetProjection, MIDDLE, planCardSvg, SIGN, stationFontSize, textOn, textWidth, type CardPerson } from "../../preview/card";
 import { answerFor } from "../../preview/plan";
 import { real, realRoutes, realShapes } from "../realData";
 import { routeFor } from "../../core/routes";
@@ -94,6 +94,31 @@ describe("meetProjection", () => {
       expect(y).toBeGreaterThanOrEqual(box.y0 - 1e-6);
       expect(y).toBeLessThanOrEqual(box.y1 + 1e-6);
     }
+  });
+});
+
+describe("bandColor", () => {
+  const ningyocho = real.byId.get("ningyocho")!; // the Hibiya Line (silver gray) is listed first, then the Asakusa Line (rose)
+  const [HIBIYA, ASAKUSA] = ["#B5B5AC", "#DC435F"];
+  const arriving = (...colors: string[]): CardPerson[] => colors.map((color, i) => ({
+    n: i + 1, label: `P${i + 1}`, minutes: 10, start: [139.7, 35.7],
+    legs: [{ path: [], walk: false, color: "#00A7DB" }, { path: [], walk: false, color }, { path: [], walk: true, color: "#000000" }],
+  }));
+
+  it("takes the line that most people arrive on, not the line the station lists first", () => {
+    expect(bandColor(real, ningyocho, arriving(ASAKUSA, ASAKUSA, HIBIYA))).toBe(ASAKUSA);
+    expect(bandColor(real, ningyocho, arriving(HIBIYA, HIBIYA, ASAKUSA))).toBe(HIBIYA);
+  });
+
+  it("gives a tie to the line the station lists first, and falls back to it when nobody rides in", () => {
+    expect(bandColor(real, ningyocho, arriving(ASAKUSA, HIBIYA))).toBe(HIBIYA);
+    expect(bandColor(real, ningyocho, [])).toBe(HIBIYA);
+  });
+
+  it("colors a real 人形町 plan rose: two of three people arrive on the Asakusa Line", () => {
+    const svg = card("?p=sengakuji_A~oshiage_B~kita-senju_C");
+    expect(svg).toContain(">人形町<");
+    expect(svg).toContain(`fill="${ASAKUSA}"/><text class="band"`);
   });
 });
 
